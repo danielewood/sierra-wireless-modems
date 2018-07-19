@@ -175,7 +175,7 @@ send AT!RESET
 fi
 
 echo "---"
-# Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware
+echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware'
 curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
 unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 
@@ -199,6 +199,7 @@ fi
 
 echo "---"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
+echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
 qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
 #Done, restart ModemManager
