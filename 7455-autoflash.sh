@@ -4,6 +4,7 @@
 # wget -qO- https://raw.githubusercontent.com/danielewood/sierra-wireless-em7455/master/7455-autoflash.sh | sudo bash
 
 #.SYNOPSIS
+# - Only for use on Ubuntu 18.04 LTS LiveUSB
 # - Changes all models of EM/MC7455 Modems to the Generic Sierra Wireless VID/PID
 # - Flashes the Current Generic Firmware as of 2018-07-18
 
