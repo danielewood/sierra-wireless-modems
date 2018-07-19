@@ -61,9 +61,13 @@
 ---
 ### Create Accessible COM Port
 
-+ Option 1: [Sierra Wireless MC7455 | EM7455 -- AT! Command Guide](https://ltehacks.com/viewtopic.php?t=33)
++ Option 1: Use my automatic script to do all configuration. This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
+        + WARNING: Only for use with and external USB enclosure.
+        + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
+        + Run my script, follow on screen instructions.
++ Option 2: [Sierra Wireless MC7455 | EM7455 -- AT! Command Guide](https://ltehacks.com/viewtopic.php?t=33)
     + Use Putty instead of the Huawei program
-+ Option 2: [Sierra Wireless EM7455: How to enable COM ports](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/)
++ Option 3: [Sierra Wireless EM7455: How to enable COM ports](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/)
     + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.
 
 ---
