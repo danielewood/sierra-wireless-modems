@@ -1,9 +1,40 @@
 #/bin/bash
-# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-74xx-utilities/master/7455-autoflash.sh)
+#.USAGE
+# To start, run:
+# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-modem-utilities/master/7455-autoflash.sh)
+
+#.SYNOPSIS
+# - Changes all models of EM/MC7455 Modems to the Generic Sierra Wireless VID/PID
+# - Flashes the Current Generic Firmware as of 2018-07-18
+
+#.DESCRIPTION
+# - Only for use on Ubuntu 18.04 LTS LiveUSB
+# - All Needed Packages will Auto-Install
+# - Sets MBIM Mode with AT Commands Access 
+# - Changes all models of EM/MC7455 Modems to the Generic Sierra Wireless VID/PID
+# - Clears Band Restrictions and Places Modem in LTE only mode.
+# - Flashes the Current Generic Firmware as of 2018-07-18
+
+#.NOTES
+# License: Unlicense / CCZero / WTFPL / Public Domain
+# Author: Daniel Wood / https://github.com/danielewood
+
+#.LINK
+# https://github.com/danielewood/sierra-wireless-modem-utilities
+
+#.VERSION
+# Version: 20180718
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run with sudo or as root"
   exit
+fi
+
+lsbrelease=`lsb_release -c | awk '{print $2}'`
+if [ "$lsbrelease" != "bionic" ]
+    then echo "Please run on Ubuntu 18.04 LTS"
+    lsb_release -a
+    exit
 fi
 
 echo "---"
