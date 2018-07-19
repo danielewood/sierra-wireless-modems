@@ -1,7 +1,7 @@
 #/bin/bash
 #.USAGE
 # To start, run:
-# wget -qO- https://raw.githubusercontent.com/danielewood/sierra-wireless-7455/master/autoflash-7455.sh | sudo bash
+# wget https://raw.githubusercontent.com/danielewood/sierra-wireless-7455/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
 #.SYNOPSIS
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
@@ -64,7 +64,7 @@ fi
 # Stop modem manager to prevent AT command spam and allow firmware-update
 systemctl stop ModemManager
 
-# Install all needed prerequisites
+echo "Installing all needed prerequisites..."
 apt-get update
 apt-get install git make gcc curl -y
 yes | cpan install UUID::Tiny IPC::Shareable JSON
@@ -80,6 +80,7 @@ git clone https://github.com/mavstuff/swi_setusbcomp.git
 chmod +x ~/swi_setusbcomp/scripts_swi_setusbcomp.pl
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
+echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ~/swi_setusbcomp/scripts_swi_setusbcomp.pl --usbcomp=8
 
 startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
@@ -98,6 +99,7 @@ ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyU
 sudo cat /dev/$ttyUSB &  
 
 # Display current modem settings
+echo 'Current modem settings:'
 echo 'send AT
 send ATE1
 sleep 1
@@ -133,7 +135,7 @@ sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 while [[ ! $REPLY =~ ^[Yy]$ ]]
 do
     read -p '
-Warning: This will overwrite all settings with generic EM7455/MC7455 Settings?
+Warning: This will overwrite all settings with generic EM7455/MC7455 Settings.
 Are you sure you want to continue? (CTRL+C to exit) ' -n 1 -r
     if [[ $REPLY =~ ^[Nn]$ ]]
     then
@@ -183,6 +185,7 @@ sudo pkill -9 cat &>/dev/null
 # Force reinsertion if Lenovo/Dell Modem PIDs are detected
 modemcount=`lsusb | grep -E '1199:9079|413C:81B6' | wc -l`
 if [ $modemcount -eq 1 ]
+    then
     echo "---"
     startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
     endcount=0
