@@ -236,7 +236,7 @@
 - http://m2msupport.net/m2msupport/download-at-command-tester/
 - Mikrotik specific: 
     + http://whirlpool.net.au/wiki/wiki_rooter_pg5
-- pfSense specific (QMI, wont work without duccessful decode of engineer mode)
+- pfSense specific (QMI, wont work without successful decode of engineer mode)
     + https://forum.netgate.com/topic/110135/sierra-wireless-airprime-em7455-support/5  
     + https://github.com/bkerler/SierraWirelessGen
     + https://forum.sierrawireless.com/t/em7455-deactivate-low-power-mode/8620/15
