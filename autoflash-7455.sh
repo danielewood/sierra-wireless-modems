@@ -185,14 +185,14 @@ unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 modemcount=`lsusb | grep -E '1199:9079|413C:81B6' | wc -l`
 if [ $modemcount -eq 1 ]
     echo "---"
-	startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-	endcount=0
-	while [ $endcount -le $startcount ]
-	do
-		endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-		echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
-		sleep 5
-	done
+    startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
+    endcount=0
+    while [ $endcount -le $startcount ]
+    do
+        endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
+        echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
+        sleep 5
+    done
 fi
 
 echo "---"
@@ -203,4 +203,3 @@ qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02
 systemctl start ModemManager
 
 echo "Done!"
-echo "Please unplug your modem and reinsert it."
