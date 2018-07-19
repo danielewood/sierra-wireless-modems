@@ -61,31 +61,15 @@
 ---
 ### Create Accessible COM Port
 
-+ Option 1: Use my automatic script to do all configuration. This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
++ Option 1: Use my [automatic script to do all configuration](https://github.com/danielewood/sierra-wireless-7455/blob/master/autoflash-7455.sh). This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
         + WARNING: Only for use with and external USB enclosure.
         + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
         + Run my script, follow on screen instructions.
 + Option 2: [Sierra Wireless MC7455 | EM7455 -- AT! Command Guide](https://ltehacks.com/viewtopic.php?t=33)
     + Use Putty instead of the Huawei program
 + Option 3: [Sierra Wireless EM7455: How to enable COM ports](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/)
-    + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.
+    + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.		
 
----
-### First Setup on Dell DW5811e
-
-+ [2016 Dell Driver/Firmware Package](https://www.dell.com/support/home/us/en/04/drivers/driversdetails?driverid=y28mx) (Extract and install with USBCOMP=8) and a external NGFF to USB Adapter
-+ If after installing the Dell drivers, you end up in a modem boot loop(Flash, Success, Flash, Success, Flash, Success):
-    + Run the Sierra Update Package as soon as it says the modem has been successfully updated, run the package. 
-    + After the Sierra package flashes successfully, it will change all the PIDs/VIDs to Generic Sierra Wireless Ones
-    + Uninstall the Dell drivers
-    + Install the Sierra Drivers
-    + Run the following AT Commands:
-        + `AT!ENTERCND="A710"`
-        + `AT!RMARESET=1`
-        + `AT!RESET`
-    + Run the Flasher one last time to make sure the modem is now defaulted and on the latest firmware.
-		
-		
 ---
 ### Basic Setup
 
@@ -96,7 +80,7 @@
     + `AT!IMPREF="ATT"`
 3. Set Interface bitmask to 0000100D (diag,nmea,modem,mbim). [This is the same as USBCOMP=8](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/).
     + `AT!USBCOMP=1,1,0000100D`
-4. Set LTE Only (Disables UMTS/HSDPA/3G fallback, which you dont want)
+4. Set LTE Only (Disables UMTS/HSDPA/3G fallback, which you probably dont want)
     + `AT!SELRAT=06`
 5. Set Modem to use all available bands (Dont hide any bands)
     + `AT!BAND=00`
@@ -165,7 +149,7 @@
     AT!ENTERCND="A710"
     ```
 ---
-+ Clear all Carrier Preferences/Firmwares other than current:
++ Clear all Carrier Preferences/Firmwares other than current(You will want to flash the modem after this):
     ```
     AT!IMAGE?
     AT!IMAGE=0
