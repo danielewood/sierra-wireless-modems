@@ -5,7 +5,6 @@
   * [Which Modem to Buy](#which-modem-to-buy)
   * [Adapters and Antennas](#adapters-and-antennas)
   * [Create Accessible COM Port](#create-accessible-com-port)
-  * [First Setup on Dell DW5811e](#first-setup-on-dell-dw5811e)
   * [Basic Setup](#basic-setup)
   * [Change Modem Identity (Sierra Wireless / Lenovo / Dell)](#change-modem-identity-sierra-wireless--lenovo--dell)
   * [Useful Commands/Info](#useful-commandsinfo)
