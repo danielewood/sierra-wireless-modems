@@ -62,7 +62,9 @@ then
 fi
 
 # Stop modem manager to prevent AT command spam and allow firmware-update
+echo 'Stoping modem manager to prevent AT command spam and allow firmware-update'
 systemctl stop ModemManager
+systemctl disable ModemManager
 
 echo "Installing all needed prerequisites..."
 apt-get update
@@ -203,6 +205,7 @@ echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Mode
 qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
 #Done, restart ModemManager
+systemctl enable ModemManager
 systemctl start ModemManager
 
 echo "Done!"
