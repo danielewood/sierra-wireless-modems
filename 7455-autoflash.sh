@@ -1,7 +1,7 @@
 #/bin/bash
 #.USAGE
 # To start, run:
-# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-em7455/master/7455-autoflash.sh)
+# wget -qO- https://raw.githubusercontent.com/danielewood/sierra-wireless-em7455/master/7455-autoflash.sh | sudo bash
 
 #.SYNOPSIS
 # - Changes all models of EM/MC7455 Modems to the Generic Sierra Wireless VID/PID
@@ -67,6 +67,9 @@ systemctl stop ModemManager
 apt-get update
 apt-get install git make gcc curl -y
 yes | cpan install UUID::Tiny IPC::Shareable JSON
+wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
+dpkg -i minicom_2.7.1-1_amd64.deb
+
 
 # Install Modem Mode Switcher
 git clone https://github.com/mavstuff/swi_setusbcomp.git
@@ -90,29 +93,40 @@ done
 ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
 
 # Cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-cat /dev/$ttyUSB &
+sudo cat /dev/$ttyUSB &  
 
 # Display current modem settings
-echo 'ATE
-ATI
-AT!ENTERCND="A710"
-AT!IMPREF?
-AT!GOBIIMPREF?
-AT!USBCOMP?
-AT!USBVID?
-AT!USBPID?
-AT!USBPRODUCT?
-AT!PRIID?
-AT!SELRAT?
-AT!BAND?
-AT!IMAGE?' |
-while read newline; 
-do
-	printf "$newline\r\n" > /dev/$ttyUSB
-	printf "\r\n" > /dev/$ttyUSB
-	sleep 1
-done 
+echo 'send AT
+send ATE1
+sleep 1
+send ATI
+sleep 1
+send AT!ENTERCND=\"A710\"
+sleep 1
+send AT!IMPREF?
+sleep 1
+send AT!GOBIIMPREF?
+sleep 1
+send AT!USBCOMP?
+sleep 1
+send AT!USBVID?
+sleep 1
+send AT!USBPID?
+sleep 1
+send AT!USBPRODUCT?
+sleep 1
+send AT!PRIID?
+sleep 1
+send AT!SELRAT?
+sleep 1
+send AT!BAND?
+sleep 1
+send AT!IMAGE?
+sleep 1
+! pkill minicom
+' > script.txt
 
+sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 
 while [[ ! $REPLY =~ ^[Yy]$ ]]
 do
@@ -124,28 +138,40 @@ do
 		printf '\r\n'; break
 	fi
 done
+printf '\r\n'
 
 # Set Generic Sierra Wireless VIDs/PIDs
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-	echo 'AT!IMPREF="GENERIC"
-AT!GOBIIMPREF="GENERIC"
-AT!USBCOMP=1,1,0000100D
-AT!USBVID=1199
-AT!USBPID=9071,9070
-AT!USBPRODUCT="EM7455"
-AT!PRIID="9904609","002.026","Generic-Laptop"
-AT!SELRAT=06
-AT!BAND=00
-AT!IMAGE=0
-AT!RESET
-AT!RESET' | 
-	while read newline; do
-		printf "$newline\r\n" > /dev/$ttyUSB
-		printf "\r\n" > /dev/$ttyUSB
-		sleep 1
-	done 
+    echo 'send AT
+send AT!IMPREF=\"GENERIC\"
+sleep 1
+send AT!GOBIIMPREF=\"GENERIC\"
+sleep 1
+send AT!USBCOMP=1,1,0000100D
+sleep 1
+send AT!USBVID=1199
+sleep 1
+send AT!USBPID=9071,9070
+sleep 1
+send AT!USBPRODUCT=\"EM7455\"
+sleep 1
+send AT!PRIID=\"9904609\",\"002.026\",\"Generic-Laptop\"
+sleep 1
+send AT!SELRAT=06
+sleep 1
+send AT!BAND=00
+sleep 1
+send AT!IMAGE=0
+sleep 1
+send AT!RESET
+! pkill minicom
+' > script.txt
+    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
+
+#Kill cat processes used for monitoring status
+sudo pkill -9 cat &>/dev/null
 
 # Install qmi-utilities
 curl -o libqmi-utils_1.18.0-3ubuntu1_amd64.deb -L http://mirrors.edge.kernel.org/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.18.0-3ubuntu1_amd64.deb
@@ -157,7 +183,6 @@ unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
 qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
-sleep 10
 
 #Done, restart ModemManager
 systemctl start ModemManager
