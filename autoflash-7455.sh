@@ -26,6 +26,9 @@
 #.VERSION
 # Version: 20180719
 
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 if [ "$EUID" -ne 0 ]
     then echo "Please run with sudo or as root"
     exit
@@ -38,34 +41,37 @@ if [ "$lsbrelease" != "bionic" ]
     exit
 fi
 
-echo "---"
+printf "${BLUE}---${NC}\n"
 echo 'Searching for EM7455/MC7455 USB modems...'
 modemcount=`lsusb | grep -E '1199:9071|1199:9079|413C:81B6' | wc -l`
 while [ $modemcount -eq 0 ]
 do
-    echo "---"
+    printf "${BLUE}---${NC}\n"
     echo "Could not find any EM7455/MC7455 USB modems"
     echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
     modemcount=`lsusb | grep -E '1199:9071|1199:9079|413C:81B6' | wc -l`
     sleep 5
 done
 
+printf "${BLUE}---${NC}\n"
 echo "Found EM7455/MC7455: 
 `lsusb | grep -E '1199:9071|1199:9079|413C:81B6'`
 "
 
 if [ $modemcount -gt 1 ]
 then 
-    echo "---"
+    printf "${BLUE}---${NC}\n"
     echo "Found more than one EM7455/MC7455, remove the one you dont want to flash and try again."
     exit
 fi
 
 # Stop modem manager to prevent AT command spam and allow firmware-update
+printf "${BLUE}---${NC}\n"
 echo 'Stoping modem manager to prevent AT command spam and allow firmware-update'
 systemctl stop ModemManager
 systemctl disable ModemManager
 
+printf "${BLUE}---${NC}\n"
 echo "Installing all needed prerequisites..."
 apt-get update
 apt-get install git make gcc curl -y
@@ -82,12 +88,13 @@ git clone https://github.com/mavstuff/swi_setusbcomp.git
 chmod +x ~/swi_setusbcomp/scripts_swi_setusbcomp.pl
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
+printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ~/swi_setusbcomp/scripts_swi_setusbcomp.pl --usbcomp=8
 
 startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
 endcount=0
-echo "---"
+printf "${BLUE}---${NC}\n"
 while [ $endcount -le $startcount ]
 do
     endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
@@ -101,6 +108,7 @@ ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyU
 sudo cat /dev/$ttyUSB &  
 
 # Display current modem settings
+printf "${BLUE}---${NC}\n"
 echo 'Current modem settings:'
 echo 'send AT
 send ATE1
@@ -133,7 +141,7 @@ sleep 1
 ' > script.txt
 
 sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
-
+printf "${BLUE}---${NC}\n"
 while [[ ! $REPLY =~ ^[Yy]$ ]]
 do
     read -p '
@@ -176,7 +184,7 @@ send AT!RESET
     sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
-echo "---"
+printf "${BLUE}---${NC}\n"
 echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware'
 curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
 unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
@@ -188,7 +196,7 @@ sudo pkill -9 cat &>/dev/null
 modemcount=`lsusb | grep -E '1199:9079|413C:81B6' | wc -l`
 if [ $modemcount -eq 1 ]
     then
-    echo "---"
+    printf "${BLUE}---${NC}\n"
     startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
     endcount=0
     while [ $endcount -le $startcount ]
@@ -199,13 +207,13 @@ if [ $modemcount -eq 1 ]
     done
 fi
 
-echo "---"
+printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
 qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
 #Done, restart ModemManager
-systemctl enable ModemManager
-systemctl start ModemManager
+systemctl enable ModemManager &>/dev/null
+systemctl start ModemManager &>/dev/null
 
 echo "Done!"
