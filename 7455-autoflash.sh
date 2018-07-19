@@ -1,5 +1,5 @@
 #/bin/bash
-# sudo bash <(curl -Ss https://url/7455-autoflash.sh)
+# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-74xx-utilities/master/7455-autoflash.sh)
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run with sudo or as root"
