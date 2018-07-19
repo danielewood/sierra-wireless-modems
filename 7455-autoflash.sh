@@ -1,7 +1,7 @@
 #/bin/bash
 #.USAGE
 # To start, run:
-# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-modem-utilities/master/7455-autoflash.sh)
+# sudo bash <(curl -Ss https://raw.githubusercontent.com/danielewood/sierra-wireless-em7455/master/7455-autoflash.sh)
 
 #.SYNOPSIS
 # - Changes all models of EM/MC7455 Modems to the Generic Sierra Wireless VID/PID
@@ -20,7 +20,7 @@
 # Author: Daniel Wood / https://github.com/danielewood
 
 #.LINK
-# https://github.com/danielewood/sierra-wireless-modem-utilities
+# https://github.com/danielewood/sierra-wireless-em7455
 
 #.VERSION
 # Version: 20180718
