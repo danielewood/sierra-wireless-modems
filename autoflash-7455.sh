@@ -12,7 +12,7 @@
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
 # - All Needed Packages will Auto-Install
 # - Sets MBIM Mode with AT Commands Access 
-# - Changes all models of EM7455/MC7455 Modems to the Generic Sierra Wireless VID/PID
+# - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
 # - Clears Band Restrictions and Places Modem in LTE only mode.
 # - Flashes the Current Generic Firmware as of 2018-07-18
 
