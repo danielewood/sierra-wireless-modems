@@ -1,7 +1,7 @@
 #/bin/bash
 #.USAGE
 # To start, run:
-# wget https://raw.githubusercontent.com/danielewood/sierra-wireless-7455/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
+# wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
 #.SYNOPSIS
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
@@ -21,7 +21,7 @@
 # Author: Daniel Wood / https://github.com/danielewood
 
 #.LINK
-# https://github.com/danielewood/sierra-wireless-7455
+# https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
 # Version: 20180719
