@@ -184,7 +184,7 @@ send AT!SELRAT=06
 sleep 1
 send AT!BAND=00
 sleep 1
-send AT!IMAGE=0
+#send AT!IMAGE=0
 sleep 1
 send AT!RESET
 ! pkill minicom
@@ -208,7 +208,7 @@ echo 'Reseting modem...'
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
-qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+qmi-firmware-update --update SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
 #Done, restart ModemManager
 systemctl enable ModemManager &>/dev/null
