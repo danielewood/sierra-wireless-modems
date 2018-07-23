@@ -254,7 +254,7 @@
     + Todo: Lookup sending AT Commands with uqmi
     + `/lib/netifd/proto/mbim.sh: uqmi $DBG -m -d $device --fcc-auth`
 + Using uqmi commands:
-        + http://tiebing.blogspot.com/2015/03/linux-running-4g-lte-modem.html
+    + http://tiebing.blogspot.com/2015/03/linux-running-4g-lte-modem.html
 + Git Repo for uqmi
     + https://git.openwrt.org/project/uqmi.git
 + MC7700 flashing by Mork
