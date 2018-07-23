@@ -80,7 +80,8 @@ apt-get install make gcc curl -y
 yes | cpan install UUID::Tiny IPC::Shareable JSON
 
 # apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
-# Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18), so we'll pull the .debs directly
+# Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
+# So we'll pull the .deb files directly
 wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
 dpkg -i minicom_2.7.1-1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
