@@ -93,22 +93,22 @@ dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 
 # Install Modem Mode Switcher
 wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
-chmod +x ~/swi_setusbcomp.pl
+chmod +x ./swi_setusbcomp.pl
 
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-~/swi_setusbcomp.pl --usbreset &>/dev/null
+./swi_setusbcomp.pl --usbreset &>/dev/null
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
-~/swi_setusbcomp.pl --usbcomp=8
+./swi_setusbcomp.pl --usbcomp=8
 
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-~/swi_setusbcomp.pl --usbreset &>/dev/null && sleep 2
+./swi_setusbcomp.pl --usbreset &>/dev/null && sleep 2
 
 ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
 
@@ -203,7 +203,7 @@ sudo pkill -9 cat &>/dev/null
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-~/swi_setusbcomp.pl --usbreset &>/dev/null
+./swi_setusbcomp.pl --usbreset &>/dev/null
 
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
