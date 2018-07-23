@@ -75,27 +75,26 @@ printf "${BLUE}---${NC}\n"
 echo "Installing all needed prerequisites..."
 apt-get update
 # need make and GCC for compiling perl modules
-apt-get install git make gcc curl -y
+apt-get install make gcc curl -y
 # Use cpan to install/compile all dependencies needed by swi_setusbcomp.pl
 yes | cpan install UUID::Tiny IPC::Shareable JSON
 
 # apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
-# Also, if you add security.ubuntu.com universe, you'll get an older version of libqmi (1.18), so we'll pull the .debs directly
+# Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18), so we'll pull the .debs directly
 wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
 dpkg -i minicom_2.7.1-1_amd64.deb
+wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
+dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 
 # Install Modem Mode Switcher
-#git clone https://github.com/mavstuff/swi_setusbcomp.git
-#chmod +x ~/swi_setusbcomp/scripts_swi_setusbcomp.pl
 wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
 chmod +x ~/swi_setusbcomp.pl
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
-#~/swi_setusbcomp/scripts_swi_setusbcomp.pl --usbcomp=8
 ~/swi_setusbcomp.pl --usbcomp=8
 
 startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
