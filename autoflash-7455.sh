@@ -85,7 +85,7 @@ wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_a
 dpkg -i minicom_2.7.1-1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
-http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
+wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
