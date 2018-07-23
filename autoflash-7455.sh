@@ -97,12 +97,12 @@ chmod +x ~/swi_setusbcomp.pl
 
 # Reset modem's USB connection before making changes
 printf "${BLUE}---${NC}\n"
-echo 'Reseting modem's USB connection before making changes'
+echo 'Reseting modem\'s USB connection before making changes'
 ~/swi_setusbcomp.pl --usbreset &>/dev/null
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
-echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
+echo "Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ~/swi_setusbcomp.pl --usbcomp=8
 
 # Reset Modem
