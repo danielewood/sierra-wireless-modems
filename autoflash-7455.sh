@@ -85,6 +85,8 @@ wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_a
 dpkg -i minicom_2.7.1-1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
+http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
+dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 
@@ -92,22 +94,22 @@ dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
 chmod +x ~/swi_setusbcomp.pl
 
+# Reset modem's USB connection before making changes
+printf "${BLUE}---${NC}\n"
+echo 'Reseting modem's USB connection before making changes'
+~/swi_setusbcomp.pl --usbreset &>/dev/null
+
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ~/swi_setusbcomp.pl --usbcomp=8
 
-startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-endcount=0
+# Reset Modem
 printf "${BLUE}---${NC}\n"
-while [ $endcount -le $startcount ]
-do
-    endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-    echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
-    sleep 5
-done
+echo 'Reseting modem...'
+~/swi_setusbcomp.pl --usbreset &>/dev/null
 
-ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
+ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
 sudo cat /dev/$ttyUSB &  
@@ -197,21 +199,10 @@ unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 #Kill cat processes used for monitoring status, if it hasnt already exited
 sudo pkill -9 cat &>/dev/null
 
-# Force reinsertion if Lenovo/Dell Modem PIDs are detected
-modemcount=`lsusb | grep -E '1199:9079|413C:81B6' | wc -l`
-if [ $modemcount -eq 1 ]
-    then
-    printf "${BLUE}---${NC}\n"
-    startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-    endcount=0
-    while [ $endcount -le $startcount ]
-    do
-        endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
-        echo 'Detected Dell/Lenovo VID:PIDs'
-        echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
-        sleep 5
-    done
-fi
+# Reset Modem
+printf "${BLUE}---${NC}\n"
+echo 'Reseting modem...'
+~/swi_setusbcomp.pl --usbreset &>/dev/null
 
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
