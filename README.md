@@ -60,7 +60,7 @@
 ---
 ### Create Accessible COM Port
 
-+ Option 1: Use my [automatic script to do all configuration](https://github.com/danielewood/sierra-wireless-7455/blob/master/autoflash-7455.sh). This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
++ Option 1: Use my [automatic script to do all configuration](https://github.com/danielewood/sierra-wireless-modems/blob/master/autoflash-7455.sh). This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
         + WARNING: Only for use with and external USB enclosure.
         + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
         + Run my script, follow on screen instructions.
@@ -224,19 +224,40 @@
 
 ---
 ### Additional References: 
-- https://techship.com/faq/sierra-wireless-mc74-series-module-is-not-detected-by-the-operating-system/
-- https://ltehacks.com/viewtopic.php?t=33
-- https://www.ofmodemsandmen.com/routers.html
-- http://www.hwtools.net/Adapter/USB3M2%20Series.html#Web-shop
-- http://forums.whirlpool.net.au/archive/2689577
-- https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/
-- https://techship.com/faq/sierra-wireless-mc74-series-module-is-not-detected-by-the-operating-system/
-- http://whirlpool.net.au/wiki/sierra_advanced
-- http://ltehacks.com/viewtopic.php?f=16&t=33&sid=5a5b06ff46bb3756c4e8abfc1b060f72
-- http://m2msupport.net/m2msupport/download-at-command-tester/
-- Mikrotik specific: 
+
++ Must tape over USB3 pins on MC74XX:
+    + https://techship.com/faq/sierra-wireless-mc74-series-module-is-not-detected-by-the-operating-system/
++ Sierra Wireless MC7455 | EM7455 -- AT! Command Guide
+    + https://ltehacks.com/viewtopic.php?t=33
++ Routers Supported by ROOter
+    + https://www.ofmodemsandmen.com/routers.html
++ BPlus USB 3.0 Enclosure for M2 B Key with SIM
+    + http://www.hwtools.net/Adapter/USB3M2%20Series.html#Web-shop- 
++ ROOter development thread
+    + http://forums.whirlpool.net.au/archive/2689577
++ Zukota on enabling COM ports
+    + https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/
++ ROOter Sierra FAQ
+    + http://whirlpool.net.au/wiki/sierra_advanced
++ Interesting AT Command Utility GUI, have not tried it.
+    + http://m2msupport.net/m2msupport/download-at-command-tester/
++ Mikrotik specific: 
     + http://whirlpool.net.au/wiki/wiki_rooter_pg5
-- pfSense specific (QMI, wont work without successful decode of engineer mode)
-    + https://forum.netgate.com/topic/110135/sierra-wireless-airprime-em7455-support/5  
++ pfSense (QMI, wont work without successful decode of engineer mode)
+    + https://forum.netgate.com/topic/110135/sierra-wireless-airprime-em7455-support/5
++ Engineer Mode Decoder
     + https://github.com/bkerler/SierraWirelessGen
     + https://forum.sierrawireless.com/t/em7455-deactivate-low-power-mode/8620/15
++ Ubuntu fix apt-get on LiveCD
+    + https://askubuntu.com/questions/378558/unable-to-locate-package-while-trying-to-install-packages-with-apt#481355
++ ROOTer enable fcc auth with QMI command
+    + Todo: Lookup sending AT Commands with uqmi
+    + `/lib/netifd/proto/mbim.sh: uqmi $DBG -m -d $device --fcc-auth`
++ Using uqmi commands:
+        + http://tiebing.blogspot.com/2015/03/linux-running-4g-lte-modem.html
++ Git Repo for uqmi
+    + https://git.openwrt.org/project/uqmi.git
++ MC7700 flashing by Mork
+    + http://whrl.pl/Rfbxjc
++ SpeedFusion connection bonding with VPS
+    + http://whrl.pl/Re9nIw
