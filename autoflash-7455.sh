@@ -84,13 +84,16 @@ wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.
 dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 
 # Install Modem Mode Switcher
-git clone https://github.com/mavstuff/swi_setusbcomp.git
-chmod +x ~/swi_setusbcomp/scripts_swi_setusbcomp.pl
+#git clone https://github.com/mavstuff/swi_setusbcomp.git
+#chmod +x ~/swi_setusbcomp/scripts_swi_setusbcomp.pl
+wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
+chmod +x ~/swi_setusbcomp.pl
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
-~/swi_setusbcomp/scripts_swi_setusbcomp.pl --usbcomp=8
+#~/swi_setusbcomp/scripts_swi_setusbcomp.pl --usbcomp=8
+~/swi_setusbcomp.pl --usbcomp=8
 
 startcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
 endcount=0
