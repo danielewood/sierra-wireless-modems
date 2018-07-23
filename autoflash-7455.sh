@@ -95,9 +95,9 @@ dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
 chmod +x ~/swi_setusbcomp.pl
 
-# Reset modem's USB connection before making changes
+# Reset Modem
 printf "${BLUE}---${NC}\n"
-echo 'Reseting modem\'s USB connection before making changes'
+echo 'Reseting modem...'
 ~/swi_setusbcomp.pl --usbreset &>/dev/null
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
