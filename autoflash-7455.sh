@@ -67,17 +67,20 @@ fi
 
 # Stop modem manager to prevent AT command spam and allow firmware-update
 printf "${BLUE}---${NC}\n"
-echo 'Stoping modem manager to prevent AT command spam and allow firmware-update'
+echo 'Stoping modem manager to prevent AT command spam and allow firmware-update, this may take a minute...'
 systemctl stop ModemManager
 systemctl disable ModemManager
 
 printf "${BLUE}---${NC}\n"
 echo "Installing all needed prerequisites..."
 apt-get update
+# need make and GCC for compiling perl modules
 apt-get install git make gcc curl -y
+# Use cpan to install/compile all dependencies needed by swi_setusbcomp.pl
 yes | cpan install UUID::Tiny IPC::Shareable JSON
 
-# apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB, so we'll pull the deb directly
+# apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
+# Also, if you add security.ubuntu.com universe, you'll get an older version of libqmi (1.18), so we'll pull the .debs directly
 wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
 dpkg -i minicom_2.7.1-1_amd64.deb
 wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
@@ -192,7 +195,7 @@ echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware'
 curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
 unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 
-#Kill cat processes used for monitoring status
+#Kill cat processes used for monitoring status, if it hasnt already exited
 sudo pkill -9 cat &>/dev/null
 
 # Force reinsertion if Lenovo/Dell Modem PIDs are detected
@@ -205,6 +208,7 @@ if [ $modemcount -eq 1 ]
     while [ $endcount -le $startcount ]
     do
         endcount=`dmesg | grep 'Qualcomm USB modem converter detected' | wc -l`
+        echo 'Detected Dell/Lenovo VID:PIDs'
         echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
         sleep 5
     done
