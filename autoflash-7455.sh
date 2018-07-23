@@ -102,13 +102,13 @@ echo 'Reseting modem...'
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
-echo "Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
+echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ~/swi_setusbcomp.pl --usbcomp=8
 
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-~/swi_setusbcomp.pl --usbreset &>/dev/null
+~/swi_setusbcomp.pl --usbreset &>/dev/null && sleep 2
 
 ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
 
