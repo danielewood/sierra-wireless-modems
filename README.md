@@ -261,3 +261,5 @@
     + http://whrl.pl/Rfbxjc
 + SpeedFusion connection bonding with VPS
     + http://whrl.pl/Re9nIw
++ Long Range Custom Yagi Setups
+    + https://ltehacks.com/viewtopic.php?f=24&t=71
