@@ -5,6 +5,7 @@
   * [Which Modem to Buy](#which-modem-to-buy)
   * [Adapters and Antennas](#adapters-and-antennas)
   * [Create Accessible COM Port](#create-accessible-com-port)
+  * [Manual Flashing Procedure (Linux)](#manual-flashing-procedure-linux)
   * [Basic Setup](#basic-setup)
   * [Change Modem Identity (Sierra Wireless / Lenovo / Dell)](#change-modem-identity-sierra-wireless--lenovo--dell)
   * [Useful Commands/Info](#useful-commandsinfo)
@@ -70,13 +71,37 @@
     + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.		
 
 ---
+### Manual Flashing Procedure
+1. Install libqmi-utils 
+	+ Ubuntu 18.04 (libqmi version 1.20, it is not yet in the main repositories)
+	    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+        + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+        + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
+        + `dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
+        + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
+        + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
+        + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+        + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+2. Get the [latest firmware bundle)](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
+    + `curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx`
+3. Extract firmware CWE and NVU.
+    + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
+4. Stop Modem Manager
+    + `systemctl stop ModemManager`
+5. Flash firmware
+    + Sierra: `qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+    + If you have not changed the PID:VID to the Generic Sierra Firmware:
+        + Lenovo: `qmi-firmware-update --update -d "1199:9079" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`	
+        + Dell: `qmi-firmware-update --update -d "413C:81B6'" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`	
+6. Modem will reset with new firmware and carrier profile.
+
+---
 ### Basic Setup
 ##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
 1. Enable Advanced Commands:
     + `AT!ENTERCND="A710"`
-2. Set preferred image to GENERIC or AT&T
+2. Set preferred image to GENERIC (Will error if Generic does not exist)
     + `AT!IMPREF="GENERIC"`
-    + `AT!IMPREF="ATT"`
 3. Set Interface bitmask to 0000100D (diag,nmea,modem,mbim). [This is the same as USBCOMP=8](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/).
     + `AT!USBCOMP=1,1,0000100D`
 4. Set LTE Only (Disables UMTS/HSDPA/3G fallback, which you probably dont want)
