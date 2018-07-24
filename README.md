@@ -71,7 +71,7 @@
 
 ---
 ### Basic Setup
-
+#### My [automated script will complete this task](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html).
 1. Enable Advanced Commands:
     + `AT!ENTERCND="A710"`
 2. Set preferred image to GENERIC or AT&T
