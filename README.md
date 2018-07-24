@@ -71,7 +71,7 @@
     + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.		
 
 ---
-### Manual Flashing Procedure
+### Manual Flashing Procedure (Linux)
 1. Install libqmi-utils 
 	+ Ubuntu 18.04 (libqmi version 1.20, it is not yet in the main repositories)
 	    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
