@@ -5,7 +5,7 @@
   * [Which Modem to Buy](#which-modem-to-buy)
   * [Adapters and Antennas](#adapters-and-antennas)
   * [Create Accessible COM Port](#create-accessible-com-port)
-  * [Manual Flashing Procedure (Linux)](#manual-flashing-procedure-linux)
+  * [Manual Flashing Procedure (Linux)](#manual-flashing-procedure-ubuntu-linux-1804)
   * [Basic Setup](#basic-setup)
   * [Change Modem Identity (Sierra Wireless / Lenovo / Dell)](#change-modem-identity-sierra-wireless--lenovo--dell)
   * [Useful Commands/Info](#useful-commandsinfo)
