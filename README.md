@@ -61,10 +61,11 @@
 ---
 ### Create Accessible COM Port
 ##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
+
 + Option 1: Use my [automatic script to do all configuration](https://github.com/danielewood/sierra-wireless-modems/blob/master/autoflash-7455.sh). This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
-        + WARNING: Only for use with and external USB enclosure.
-        + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
-        + Run my script, follow on screen instructions.
+    + WARNING: Only for use with an external USB enclosure.
+    + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
+    + Run my script, follow on screen instructions.
 + Option 2: [Sierra Wireless MC7455 | EM7455 -- AT! Command Guide](https://ltehacks.com/viewtopic.php?t=33)
     + Use Putty instead of the Huawei program
 + Option 3: [Sierra Wireless EM7455: How to enable COM ports](https://zukota.com/sierra-wireless-em7455-how-to-enable-com-ports/)
