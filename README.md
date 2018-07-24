@@ -71,17 +71,16 @@
     + Use Rufus to write the Ubuntu image, if it asks, use `dd` mode.		
 
 ---
-### Manual Flashing Procedure (Linux)
-1. Install libqmi-utils 
-	+ Ubuntu 18.04 (libqmi version 1.20, it is not yet in the main repositories)
-	    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-        + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-        + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-        + `dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-        + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-        + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-        + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-        + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+### Manual Flashing Procedure (Ubuntu Linux 18.04)
+1. Install libqmi-utils version 1.20 (It is not yet in the main repositories)
+    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
+    + `dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
+    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
+    + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
+    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
 2. Get the [latest firmware bundle)](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
     + `curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx`
 3. Extract firmware CWE and NVU.
@@ -89,10 +88,12 @@
 4. Stop Modem Manager
     + `systemctl stop ModemManager`
 5. Flash firmware
-    + Sierra: `qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
-    + If you have not changed the PID:VID to the Generic Sierra Firmware:
-        + Lenovo: `qmi-firmware-update --update -d "1199:9079" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`	
-        + Dell: `qmi-firmware-update --update -d "413C:81B6'" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`	
+    + Sierra: 
+        + `qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+    + Lenovo:
+        + `qmi-firmware-update --update -d "1199:9079" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+    + Dell:
+        + `qmi-firmware-update --update -d "413C:81B6'" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
 6. Modem will reset with new firmware and carrier profile.
 
 ---
