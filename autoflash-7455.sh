@@ -43,19 +43,19 @@ fi
 
 printf "${BLUE}---${NC}\n"
 echo 'Searching for EM7455/MC7455 USB modems...'
-modemcount=`lsusb | grep -E '1199:9071|1199:9079|413C:81B6' | wc -l`
+modemcount=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | wc -l`
 while [ $modemcount -eq 0 ]
 do
     printf "${BLUE}---${NC}\n"
     echo "Could not find any EM7455/MC7455 USB modems"
     echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
-    modemcount=`lsusb | grep -E '1199:9071|1199:9079|413C:81B6' | wc -l`
+    modemcount=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | wc -l`
     sleep 5
 done
 
 printf "${BLUE}---${NC}\n"
 echo "Found EM7455/MC7455: 
-`lsusb | grep -E '1199:9071|1199:9079|413C:81B6'`
+`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6'`
 "
 
 if [ $modemcount -gt 1 ]
