@@ -59,7 +59,7 @@
 		
 ---
 ### Create Accessible COM Port
-
+##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
 + Option 1: Use my [automatic script to do all configuration](https://github.com/danielewood/sierra-wireless-modems/blob/master/autoflash-7455.sh). This will change any of the Dell/Lenovo/Generic modems to Generic MBIM with AT ports and update the firmware to the newest version. 
         + WARNING: Only for use with and external USB enclosure.
         + Create a Bootable LiveCD/LiveUSB Ubuntu 18.04
@@ -71,7 +71,7 @@
 
 ---
 ### Basic Setup
-#### My [automated script will complete this task](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html).
+##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
 1. Enable Advanced Commands:
     + `AT!ENTERCND="A710"`
 2. Set preferred image to GENERIC or AT&T
@@ -87,6 +87,7 @@
     + `AT!RESET`
 
 ### Change Modem Identity (Sierra Wireless / Lenovo / Dell)
+##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
 
 1. Enable Terminal Echo
     ```
