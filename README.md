@@ -211,6 +211,13 @@
     AT!RESET
     ```
 ---
++ Clear all changes and restore to (Dell/Lenovo/Sierra) factory settings:
+    ```
+    AT!ENTERCND="A710"
+    AT!RMARESET=1
+    AT!RESET
+    ```
+---
 + [Lock LTE Bands](https://ltehacks.com/viewtopic.php?t=33)
     + Pick one:
     ```
