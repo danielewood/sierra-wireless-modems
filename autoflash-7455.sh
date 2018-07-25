@@ -192,18 +192,16 @@ then
     exit
 fi
 
-if [[ $REPLY =~ ^[Yy]$ ]]
-then
-    echo 'send AT!IMAGE=0
+# Clear Previous PRI/FW Entries
+echo 'send AT!IMAGE=0
 sleep 1
 send AT!IMAGE?
 sleep 1
 send AT!RESET
-sleep 5
+sleep 3
 ! pkill minicom
 ' > script.txt
-    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
-fi
+sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 
 deviceid=''
 while [ -z $deviceid ]
