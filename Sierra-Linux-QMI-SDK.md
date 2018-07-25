@@ -1,4 +1,3 @@
----
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
 + Download and unzip the latest Generic Firmware (Linux)
     + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
@@ -25,8 +24,7 @@
     --fwpath ./
     ```
 ---
-
-Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
+### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
 ```
 root@ubuntu:/tmp# tar xf SLQS04.00.15-lite.bin.tar.gz
 root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary'
