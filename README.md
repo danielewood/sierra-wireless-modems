@@ -193,12 +193,10 @@
     ```
 ---
 ### Flash modem stuck in QDLoader mode using qmi-firmware-update
-
-    ```
-    deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'`
-    qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
-    ```
-
+```
+deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'`
+qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+```
 ---
 ### Useful Commands/Info
 + Enable Terminal Echo
