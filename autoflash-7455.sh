@@ -118,7 +118,7 @@ do
     deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 done
 
-ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
+ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | sort -u`
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
 sudo cat /dev/$ttyUSB &  
