@@ -123,6 +123,7 @@ done
 sleep 2
 
 ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | sort -u`
+devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
 sudo cat /dev/$ttyUSB &  
@@ -198,17 +199,14 @@ sleep 1
 send AT!IMAGE?
 sleep 1
 send AT!RESET
-sleep 1
+sleep 5
 ! pkill minicom
 ' > script.txt
     sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
-#Kill cat processes used for monitoring status, if it hasnt already exited
-sudo pkill -9 cat &>/dev/null
 
 # Reset Modem
-devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
@@ -220,6 +218,8 @@ do
     sleep 3
     deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 done
+#Kill cat processes used for monitoring status, if it hasnt already exited
+sudo pkill -9 cat &>/dev/null
 
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
