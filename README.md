@@ -165,25 +165,29 @@
     + `AT!RESET`
 
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
++ Download and unzip the latest Generic Firmware (Linux)
+    + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
+    + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
 + Download Latest Linux QMI SDK Software (SLQS bin + Lite bin)
-    + SLQS04.00.15-lite.bin.tar
-    + https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/
+    + [SLQS04.00.15-lite.bin.tar](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
 + Extract fwdwl-litehostx86_64
     `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
-+ For MBIM Modems:
++ For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
     ```
     devpath=`ls /dev | grep cdc-wdm`
     ./fwdwl-litehostx86_64 \
     --devmode MBIM  \
     --devpath /dev/$devpath \
+    --dmreset \
     --fwpath ./
     ```
-+ For QMI Modems:
++ For QMI Modems `(if --dmreset doesnt work, try removing it)`:
     ```
     devpath=`ls /dev | grep qcqmi`
     ./fwdwl-litehostx86_64 \
     --devmode QMI  \
     --devpath /dev/$devpath \
+    --dmreset \
     --fwpath ./
     ```
 
