@@ -209,7 +209,9 @@ fi
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
+echo "/dev/$devpath"
+./swi_setusbcomp.pl --usbreset --device="/dev/$devpath"
+#&>/dev/null
 
 deviceid=''
 while [ -z $deviceid ]
