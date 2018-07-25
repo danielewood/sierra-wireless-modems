@@ -270,6 +270,8 @@ send AT!SELRAT=06
 sleep 1
 send AT!BAND=00
 sleep 1
+send AT!IMAGE?
+sleep 1
 send AT!RESET
 ! pkill minicom
 ' > script.txt
