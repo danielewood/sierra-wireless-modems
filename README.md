@@ -94,7 +94,7 @@
     + Lenovo:
         + `qmi-firmware-update --update -d "1199:9079" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
     + Dell:
-        + `qmi-firmware-update --update -d "413C:81B6'" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+        + `qmi-firmware-update --update -d "413C:81B6" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
 6. Modem will reset with new firmware and carrier profile.
 
 ---
