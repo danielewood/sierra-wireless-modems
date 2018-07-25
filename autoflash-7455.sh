@@ -24,7 +24,7 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: 20180719
+# Version: 20180724
 
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
@@ -50,7 +50,7 @@ do
     echo "Could not find any EM7455/MC7455 USB modems"
     echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
     modemcount=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | wc -l`
-    sleep 5
+    sleep 3
 done
 
 printf "${BLUE}---${NC}\n"
@@ -108,7 +108,15 @@ echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-./swi_setusbcomp.pl --usbreset &>/dev/null && sleep 2
+./swi_setusbcomp.pl --usbreset &>/dev/null
+
+deviceid=''
+while [ -z $deviceid ]
+do
+    echo 'Waiting for modem to reboot...'
+    sleep 3
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
+done
 
 ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | awk '{print $12}' | sort -u`
 
@@ -197,6 +205,16 @@ echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware'
 curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
 unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
 
+zipsha512actual=`sha512sum SWI9X30C_02.24.05.06_Generic_002.026_000.zip |  awk '{print $1}'`
+zipsha512expected='e2e3069c1c83f35b27111384524907ef24e2aebe94c990f8f0a33569e606b708919f618b840e125fb73c8afb7eec043e358fc734c09e18e498f29d6a5c2312e4'
+
+if [ "$zipsha512actual" != "$zipsha512expected" ]
+then 
+    printf "${BLUE}---${NC}\n"
+    printf "Download of ${BLUE}SWI9X30C_02.24.05.06_Generic_002.026_000.zip${NC} Failed, exiting...\n"
+    exit
+fi
+
 #Kill cat processes used for monitoring status, if it hasnt already exited
 sudo pkill -9 cat &>/dev/null
 
@@ -209,8 +227,8 @@ deviceid=''
 while [ -z $deviceid ]
 do
     echo 'Waiting for modem to reboot...'
-    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
     sleep 3
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 done
 
 printf "${BLUE}---${NC}\n"
