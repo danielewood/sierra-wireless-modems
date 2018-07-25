@@ -155,6 +155,8 @@ send AT!SELRAT?
 sleep 1
 send AT!BAND?
 sleep 1
+send AT!BAND=?
+sleep 1
 send AT!IMAGE?
 sleep 1
 ! pkill minicom
