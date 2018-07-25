@@ -208,6 +208,7 @@ fi
 sudo pkill -9 cat &>/dev/null
 
 # Reset Modem
+devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
