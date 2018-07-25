@@ -177,6 +177,17 @@ Are you sure you want to continue? (CTRL+C to exit) ' -n 1 -r
 done
 printf '\r\n'
 
+# Clear Previous PRI/FW Entries
+echo 'send AT!IMAGE=0
+sleep 1
+send AT!IMAGE?
+sleep 1
+send AT!RESET
+sleep 1
+! pkill minicom
+' > script.txt
+sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+
 printf "${BLUE}---${NC}\n"
 echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware...'
 curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
@@ -192,18 +203,8 @@ then
     exit
 fi
 
-# Clear Previous PRI/FW Entries
-echo 'send AT!IMAGE=0
-sleep 1
-send AT!IMAGE?
-sleep 1
-send AT!RESET
 sleep 3
-! pkill minicom
-' > script.txt
-sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
-
-deviceid=''
+deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 while [ -z $deviceid ]
 do
     echo 'Waiting for modem to reboot...'
