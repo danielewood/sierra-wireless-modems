@@ -157,8 +157,6 @@ send AT!BAND?
 sleep 1
 send AT!IMAGE?
 sleep 1
-send AT!IMAGE=0
-sleep 1
 send AT!RESET
 sleep 1
 ! pkill minicom
@@ -177,6 +175,24 @@ Are you sure you want to continue? (CTRL+C to exit) ' -n 1 -r
     fi
 done
 printf '\r\n'
+
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+    echo 'send AT
+send ATE1
+sleep 1
+send ATI
+sleep 1
+send AT!ENTERCND=\"A710\"
+sleep 1
+send AT!IMAGE=0
+sleep 1
+send AT!RESET
+sleep 1
+! pkill minicom
+' > script.txt
+    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+fi
 
 printf "${BLUE}---${NC}\n"
 echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware...'
@@ -213,6 +229,12 @@ printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
 qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+rc=$?
+if [[ $rc != 0 ]]
+then
+    echo "Firmware Update failed, exiting..."
+    exit $rc
+fi
 
 deviceid=''
 while [ -z $deviceid ]
