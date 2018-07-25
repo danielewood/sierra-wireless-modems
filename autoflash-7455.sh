@@ -214,6 +214,16 @@ printf "${BLUE}---${NC}\n"
 echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
 qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
+deviceid=''
+while [ -z $deviceid ]
+do
+    echo 'Waiting for modem to reboot...'
+    sleep 3
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
+done
+
+# cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
+sudo cat /dev/$ttyUSB &  
 
 # Set Generic Sierra Wireless VIDs/PIDs
 if [[ $REPLY =~ ^[Yy]$ ]]
