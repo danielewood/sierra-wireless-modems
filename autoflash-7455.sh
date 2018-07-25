@@ -157,8 +157,6 @@ send AT!BAND?
 sleep 1
 send AT!IMAGE?
 sleep 1
-send AT!RESET
-sleep 1
 ! pkill minicom
 ' > script.txt
 
@@ -178,14 +176,9 @@ printf '\r\n'
 
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-    echo 'send AT
-send ATE1
+    echo 'send AT!IMAGE=0
 sleep 1
-send ATI
-sleep 1
-send AT!ENTERCND=\"A710\"
-sleep 1
-send AT!IMAGE=0
+send AT!IMAGE?
 sleep 1
 send AT!RESET
 sleep 1
