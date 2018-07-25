@@ -171,21 +171,21 @@
 + Extract fwdwl-litehostx86_64
     + `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
 + For MBIM Modems:
-+ ```
-devpath=`ls /dev | grep cdc-wdm`
-./fwdwl-litehostx86_64 \
---devmode MBIM  \
---devpath /dev/$devpath \
---fwpath ./
-```
+    ```
+    devpath=`ls /dev | grep cdc-wdm`
+    ./fwdwl-litehostx86_64 \
+    --devmode MBIM  \
+    --devpath /dev/$devpath \
+    --fwpath ./
+    ```
 + For QMI Modems:
-+ ```
-devpath=`ls /dev | grep qcqmi`
-./fwdwl-litehostx86_64 \
---devmode QMI  \
---devpath /dev/$devpath \
---fwpath ./
-```
+    ```
+    devpath=`ls /dev | grep qcqmi`
+    ./fwdwl-litehostx86_64 \
+    --devmode QMI  \
+    --devpath /dev/$devpath \
+    --fwpath ./
+    ```
 
 ### Useful Commands/Info
 + Enable Terminal Echo
