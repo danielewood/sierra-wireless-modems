@@ -164,6 +164,28 @@
 5. Save settings and reboot modem to apply
     + `AT!RESET`
 
+### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
++ Download Latest Linux QMI SDK Software (SLQS bin + Lite bin)
+    + SLQS04.00.15-lite.bin.tar
+    + https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/
++ Extract fwdwl-litehostx86_64
+    + `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
++ For MBIM Modems:
++ ```
+devpath=`ls /dev | grep cdc-wdm`
+./fwdwl-litehostx86_64 \
+--devmode MBIM  \
+--devpath /dev/$devpath \
+--fwpath ./
+```
++ For QMI Modems:
++ ```
+devpath=`ls /dev | grep qcqmi`
+./fwdwl-litehostx86_64 \
+--devmode QMI  \
+--devpath /dev/$devpath \
+--fwpath ./
+```
 
 ### Useful Commands/Info
 + Enable Terminal Echo
