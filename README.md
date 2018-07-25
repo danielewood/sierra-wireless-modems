@@ -82,7 +82,7 @@
     + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
     + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
     + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-2. Get the [latest firmware bundle)](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
+2. Get the [latest firmware bundle](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
     + `curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx`
 3. Extract firmware CWE and NVU.
     + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
