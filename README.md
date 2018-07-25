@@ -169,7 +169,7 @@
     + SLQS04.00.15-lite.bin.tar
     + https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/
 + Extract fwdwl-litehostx86_64
-    + `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
+    `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
 + For MBIM Modems:
     ```
     devpath=`ls /dev | grep cdc-wdm`
