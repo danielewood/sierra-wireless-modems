@@ -205,10 +205,18 @@ printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset &>/dev/null
 
+deviceid=''
+while [ -z $deviceid ]
+do
+    echo 'Waiting for modem to reboot...'
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
+    sleep 3
+done
+
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
-qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
 
 #Done, restart ModemManager
 systemctl enable ModemManager &>/dev/null
