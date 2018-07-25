@@ -205,14 +205,6 @@ sleep 5
     sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
-
-# Reset Modem
-printf "${BLUE}---${NC}\n"
-echo 'Reseting modem...'
-echo "/dev/$devpath"
-./swi_setusbcomp.pl --usbreset --device="/dev/$devpath"
-#&>/dev/null
-
 deviceid=''
 while [ -z $deviceid ]
 do
