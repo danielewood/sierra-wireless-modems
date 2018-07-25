@@ -95,28 +95,32 @@ dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
 wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
 chmod +x ./swi_setusbcomp.pl
 
+devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
+
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-./swi_setusbcomp.pl --usbreset &>/dev/null
+./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
 
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
-./swi_setusbcomp.pl --usbcomp=8
+./swi_setusbcomp.pl --usbcomp=8 --device="/dev/$devpath"
 
 # Reset Modem
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
-./swi_setusbcomp.pl --usbreset &>/dev/null
+./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
 
 deviceid=''
 while [ -z $deviceid ]
 do
     echo 'Waiting for modem to reboot...'
-    sleep 3
+    sleep 1
     deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 done
+
+sleep 2
 
 ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | sort -u`
 
@@ -153,6 +157,10 @@ send AT!BAND?
 sleep 1
 send AT!IMAGE?
 sleep 1
+send AT!IMAGE=0
+sleep 1
+send AT!RESET
+sleep 1
 ! pkill minicom
 ' > script.txt
 
@@ -170,10 +178,53 @@ Are you sure you want to continue? (CTRL+C to exit) ' -n 1 -r
 done
 printf '\r\n'
 
+printf "${BLUE}---${NC}\n"
+echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware...'
+curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
+unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
+
+zipsha512actual=`sha512sum SWI9X30C_02.24.05.06_Generic_002.026_000.zip |  awk '{print $1}'`
+zipsha512expected='e2e3069c1c83f35b27111384524907ef24e2aebe94c990f8f0a33569e606b708919f618b840e125fb73c8afb7eec043e358fc734c09e18e498f29d6a5c2312e4'
+
+if [ "$zipsha512actual" != "$zipsha512expected" ]
+then 
+    printf "${BLUE}---${NC}\n"
+    printf "Download of ${BLUE}SWI9X30C_02.24.05.06_Generic_002.026_000.zip${NC} failed, exiting...\n"
+    exit
+fi
+
+#Kill cat processes used for monitoring status, if it hasnt already exited
+sudo pkill -9 cat &>/dev/null
+
+# Reset Modem
+printf "${BLUE}---${NC}\n"
+echo 'Reseting modem...'
+./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
+
+deviceid=''
+while [ -z $deviceid ]
+do
+    echo 'Waiting for modem to reboot...'
+    sleep 3
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
+done
+
+printf "${BLUE}---${NC}\n"
+# Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
+echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
+qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+
+
 # Set Generic Sierra Wireless VIDs/PIDs
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
     echo 'send AT
+send ATE1
+sleep 1
+send ATI
+sleep 1
+send AT!ENTERCND=\"A710\"
+sleep 1
 send AT!IMPREF=\"GENERIC\"
 sleep 1
 send AT!GOBIIMPREF=\"GENERIC\"
@@ -192,52 +243,17 @@ send AT!SELRAT=06
 sleep 1
 send AT!BAND=00
 sleep 1
-send AT!IMAGE=0
-sleep 1
 send AT!RESET
 ! pkill minicom
 ' > script.txt
     sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
-printf "${BLUE}---${NC}\n"
-echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware'
-curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
-unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
-
-zipsha512actual=`sha512sum SWI9X30C_02.24.05.06_Generic_002.026_000.zip |  awk '{print $1}'`
-zipsha512expected='e2e3069c1c83f35b27111384524907ef24e2aebe94c990f8f0a33569e606b708919f618b840e125fb73c8afb7eec043e358fc734c09e18e498f29d6a5c2312e4'
-
-if [ "$zipsha512actual" != "$zipsha512expected" ]
-then 
-    printf "${BLUE}---${NC}\n"
-    printf "Download of ${BLUE}SWI9X30C_02.24.05.06_Generic_002.026_000.zip${NC} Failed, exiting...\n"
-    exit
-fi
-
-#Kill cat processes used for monitoring status, if it hasnt already exited
-sudo pkill -9 cat &>/dev/null
-
-# Reset Modem
-printf "${BLUE}---${NC}\n"
-echo 'Reseting modem...'
-./swi_setusbcomp.pl --usbreset &>/dev/null
-
-deviceid=''
-while [ -z $deviceid ]
-do
-    echo 'Waiting for modem to reboot...'
-    sleep 3
-    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
-done
-
-printf "${BLUE}---${NC}\n"
-# Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
-echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
-qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
-
 #Done, restart ModemManager
 systemctl enable ModemManager &>/dev/null
 systemctl start ModemManager &>/dev/null
 
 echo "Done!"
+
+#Kill cat processes used for monitoring status, if it hasnt already exited
+sudo pkill -9 cat &>/dev/null
