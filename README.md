@@ -113,6 +113,7 @@
 6. Save settings and reboot modem to apply
     + `AT!RESET`
 
+---
 ### Change Modem Identity (Sierra Wireless / Lenovo / Dell)
 ##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
 
@@ -164,14 +165,14 @@
 5. Save settings and reboot modem to apply
     + `AT!RESET`
 
+---
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
 + Download and unzip the latest Generic Firmware (Linux)
     + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
     + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
-+ Download Latest Linux QMI SDK Software (SLQS bin + Lite bin)
++ Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
     + [SLQS04.00.15-lite.bin.tar](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
-+ Extract fwdwl-litehostx86_64
-    + `tar --extract --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64 --strip-components 3`
+    + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
 + For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
     ```
     devpath=`ls /dev | grep cdc-wdm`
@@ -191,6 +192,7 @@
     --fwpath ./
     ```
 
+---
 ### Useful Commands/Info
 + Enable Terminal Echo
     ```
