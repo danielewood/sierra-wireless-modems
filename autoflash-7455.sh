@@ -144,6 +144,8 @@ send AT!GOBIIMPREF?
 sleep 1
 send AT!USBCOMP?
 sleep 1
+send AT!USBCOMP=?
+sleep 1
 send AT!USBVID?
 sleep 1
 send AT!USBPID?
