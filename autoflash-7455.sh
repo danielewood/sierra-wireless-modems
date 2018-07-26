@@ -126,7 +126,7 @@ ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | gr
 devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-sudo cat /dev/$ttyUSB &  
+sudo cat /dev/$ttyUSB 2>1 | tee -a modem.log &  
 
 # Display current modem settings
 printf "${BLUE}---${NC}\n"
@@ -236,7 +236,7 @@ do
 done
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-sudo cat /dev/$ttyUSB &  
+sudo cat /dev/$ttyUSB 2>1 | tee -a modem.log &  
 
 # Set Generic Sierra Wireless VIDs/PIDs
 if [[ $REPLY =~ ^[Yy]$ ]]
