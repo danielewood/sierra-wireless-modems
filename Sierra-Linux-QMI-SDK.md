@@ -34,6 +34,7 @@
     systemctl enable ModemManager
     systemctl start ModemManager
     ```
+    
 ---
 ### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
 ```
@@ -51,6 +52,69 @@ root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-execu
 ./SampleApps/lite-fw-download/bin/fwdwl-litearm: application/x-executable; charset=binary
 ```
 
+---
+### WARNING: Completely untested and theoretical based on research and [others experiences](https://forum.sierrawireless.com/t/solved-em7565-firmware-update-from-01-00-02-00-to-01-07-00-00/13010/19).
+#### MC/EM 7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
+1. Stop and disable ModemManager during update process
+    ```
+    systemctl stop ModemManager
+    systemctl disable ModemManager
+    ```
+2. Create folders to hold firmware versions
+    + mkdir swi_fw0105 swi_fwlatest
+3. Download and unzip the 01.05.01.00 Generic Firmware (zip)
+    + [SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/75xx/fw/swi9x50c_01,-d-,05,-d-,01,-d-,00_00_generic_001,-d-,028_000/)
+    + `unzip SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip -d ./swi_fw0105`
+4. Download and unzip the latest 7565 Generic Firmware (Linux)
+    + Currently: [SWI9X50C_01.07.02.00_GENERIC_002.004_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/75xx/airprime-em_mc75xx-approved-fw-packages/)
+    + `unzip SWI9X50C_01.07.02.00_GENERIC_002.004_000.zip -d ./swi_fwlatest`
+5. Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
+    + [SLQS04.00.15-lite.bin.tar.gz](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
+    + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
+6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000
+    + For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
+        ```
+        devpath=`ls /dev | grep cdc-wdm`
+        ./fwdwl-litehostx86_64 \
+        --devmode MBIM  \
+        --devpath /dev/$devpath \
+        --dmreset \
+        --fwpath ./swi_fw0105/
+        ```
+    + For QMI Modems `(if --dmreset doesnt work, try removing it)`:
+        ```
+        devpath=`ls /dev | grep qcqmi`
+        ./fwdwl-litehostx86_64 \
+        --devmode QMI  \
+        --devpath /dev/$devpath \
+        --dmreset \
+        --fwpath ./swi_fw0105/
+        ```
+7. Flash to **Latest Firmware**
+    + For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
+        ```
+        devpath=`ls /dev | grep cdc-wdm`
+        ./fwdwl-litehostx86_64 \
+        --devmode MBIM  \
+        --devpath /dev/$devpath \
+        --dmreset \
+        --fwpath ./swi_fwlatest/
+        ```
+    + For QMI Modems `(if --dmreset doesnt work, try removing it)`:
+        ```
+        devpath=`ls /dev | grep qcqmi`
+        ./fwdwl-litehostx86_64 \
+        --devmode QMI  \
+        --devpath /dev/$devpath \
+        --dmreset \
+        --fwpath ./swi_fwlatest/
+        ```
+8. Repeat Step 7 to Flash the **Latest Firmware** a second time.
+9. Re-enable and start ModemManager
+    ```
+    systemctl enable ModemManager
+    systemctl start ModemManager
+    ```
 
 ---
 ### Binary Files Listing of SLQS04.00.15.bin.tar.gz
