@@ -93,7 +93,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
         --dmreset \
         --fwpath ./swi_fwlatest/
         ```
-8. Repeat Step 7 to Flash the **Latest Firmware** a second time.
+8. Repeat **Step 7** to Flash the **Latest Firmware** a second time.
 9. Re-enable and start ModemManager
     ```
     systemctl enable ModemManager
