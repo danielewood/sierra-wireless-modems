@@ -40,21 +40,23 @@
 ```
 root@ubuntu:/tmp# tar xf SLQS04.00.15-lite.bin.tar.gz
 root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary'
-./SampleApps/lite-qmi-demo/bin/packingdemoppc: application/x-executable; charset=binary
-./SampleApps/lite-qmi-demo/bin/packingdemohostx86_64: application/x-executable; charset=binary
-./SampleApps/lite-qmi-demo/bin/packingdemohosti686: application/x-executable; charset=binary
-./SampleApps/lite-qmi-demo/bin/packingdemoarm: application/x-executable; charset=binary
-./SampleApps/lite-qmi-demo/bin/packingdemoarm64: application/x-executable; charset=binary
-./SampleApps/lite-fw-download/bin/fwdwl-litehosti686: application/x-executable; charset=binary
-./SampleApps/lite-fw-download/bin/fwdwl-liteppc: application/x-executable; charset=binary
-./SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64: application/x-executable; charset=binary
-./SampleApps/lite-fw-download/bin/fwdwl-litearm64: application/x-executable; charset=binary
-./SampleApps/lite-fw-download/bin/fwdwl-litearm: application/x-executable; charset=binary
+./SampleApps/lite-qmi-demo/bin/packingdemoppc
+./SampleApps/lite-qmi-demo/bin/packingdemohostx86_64
+./SampleApps/lite-qmi-demo/bin/packingdemohosti686
+./SampleApps/lite-qmi-demo/bin/packingdemoarm
+./SampleApps/lite-qmi-demo/bin/packingdemoarm64
+./SampleApps/lite-fw-download/bin/fwdwl-litehosti686
+./SampleApps/lite-fw-download/bin/fwdwl-liteppc
+./SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64
+./SampleApps/lite-fw-download/bin/fwdwl-litearm64
+./SampleApps/lite-fw-download/bin/fwdwl-litearm
 ```
 
 ---
-### WARNING: Completely untested and theoretical based on research and [others experiences](https://forum.sierrawireless.com/t/solved-em7565-firmware-update-from-01-00-02-00-to-01-07-00-00/13010/19).
-#### MC/EM 7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
+#### EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
+##### WARNING: Completely untested and theoretical based on research and [others experiences](https://forum.sierrawireless.com/t/solved-em7565-firmware-update-from-01-00-02-00-to-01-07-00-00/13010/19).
+If your EM7565 is below Release 9, you must first flash Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless.
+
 1. Stop and disable ModemManager during update process
     ```
     systemctl stop ModemManager
@@ -62,7 +64,7 @@ root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-execu
     ```
 2. Create folders to hold firmware versions
     + mkdir swi_fw0105 swi_fwlatest
-3. Download and unzip the 01.05.01.00 Generic Firmware (zip)
+3. Download and unzip the 01.05.01.00 Generic Firmware (Linux)
     + [SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/75xx/fw/swi9x50c_01,-d-,05,-d-,01,-d-,00_00_generic_001,-d-,028_000/)
     + `unzip SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip -d ./swi_fw0105`
 4. Download and unzip the latest 7565 Generic Firmware (Linux)
@@ -121,129 +123,129 @@ root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-execu
 ```
 root@ubuntu:/tmp/tmp1/tmp# tar xf SLQS04.00.15.bin.tar.gz
 root@ubuntu:/tmp/tmp1/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary'
-./SampleApps/Firmware_Download/bin/fwdldmips: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldhostx86_64: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldarm64: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldarm: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldmipsel: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldhosti686: application/x-executable; charset=binary
-./SampleApps/Firmware_Download/bin/fwdldppc: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrarm64: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrmips: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrmipsel: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrarm: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrhostx86_64: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrhosti686: application/x-executable; charset=binary
-./SampleApps/Connection_Manager/bin/connectionmgrppc: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtmips: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtmipsel: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmthosti686: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtppc: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtarm: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtarm64: application/x-executable; charset=binary
-./SampleApps/Gobi_Image_Management/bin/gobiimgmgmthostx86_64: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialarm64: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialhostx86_64: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialhosti686: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialppc: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialmipsel: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialarm: application/x-executable; charset=binary
-./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialmips: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtmipsel: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtppc: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtarm: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtarm64: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtmips: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmthostx86_64: application/x-executable; charset=binary
-./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmthosti686: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleApparm64: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleApphostx86_64: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleApparm: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleAppmips: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleAppmipsel: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleApphosti686: application/x-executable; charset=binary
-./SampleApps/SMS_Application/bin/SMSSampleAppppc: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlingppc: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlingarm: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlingmips: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlingarm64: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlinghosti686: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlingmipsel: application/x-executable; charset=binary
-./SampleApps/CallHandling_Application/bin/callhandlinghostx86_64: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicemipsel: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicemips: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locserviceppc: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicehosti686: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicearm64: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicearm: application/x-executable; charset=binary
-./SampleApps/LOC_Service/bin/locservicehostx86_64: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleApparm64: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleApparm: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleApphosti686: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleApphostx86_64: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppmips: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppmipsel: application/x-executable; charset=binary
-./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppppc: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsservicesarm64: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsservicesmipsel: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsservicesmips: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsserviceshosti686: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsserviceshostx86_64: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsservicesarm: application/x-executable; charset=binary
-./SampleApps/PDS_Services/bin/pdsservicesppc: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/runtime/bin/luasignalcmd: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/runtime/bin/agent: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/runtime/bin/slqssdk: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/runtime/bin/appmon_daemon: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/runtime/bin/slqs_fw_update: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_CXX.bin: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CompilerIdCXX/a.out: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_C.bin: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CompilerIdC/a.out: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/bin/start_sdkmipsel: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/runtime/bin/luasignalcmd: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/runtime/bin/agent: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/runtime/bin/slqssdk: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/runtime/bin/appmon_daemon: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/runtime/bin/slqs_fw_update: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_CXX.bin: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CompilerIdCXX/a.out: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_C.bin: application/x-executable; charset=binary
-./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CompilerIdC/a.out: application/x-executable; charset=binary
-./tools/logging/ramdump-legacy/bin/ramdumptooli386: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialppc: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialarm: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialhosti686: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialmips: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialmipsel: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfarm64: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfi386: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfarm: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfhosti686: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfppc: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfmips: application/x-executable; charset=binary
-./tools/logging/dm/bin/remseriali386: application/x-executable; charset=binary
-./tools/logging/dm/bin/split-sqfmipsel: application/x-executable; charset=binary
-./tools/logging/dm/bin/remserialarm64: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_mips: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_arm: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_hosti686: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_i386: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_arm64: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_ppc: application/x-executable; charset=binary
-./tools/logging/ramdump/bin/ramdumptool_mipsel: application/x-executable; charset=binary
-./pkgs/qa/qatestppc: application/x-executable; charset=binary
-./pkgs/qa/qatestmipsel: application/x-executable; charset=binary
-./pkgs/qa/qatestmips: application/x-executable; charset=binary
-./pkgs/qa/qatesthostx86_64: application/x-executable; charset=binary
-./pkgs/qa/qatesthosti686: application/x-executable; charset=binary
-./pkgs/qa/qatestarm64: application/x-executable; charset=binary
-./pkgs/qa/qatestarm: application/x-executable; charset=binary
-./build/bin/arm/slqssdk: application/x-executable; charset=binary
-./build/bin/mipsel/slqssdk: application/x-executable; charset=binary
-./build/bin/mips/slqssdk: application/x-executable; charset=binary
-./build/bin/arm64/slqssdk: application/x-executable; charset=binary
-./build/bin/hosti686/slqssdk: application/x-executable; charset=binary
-./build/bin/hostx86_64/slqssdk: application/x-executable; charset=binary
-./build/bin/ppc/slqssdk: application/x-executable; charset=binary
+./SampleApps/Firmware_Download/bin/fwdldmips
+./SampleApps/Firmware_Download/bin/fwdldhostx86_64
+./SampleApps/Firmware_Download/bin/fwdldarm64
+./SampleApps/Firmware_Download/bin/fwdldarm
+./SampleApps/Firmware_Download/bin/fwdldmipsel
+./SampleApps/Firmware_Download/bin/fwdldhosti686
+./SampleApps/Firmware_Download/bin/fwdldppc
+./SampleApps/Connection_Manager/bin/connectionmgrarm64
+./SampleApps/Connection_Manager/bin/connectionmgrmips
+./SampleApps/Connection_Manager/bin/connectionmgrmipsel
+./SampleApps/Connection_Manager/bin/connectionmgrarm
+./SampleApps/Connection_Manager/bin/connectionmgrhostx86_64
+./SampleApps/Connection_Manager/bin/connectionmgrhosti686
+./SampleApps/Connection_Manager/bin/connectionmgrppc
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtmips
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtmipsel
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmthosti686
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtppc
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtarm
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmtarm64
+./SampleApps/Gobi_Image_Management/bin/gobiimgmgmthostx86_64
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialarm64
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialhostx86_64
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialhosti686
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialppc
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialmipsel
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialarm
+./SampleApps/SLQS_Tutorial_Application/bin/slqstutorialmips
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtmipsel
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtppc
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtarm
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtarm64
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmtmips
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmthostx86_64
+./SampleApps/MC7xxx_Image_Management/bin/mc7xxximgmgmthosti686
+./SampleApps/SMS_Application/bin/SMSSampleApparm64
+./SampleApps/SMS_Application/bin/SMSSampleApphostx86_64
+./SampleApps/SMS_Application/bin/SMSSampleApparm
+./SampleApps/SMS_Application/bin/SMSSampleAppmips
+./SampleApps/SMS_Application/bin/SMSSampleAppmipsel
+./SampleApps/SMS_Application/bin/SMSSampleApphosti686
+./SampleApps/SMS_Application/bin/SMSSampleAppppc
+./SampleApps/CallHandling_Application/bin/callhandlingppc
+./SampleApps/CallHandling_Application/bin/callhandlingarm
+./SampleApps/CallHandling_Application/bin/callhandlingmips
+./SampleApps/CallHandling_Application/bin/callhandlingarm64
+./SampleApps/CallHandling_Application/bin/callhandlinghosti686
+./SampleApps/CallHandling_Application/bin/callhandlingmipsel
+./SampleApps/CallHandling_Application/bin/callhandlinghostx86_64
+./SampleApps/LOC_Service/bin/locservicemipsel
+./SampleApps/LOC_Service/bin/locservicemips
+./SampleApps/LOC_Service/bin/locserviceppc
+./SampleApps/LOC_Service/bin/locservicehosti686
+./SampleApps/LOC_Service/bin/locservicearm64
+./SampleApps/LOC_Service/bin/locservicearm
+./SampleApps/LOC_Service/bin/locservicehostx86_64
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleApparm64
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleApparm
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleApphosti686
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleApphostx86_64
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppmips
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppmipsel
+./SampleApps/SWIOMA_Application/bin/SWIOMASampleAppppc
+./SampleApps/PDS_Services/bin/pdsservicesarm64
+./SampleApps/PDS_Services/bin/pdsservicesmipsel
+./SampleApps/PDS_Services/bin/pdsservicesmips
+./SampleApps/PDS_Services/bin/pdsserviceshosti686
+./SampleApps/PDS_Services/bin/pdsserviceshostx86_64
+./SampleApps/PDS_Services/bin/pdsservicesarm
+./SampleApps/PDS_Services/bin/pdsservicesppc
+./SampleApps/AirVantageAgent/build.default/runtime/bin/luasignalcmd
+./SampleApps/AirVantageAgent/build.default/runtime/bin/agent
+./SampleApps/AirVantageAgent/build.default/runtime/bin/slqssdk
+./SampleApps/AirVantageAgent/build.default/runtime/bin/appmon_daemon
+./SampleApps/AirVantageAgent/build.default/runtime/bin/slqs_fw_update
+./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_CXX.bin
+./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CompilerIdCXX/a.out
+./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_C.bin
+./SampleApps/AirVantageAgent/build.default/CMakeFiles/2.8.12.2/CompilerIdC/a.out
+./SampleApps/AirVantageAgent/bin/start_sdkmipsel
+./SampleApps/AirVantageAgent/build.arm/runtime/bin/luasignalcmd
+./SampleApps/AirVantageAgent/build.arm/runtime/bin/agent
+./SampleApps/AirVantageAgent/build.arm/runtime/bin/slqssdk
+./SampleApps/AirVantageAgent/build.arm/runtime/bin/appmon_daemon
+./SampleApps/AirVantageAgent/build.arm/runtime/bin/slqs_fw_update
+./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_CXX.bin
+./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CompilerIdCXX/a.out
+./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CMakeDetermineCompilerABI_C.bin
+./SampleApps/AirVantageAgent/build.arm/CMakeFiles/2.8.12.2/CompilerIdC/a.out
+./tools/logging/ramdump-legacy/bin/ramdumptooli386
+./tools/logging/dm/bin/remserialppc
+./tools/logging/dm/bin/remserialarm
+./tools/logging/dm/bin/remserialhosti686
+./tools/logging/dm/bin/remserialmips
+./tools/logging/dm/bin/remserialmipsel
+./tools/logging/dm/bin/split-sqfarm64
+./tools/logging/dm/bin/split-sqfi386
+./tools/logging/dm/bin/split-sqfarm
+./tools/logging/dm/bin/split-sqfhosti686
+./tools/logging/dm/bin/split-sqfppc
+./tools/logging/dm/bin/split-sqfmips
+./tools/logging/dm/bin/remseriali386
+./tools/logging/dm/bin/split-sqfmipsel
+./tools/logging/dm/bin/remserialarm64
+./tools/logging/ramdump/bin/ramdumptool_mips
+./tools/logging/ramdump/bin/ramdumptool_arm
+./tools/logging/ramdump/bin/ramdumptool_hosti686
+./tools/logging/ramdump/bin/ramdumptool_i386
+./tools/logging/ramdump/bin/ramdumptool_arm64
+./tools/logging/ramdump/bin/ramdumptool_ppc
+./tools/logging/ramdump/bin/ramdumptool_mipsel
+./pkgs/qa/qatestppc
+./pkgs/qa/qatestmipsel
+./pkgs/qa/qatestmips
+./pkgs/qa/qatesthostx86_64
+./pkgs/qa/qatesthosti686
+./pkgs/qa/qatestarm64
+./pkgs/qa/qatestarm
+./build/bin/arm/slqssdk
+./build/bin/mipsel/slqssdk
+./build/bin/mips/slqssdk
+./build/bin/arm64/slqssdk
+./build/bin/hosti686/slqssdk
+./build/bin/hostx86_64/slqssdk
+./build/bin/ppc/slqssdk
 ```
