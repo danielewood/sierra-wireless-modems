@@ -45,7 +45,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     systemctl disable ModemManager
     ```
 2. Create folders to hold firmware versions
-    + mkdir swi_fw0105 swi_fwlatest
+    + `mkdir swi_fw0105 swi_fwlatest`
 3. Download and unzip the 01.05.01.00 Generic Firmware (Linux)
     + [SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/75xx/fw/swi9x50c_01,-d-,05,-d-,01,-d-,00_00_generic_001,-d-,028_000/)
     + `unzip SWI9X50C_01.05.01.00_00_GENERIC_001.028_000.zip -d ./swi_fw0105`
