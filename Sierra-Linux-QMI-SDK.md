@@ -37,7 +37,7 @@
 ---
 #### EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
 ##### WARNING: Completely untested and theoretical based on research and [others experiences](https://forum.sierrawireless.com/t/solved-em7565-firmware-update-from-01-00-02-00-to-01-07-00-00/13010/19).
-If your EM7565 is below Release 9, you must first flash Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless.
+If the EM7565 is below Release 9, you must first upgrade to Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless. Due to the same changes, you must also flash the latest firmware twice to enable the modem to come out of Low Power Mode.
 
 1. Stop and disable ModemManager during update process
     ```
