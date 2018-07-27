@@ -34,24 +34,6 @@
     systemctl enable ModemManager
     systemctl start ModemManager
     ```
-    
----
-### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
-```
-root@ubuntu:/tmp# tar xf SLQS04.00.15-lite.bin.tar.gz
-root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary'
-./SampleApps/lite-qmi-demo/bin/packingdemoppc
-./SampleApps/lite-qmi-demo/bin/packingdemohostx86_64
-./SampleApps/lite-qmi-demo/bin/packingdemohosti686
-./SampleApps/lite-qmi-demo/bin/packingdemoarm
-./SampleApps/lite-qmi-demo/bin/packingdemoarm64
-./SampleApps/lite-fw-download/bin/fwdwl-litehosti686
-./SampleApps/lite-fw-download/bin/fwdwl-liteppc
-./SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64
-./SampleApps/lite-fw-download/bin/fwdwl-litearm64
-./SampleApps/lite-fw-download/bin/fwdwl-litearm
-```
-
 ---
 #### EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
 ##### WARNING: Completely untested and theoretical based on research and [others experiences](https://forum.sierrawireless.com/t/solved-em7565-firmware-update-from-01-00-02-00-to-01-07-00-00/13010/19).
@@ -117,7 +99,22 @@ If your EM7565 is below Release 9, you must first flash Release 9. This intermed
     systemctl enable ModemManager
     systemctl start ModemManager
     ```
-
+---
+### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
+```
+root@ubuntu:/tmp# tar xf SLQS04.00.15-lite.bin.tar.gz
+root@ubuntu:/tmp# find -type f -executable -exec file -i '{}' \; | grep 'x-executable; charset=binary'
+./SampleApps/lite-qmi-demo/bin/packingdemoppc
+./SampleApps/lite-qmi-demo/bin/packingdemohostx86_64
+./SampleApps/lite-qmi-demo/bin/packingdemohosti686
+./SampleApps/lite-qmi-demo/bin/packingdemoarm
+./SampleApps/lite-qmi-demo/bin/packingdemoarm64
+./SampleApps/lite-fw-download/bin/fwdwl-litehosti686
+./SampleApps/lite-fw-download/bin/fwdwl-liteppc
+./SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64
+./SampleApps/lite-fw-download/bin/fwdwl-litearm64
+./SampleApps/lite-fw-download/bin/fwdwl-litearm
+```
 ---
 ### Binary Files Listing of SLQS04.00.15.bin.tar.gz
 ```
