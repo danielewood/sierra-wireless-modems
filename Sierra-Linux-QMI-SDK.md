@@ -20,6 +20,8 @@
         qcqmi) devtype="QMI" ;;
         *) printf "Unknown Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"; exit
     esac
+    printf "Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"
+    
     ./fwdwl-litehostx86_64 \
     --devmode $devtype  \
     --devpath /dev/$devpath \
@@ -51,44 +53,40 @@
 5. Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
     + [SLQS04.00.15-lite.bin.tar.gz](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
     + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
-6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000
-    + For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
-        ```
-        devpath=`ls /dev | grep cdc-wdm`
-        ./fwdwl-litehostx86_64 \
-        --devmode MBIM  \
-        --devpath /dev/$devpath \
-        --dmreset \
-        --fwpath ./swi_fw0105/
-        ```
-    + For QMI Modems `(if --dmreset doesnt work, try removing it)`:
-        ```
-        devpath=`ls /dev | grep qcqmi`
-        ./fwdwl-litehostx86_64 \
-        --devmode QMI  \
-        --devpath /dev/$devpath \
-        --dmreset \
-        --fwpath ./swi_fw0105/
-        ```
-7. Flash to **Latest Firmware**
-    + For MBIM Modems `(if --dmreset doesnt work, try removing it)`:
-        ```
-        devpath=`ls /dev | grep cdc-wdm`
-        ./fwdwl-litehostx86_64 \
-        --devmode MBIM  \
-        --devpath /dev/$devpath \
-        --dmreset \
-        --fwpath ./swi_fwlatest/
-        ```
-    + For QMI Modems `(if --dmreset doesnt work, try removing it)`:
-        ```
-        devpath=`ls /dev | grep qcqmi`
-        ./fwdwl-litehostx86_64 \
-        --devmode QMI  \
-        --devpath /dev/$devpath \
-        --dmreset \
-        --fwpath ./swi_fwlatest/
-        ```
+6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000 `(if --dmreset doesnt work, try removing it)`:
+    ```
+    devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
+    devtype=`expr "$devpath" : '\(cdc-wdm\|qcqmi\)[0-9]$'`
+    case $devtype in
+        cdc-wdm) devtype="MBIM" ;;
+        qcqmi) devtype="QMI" ;;
+        *) printf "Unknown Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"; exit
+    esac
+    printf "Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"
+    
+    ./fwdwl-litehostx86_64 \
+    --devmode $devtype  \
+    --devpath /dev/$devpath \
+    --dmreset \
+    --fwpath ./swi_fw0105/
+    ```
+7. Flash to **Latest Firmware**  `(if --dmreset doesnt work, try removing it)`:
+    ```
+    devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
+    devtype=`expr "$devpath" : '\(cdc-wdm\|qcqmi\)[0-9]$'`
+    case $devtype in
+        cdc-wdm) devtype="MBIM" ;;
+        qcqmi) devtype="QMI" ;;
+        *) printf "Unknown Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"; exit
+    esac
+    printf "Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"
+    
+    ./fwdwl-litehostx86_64 \
+    --devmode $devtype  \
+    --devpath /dev/$devpath \
+    --dmreset \
+    --fwpath ./swi_fwlatest/
+    ```
 8. Repeat **Step 7** to Flash the **Latest Firmware** a second time.
 9. Re-enable and start ModemManager
     ```
