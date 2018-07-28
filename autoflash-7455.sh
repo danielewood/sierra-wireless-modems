@@ -122,7 +122,7 @@ done
 
 sleep 2
 
-ttyUSB=`dmesg | tail | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | sort -u`
+ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | tail -1`
 devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 
 # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
