@@ -1,7 +1,8 @@
 ## Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
 ### MC/EM 74XX Series
 + Stop and disable ModemManager during update process
-    ```systemctl stop ModemManager
+    ```
+    systemctl stop ModemManager
     systemctl disable ModemManager
     ```
 + Download and unzip the latest Generic Firmware (Linux)
