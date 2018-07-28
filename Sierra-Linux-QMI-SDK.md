@@ -2,7 +2,8 @@
 ### MC/EM 74XX Series
 + Stop and disable ModemManager during update process
     ```systemctl stop ModemManager
-    systemctl disable ModemManager```
+    systemctl disable ModemManager
+    ```
 + Download and unzip the latest Generic Firmware (Linux)
     + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
     + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
