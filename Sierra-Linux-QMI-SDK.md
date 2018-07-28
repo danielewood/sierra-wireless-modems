@@ -25,8 +25,11 @@
     ./fwdwl-litehostx86_64 \
     --devmode $devtype  \
     --devpath /dev/$devpath \
-    --dmreset \
-    --fwpath ./
+    --modelfamily 3 \
+    --logfile "fwdwl-lite-$devpath.log" \
+    --enable 1 \
+    --fwpath "./" \
+    --dmreset
     ```
 + Re-enable and start ModemManager
     ```
@@ -67,8 +70,11 @@
     ./fwdwl-litehostx86_64 \
     --devmode $devtype  \
     --devpath /dev/$devpath \
-    --dmreset \
-    --fwpath ./swi_fw0105/
+    --modelfamily 4 \
+    --logfile "fwdwl-lite-$devpath.log" \
+    --enable 1 \
+    --fwpath "./swi_fw0105/"
+    --dmreset
     ```
 7. Flash to **Latest Firmware**  `(if --dmreset doesnt work, try removing it)`:
     ```
@@ -84,8 +90,11 @@
     ./fwdwl-litehostx86_64 \
     --devmode $devtype  \
     --devpath /dev/$devpath \
-    --dmreset \
-    --fwpath ./swi_fwlatest/
+    --modelfamily 4 \
+    --logfile "fwdwl-lite-$devpath.log" \
+    --enable 1 \
+    --fwpath "./swi_fwlatest/" \
+    --dmreset
     ```
 8. Repeat **Step 7** to Flash the **Latest Firmware** a second time.
 9. Re-enable and start ModemManager
