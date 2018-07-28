@@ -162,7 +162,59 @@ App usage:
  Don't use this option when modem is already in QDL mode.
  This option should not be used in normal download operation.
  Modem will not be reset on QDL mode
-```    
+```
+---
+### fwdld Help File
+```
+./fwdldhostx86_64 --help
+
+App usage:
+
+  <appName> -s <sdk_path> -d [9x00/9x15/g3k] -p [pathname] -m [modem_index] -h
+
+  -s  --sdkpath
+         Specifies the path to the slqssdk. This is a mandatory parameter.
+
+  -m  --modem
+         Specifies the modem index. This is a optional parameter.
+
+        Default to zero if not specified, that is first modem
+
+  -u  --serial number or usb path
+         Specifies the usb path. This is a optional parameter.
+
+  -d  --device [9x00/9x15/9x30/g3k]
+        Specifies the device type. Must be lower cases. This option is optional.
+        If this option is omitted, 9x15 is the default setting.
+          - 9x00: This is a 9x00 based device.
+          - 9x15: This is a 9x15 based device.
+          - 9x30: This is a 9x30 based device.
+          - g3k:  This is a Gobi device.
+          - 9x07: This is a 9x07 based device.
+          - 9x50: This is a 9x50 based device.
+          - 9x06: This is a 9x06 based device.
+
+  -p  --path [folder to firmware images]
+        This specifies the folder location of the firmware images. This option is mandatory.
+        Usage of this parameter depends on type of device.
+          - 9x00: Specify the path containing the image.
+          - 9x15: Specify the path containing a combined image or separate images.
+          - 9x30: Specify the path containing a combined image or separate images.
+          - g3k: Should be in format <file path>/x , x should be a number,
+                 and this folder should contain both AMSS and UQCN.
+          - 9x07: Specify the path containing the image.
+          - 9x50: Specify the path containing the image.
+          - 9x06: Specify the path containing the image.
+
+  -k  --kill kill SDK process on exits
+  -f  --File path
+  -i  --ignore crash state checking or not.Default value is 0 means crash state checking is required
+          - 0: crash state checking required (default value)
+          - 1: ignore crash state checking
+  -l  --slot index of modem, this option is only available for EM74xx/MC74xx
+  -h  --help
+        This option prints the usage instructions.
+```
 ---
 ### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
 ```
