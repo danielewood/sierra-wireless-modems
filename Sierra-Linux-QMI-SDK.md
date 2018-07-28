@@ -103,6 +103,67 @@
     systemctl start ModemManager
     ```
 ---
+### fwdwl-lite Help File
+```
+./fwdwl-litehostx86_64 --help
+
+App usage:
+
+  <appName> -c <QMI/MBIM mode> -d <QDL Port> -p <QMI/MBIM Device path> -f <FW path> -h
+
+  -c  --devmode
+         Specifies the mode of the device, MBIM or QMI
+
+        Defaults to QMI if not specified
+
+  -d  --qdl
+         Specifies the QDL port when modem switches to BOOT and HOLD mode to download firmware.
+
+        For example: -d /dev/ttyUSB0
+
+        Defaults to /dev/ttyUSB0 if not specified
+
+  -p  --devpath
+         Specifies the QMI or MBIM device
+
+        Defaults to /dev/qcqmi0 for QMI and /dev/cdc-wdm0 for MBIM
+
+  -f  --fwpath [folder to firmware images]
+        This specifies the folder location of the firmware images. This option is mandatory.
+        - 9x30: Specify the path containing a carrier FW package (.cwe and .nvu) or an OEM PRI (.nvu)
+
+  -i  --ignore crash state checking or not.Default value is 0 means crash state checking is required
+          - 0: crash state checking required (default value)
+          - 1: ignore crash state checking
+
+  -l  --logfile
+        Specific custom log path.
+
+  -b  --blocksize
+        File Read Block Size.
+
+  -m  --modelfamily
+          - 0: Auto Detect (default value)
+          - 1: 9x15 Family
+          - 2: WP9x15 Family
+          - 3: 9x30 Family
+          - 4: 9x07 or 9x50 Family
+          - 5: 9x06 Family
+
+  -h  --help
+        This option prints the usage instructions.
+
+  -e  --enable/disable debug logs
+           - 0 : Debug logs disable.
+           - 1 : Debug logs enable.
+
+ -r --dmreset reset modem using DM command
+ This operation only support when modem in App mode.
+ Don't use this option when modem is already in QDL mode.
+ This option should not be used in normal download operation.
+ Modem will not be reset on QDL mode
+```    
+---
 ### Binary Files Listing of SLQS04.00.15-lite.bin.tar.gz
 ```
 root@ubuntu:/tmp# tar xf SLQS04.00.15-lite.bin.tar.gz
