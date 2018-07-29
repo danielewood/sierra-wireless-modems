@@ -170,7 +170,7 @@ App usage:
 
 Example Usage:
 
-./fwdldhostx86_64 -s ./hostx86_64/slqssdk -d 9x30 -m 0 -p ./swi_fwlatst/
+./fwdldhostx86_64 -s ./hostx86_64/slqssdk -d 9x30 -m 0 -p ./swi_fwlatest/
 
 App usage:
 
