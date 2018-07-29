@@ -27,7 +27,7 @@
     --devpath /dev/$devpath \
     --modelfamily 3 \
     --logfile "fwdwl-lite-$devpath.log" \
-    --enable 1 \
+    --enable \
     --fwpath "./" \
     --dmreset
     ```
@@ -72,7 +72,7 @@
     --devpath /dev/$devpath \
     --modelfamily 4 \
     --logfile "fwdwl-lite-$devpath.log" \
-    --enable 1 \
+    --enable \
     --fwpath "./swi_fw0105/" \
     --dmreset
     ```
@@ -92,7 +92,7 @@
     --devpath /dev/$devpath \
     --modelfamily 4 \
     --logfile "fwdwl-lite-$devpath.log" \
-    --enable 1 \
+    --enable \
     --fwpath "./swi_fwlatest/" \
     --dmreset
     ```
