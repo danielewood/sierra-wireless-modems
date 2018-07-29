@@ -189,7 +189,7 @@
     --devpath /dev/$devpath \
     --modelfamily 3 \
     --logfile "fwdwl-lite-$devpath.log" \
-    --enable 1 \
+    --enable \
     --fwpath "./" \
     --dmreset
     ```
