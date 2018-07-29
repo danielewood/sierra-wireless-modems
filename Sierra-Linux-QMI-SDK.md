@@ -168,6 +168,10 @@ App usage:
 ```
 ./fwdldhostx86_64 --help
 
+Example Usage:
+
+./fwdldhostx86_64 -s ./hostx86_64/slqssdk -d 9x30 -m 0 -p ./swi_fwlatst/
+
 App usage:
 
   <appName> -s <sdk_path> -d [9x00/9x15/g3k] -p [pathname] -m [modem_index] -h
