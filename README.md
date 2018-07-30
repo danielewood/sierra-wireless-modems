@@ -33,7 +33,7 @@
 + For every use other than installing in a Lenovo \*70 Series.
     + ~$55 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
     + This model supports Bands 29 and 30, unlike the Lenovo.
-    + When purchasing the Dell, I would recommend you get a production model.
+    + When purchasing the Dell, I would recommend you get a production model. Engineering Sample will sometimes contain an early (Pre 1.0) firmware that can be a royal pain to flash to something current.
     ![](https://i.imgur.com/Q9JdEIe.png)
 
 + For use in a [ThinkPad L470, L570, P51, P51s, P70, P71, T470, T470p, T470s, T570, TP25, X270](https://support.lenovo.com/cy/en/solutions/acc100362)
