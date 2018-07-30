@@ -31,8 +31,8 @@
 ---
 ### Which Modem to Buy
 + For every use other than installing in a Lenovo \*70 Series.
-    + This model supports Bands 29 and 30, unlike the Lenovo.
     + ~$55 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + This model supports Bands 29 and 30, unlike the Lenovo.
     + When purchasing the Dell, I would recommend you get a production model.
     ![](https://i.imgur.com/Q9JdEIe.png)
 
