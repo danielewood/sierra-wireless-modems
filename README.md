@@ -47,7 +47,7 @@
     + Do not waste your money on the Lenovo EM7455 (4XC0L59128 / 00JT542). It lacks Bands 29 and 30. If you get the Dell, you can change its identity according to my instructions and it will work in a Lenovo \*60 series. I currently have a DW5811e in my T460s.
 ---
 ### Adapters and Antennas
-![](https://i.imgur.com/ExyelEu.jpg)
+![](https://i.imgur.com/LjpCXCi.jpg)
 + **Get USB adapter with SIM slot for modem, $20, shipped from China. This includes small 3dBi antennas.**
 	+ [NGFF(M.2) to USB Adapter With SIM card Slot for WWAN/LTE/4G Module](https://www.ebay.com/itm/NGFF-M-2-to-USB-Adapter-With-SIM-card-Slot-for-WWAN-LTE-4G-Module/282142120662)
 + **If you are at the edge of coverage and need something better, look for 700-2700 MHz antennas with SMA connectors.**
