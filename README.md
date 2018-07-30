@@ -362,3 +362,7 @@ Empty
     + http://whrl.pl/Re9nIw
 + Long Range Custom Yagi Setups
     + https://ltehacks.com/viewtopic.php?f=24&t=71
++ LTE Modulations, Bandwidths, and Datarates:
+    + https://frankrayal.com/2011/06/27/lte-peak-capacity/
++ Understanding LTE Signal Strength Values
+    + http://usatcorp.com/faqs/understanding-lte-signal-strength-values/
