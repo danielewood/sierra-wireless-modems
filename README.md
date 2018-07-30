@@ -31,8 +31,10 @@
 ---
 ### Which Modem to Buy
 + For every use other than installing in a Lenovo \*70 Series.
-   + This model supports Bands 29 and 30, unlike the Lenovo.
-   + ~$55 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + This model supports Bands 29 and 30, unlike the Lenovo.
+    + ~$55 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + When purchasing the Dell, I would recommend you get a production model.
+    ![](https://i.imgur.com/Q9JdEIe.png)
 
 + For use in a [ThinkPad L470, L570, P51, P51s, P70, P71, T470, T470p, T470s, T570, TP25, X270](https://support.lenovo.com/cy/en/solutions/acc100362)
     + [~$90 EM7455 module (4XC0M95181 / 01AX746)](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0M95181%2C01AX746%29&_sacat=0&LH_BIN=1&_sop=15)
@@ -85,16 +87,14 @@
 2. Get the [latest firmware bundle](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
     + `curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx`
 3. Extract firmware CWE and NVU.
-    + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
+    `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
 4. Stop Modem Manager
-    + `systemctl stop ModemManager`
+    `systemctl stop ModemManager`
 5. Flash firmware
-    + Sierra: 
-        + `qmi-firmware-update --update -d "1199:9071" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
-    + Lenovo:
-        + `qmi-firmware-update --update -d "1199:9079" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
-    + Dell:
-        + `qmi-firmware-update --update -d "413C:81B6" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+    ```
+    deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
+    qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+    ```
 6. Modem will reset with new firmware and carrier profile.
 
 ---
@@ -121,12 +121,10 @@
     ```
     ATE1
     ```
-
 2. Enable Advanced Commands:
     ```
     AT!ENTERCND="A710"
     ```
-
 3. Record current settings so you can revert if needed.
     ```
     AT!USBVID?
@@ -141,30 +139,32 @@
     Revision: 002.026
     Customer: Generic-Laptop
     ```
-
 4. Change Modem Identity (Generic, Lenovo, or Dell)
-
     a. Change Modem into a Generic Sierra Wireless em7455/mc7455
-    + `AT!USBVID=1199`
-    + `AT!USBPID=9071,9070`
-    + `AT!USBPRODUCT="EM7455"`
-    + `AT!PRIID="9904609","002.026","Generic-Laptop"`
-
+        ```
+        AT!USBVID=1199
+        AT!USBPID=9071,9070
+        AT!USBPRODUCT="EM7455"
+        AT!PRIID="9904609","002.026","Generic-Laptop"
+        ```
     b. Change Modem into a Lenovo em7455/mc7455 (Use this if installing in a Lenovo)
-    + `AT!USBVID=1199`
-    + `AT!USBPID=9079,9078`
-    + `AT!USBPRODUCT="Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"`
-    + `AT!PRIID="9904609","002.026","Lenovo-Storm"`
-
+        ```
+	AT!USBVID=1199
+        AT!USBPID=9079,9078
+        AT!USBPRODUCT="Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"
+        AT!PRIID="9904609","002.026","Lenovo-Storm"
+        ```
     c. Change Modem into a Dell DW5811e em7455/mc7455
-    + `AT!USBVID=413C`
-    + `AT!USBPID=81B6,81B5`
-    + `AT!USBPRODUCT="Dell Wireless 5811e Gobi(TM)4G LTE Mobile Broadband Card"`
-    + `AT!PRIID="9904609","002.026","DELL"`
-    
+        ```
+        AT!USBVID=413C
+        AT!USBPID=81B6,81B5
+        AT!USBPRODUCT="Dell Wireless 5811e Gobi(TM)4G LTE Mobile Broadband Card"
+        AT!PRIID="9904609","002.026","DELL"
+        ```
 5. Save settings and reboot modem to apply
-    + `AT!RESET`
-
+        ```
+        AT!RESET
+        ```
 ---
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
 + Download and unzip the latest Generic Firmware (Linux)
@@ -195,8 +195,10 @@
     ```
 ---
 ### Flash modem stuck in QDLoader mode using qmi-firmware-update
-+ ```deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'` ```
-+ `qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu`
+```
+deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'`
+qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+```
 
 ---
 ### Useful Commands/Info
