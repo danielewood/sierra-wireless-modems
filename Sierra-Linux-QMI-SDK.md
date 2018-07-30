@@ -56,7 +56,7 @@
 5. Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
     + [SLQS04.00.15-lite.bin.tar.gz](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
     + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
-6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000 `(if --dmreset doesnt work, try removing it)`:
+6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000
     ```
     devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
     devtype=`expr "$devpath" : '\(cdc-wdm\|qcqmi\)[0-9]$'`
@@ -73,10 +73,9 @@
     --modelfamily 4 \
     --logfile "fwdwl-lite-$devpath.log" \
     -e 1 \
-    --fwpath "./swi_fw0105/" \
-    --dmreset
+    --fwpath "./swi_fw0105/"
     ```
-7. Flash to **Latest Firmware**  `(if --dmreset doesnt work, try removing it)`:
+7. Flash to **Latest Firmware** 
     ```
     devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
     devtype=`expr "$devpath" : '\(cdc-wdm\|qcqmi\)[0-9]$'`
@@ -93,8 +92,7 @@
     --modelfamily 4 \
     --logfile "fwdwl-lite-$devpath.log" \
     -e 1 \
-    --fwpath "./swi_fwlatest/" \
-    --dmreset
+    --fwpath "./swi_fwlatest/"
     ```
 8. Repeat **Step 7** to Flash the **Latest Firmware** a second time.
 9. Re-enable and start ModemManager
