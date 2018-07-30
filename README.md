@@ -223,8 +223,7 @@ AT!RMARESET=1
 AT!RESET
 ```
 ---
-[Lock LTE Bands](https://ltehacks.com/viewtopic.php?t=33)
-Pick one:
+[Lock LTE Bands](https://ltehacks.com/viewtopic.php?t=33) (Pick one)
 ```
 AT!BAND=10,"B2 (1900)",0,0000000000000002
 AT!BAND=10,"B4 (1700/2100)",0,0000000000000008
