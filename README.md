@@ -322,6 +322,15 @@ Empty
     ![](https://i.imgur.com/Gd0s1kJ.png)
 
 ---
+### Free Over-the-Air Updates
++ [Sierra AirVantage FOTA](https://source.sierrawireless.com/airvantage/fota/)
+    + Use your name as Business Name
++ Get Modem FSN + IMEI with `ATI`
++ [Change Modem Settings](https://source.sierrawireless.com/airvantage/av/reference/register/howtos/configure-FXT-GL-AirPrime-ForAV/)
+    + `AT+WDSC=3,x`(x being the frequency of connection in minutes)
+    + `AT+WDSS=1,1` (Sends initial heartbeat immediately)
+
+---
 ### Additional References: 
 
 + Must tape over USB3 pins on MC74XX:
