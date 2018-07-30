@@ -125,7 +125,6 @@
     ```
     AT!ENTERCND="A710"
     ```
-
 3. Record current settings so you can revert if needed.
     ```
     AT!USBVID?
@@ -140,33 +139,32 @@
     Revision: 002.026
     Customer: Generic-Laptop
     ```
-
 4. Change Modem Identity (Generic, Lenovo, or Dell)
-    + Change Modem into a Generic Sierra Wireless em7455/mc7455
-        ```
-        AT!USBVID=1199
-        AT!USBPID=9071,9070
-        AT!USBPRODUCT="EM7455"
-        AT!PRIID="9904609","002.026","Generic-Laptop"
-        ```
-    + Change Modem into a Lenovo em7455/mc7455 (Use this if installing in a Lenovo)
-        ```
-	AT!USBVID=1199
-        AT!USBPID=9079,9078
-        AT!USBPRODUCT="Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"
-        AT!PRIID="9904609","002.026","Lenovo-Storm"
-        ```
-    + Change Modem into a Dell DW5811e em7455/mc7455
-        ```
-        AT!USBVID=413C
-        AT!USBPID=81B6,81B5
-        AT!USBPRODUCT="Dell Wireless 5811e Gobi(TM)4G LTE Mobile Broadband Card"
-        AT!PRIID="9904609","002.026","DELL"
-        ```
+    Change Modem into a Generic Sierra Wireless em7455/mc7455
+    ```
+    AT!USBVID=1199
+    AT!USBPID=9071,9070
+    AT!USBPRODUCT="EM7455"
+    AT!PRIID="9904609","002.026","Generic-Laptop"
+    ```
+    Change Modem into a Lenovo em7455/mc7455 (Use this if installing in a Lenovo)
+    ```
+    AT!USBVID=1199
+    AT!USBPID=9079,9078
+    AT!USBPRODUCT="Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"
+    AT!PRIID="9904609","002.026","Lenovo-Storm"
+    ```
+    Change Modem into a Dell DW5811e em7455/mc7455
+    ```
+    AT!USBVID=413C
+    AT!USBPID=81B6,81B5
+    AT!USBPRODUCT="Dell Wireless 5811e Gobi(TM)4G LTE Mobile Broadband Card"
+    AT!PRIID="9904609","002.026","DELL"
+    ```
 5. Save settings and reboot modem to apply
-        ```
-        AT!RESET
-        ```
+    ```
+    AT!RESET
+    ```
 ---
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
 + Download and unzip the latest Generic Firmware (Linux)
