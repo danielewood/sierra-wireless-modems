@@ -95,6 +95,12 @@
     --fwpath "./swi_fwlatest/"
     ```
 8. Repeat **Step 7** to Flash the **Latest Firmware** a second time.
+    + Add `--dmreset` as a switch, if you get the following error:
+    ```
+    mbim open respons type error  -2147480831
+    Error in modem crash state checking!error code = 103
+    Exiting Application!!!
+    ```
 9. Re-enable and start ModemManager
     ```
     systemctl enable ModemManager
