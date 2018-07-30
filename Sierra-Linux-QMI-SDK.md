@@ -103,6 +103,20 @@
     systemctl start ModemManager
     ```
 ---
+### EM7565 Stuck in QDLoader
+Refer to EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
+Replace Step Six with:
+6. Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000 `(if --dmreset doesnt work, try removing it)`:
+    ```
+    devpath=`dmesg | grep 'Qualcomm USB modem converter now attached to ttyUSB' | tail -1 | sed 's/.*attached\ to\ //'`
+    ./fwdwl-litehostx86_64 \
+    -d /dev/$devpath \
+    --modelfamily 4 \
+    --logfile "fwdwl-lite-$devpath.log" \
+    -e 1 \
+    --fwpath "./swi_fw0105/" \
+    ```
+---
 ### fwdwl-lite Help File
 ```
 ./fwdwl-litehostx86_64 --help
