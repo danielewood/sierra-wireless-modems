@@ -199,7 +199,7 @@ qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30
 
 ---
 ### Useful Commands/Info
-Enable Terminal Echo
++ Enable Terminal Echo
     ```
     ATE1
     ```
