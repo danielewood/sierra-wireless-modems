@@ -105,7 +105,7 @@
 ---
 ### EM7565 Stuck in QDLoader 
 + Replace Step Six in to [EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9)
-+ Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000 `(if --dmreset doesnt work, try removing it)`:
++ Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000:
     ```
     devpath=`dmesg | grep 'Qualcomm USB modem converter now attached to ttyUSB' | tail -1 | sed 's/.*attached\ to\ //'`
     ./fwdwl-litehostx86_64 \
