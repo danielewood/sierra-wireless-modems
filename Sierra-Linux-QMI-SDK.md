@@ -114,7 +114,7 @@ Replace Step Six with:
     --modelfamily 4 \
     --logfile "fwdwl-lite-$devpath.log" \
     -e 1 \
-    --fwpath "./swi_fw0105/" \
+    --fwpath "./swi_fw0105/"
     ```
 ---
 ### fwdwl-lite Help File
