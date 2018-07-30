@@ -20,8 +20,7 @@
 
 	![Speed Test peak LTE Results](https://www.speedtest.net/result/7472005421.png)
 + Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [~$200 EM7565](https://www.ebay.com/sch/i.html?_from=R40&_nkw=EM7565&_sacat=0&LH_BIN=1&_sop=15).
-+ EM7565 allows 3CA of B2+B12+B30 for a total downlink of 40MHz on approximately 60% of AT&T towers (Assuming you are close and have a strong signal).
-
+    + EM7565 allows 3CA of B2+B12+B30 for a total downlink of 40MHz on approximately 60% of AT&T towers (Assuming you are close and have a strong signal).
 ---
 ### Official Sierra Documents/Firmwares (May require free Sierra account)
 + [Sierra EM7455 Product Page](https://source.sierrawireless.com/devices/em-series/em7455/)
@@ -45,8 +44,6 @@
     + ~~[~$70 EM7455 module (4XC0L59128 / 00JT542):](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0L59128%2C00JT542%2Clenovo+em7455%29&_sacat=0&LH_BIN=1&_sop=15)~~
     + ~~Specs: https://download.lenovo.com/pccbbs/options_iso/tp_em7455_4gltem_4xc0l59128.pdf~~
     + Do not waste your money on the Lenovo EM7455 (4XC0L59128 / 00JT542). It lacks Bands 29 and 30. If you get the Dell, you can change its identity according to my instructions and it will work in a Lenovo \*60 series. I currently have a DW5811e in my T460s.
-
-
 ---
 ### Adapters and Antennas
 ![](https://i.imgur.com/ExyelEu.jpg)
