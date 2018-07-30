@@ -279,6 +279,37 @@ RSRQ (dB):     -14.0		Cell ID:     0A14666A (169106666)
 SINR (dB):     23.8
 ```
 ---
+```
+AT!HWID?
+Revision: 0.5
+```
+---
+```
+AT!LTECA?
+Hardware:
+LTEB1: B8, 
+LTEB2: B2, B5, B12, B13, B29, 
+LTEB3: B7, B20, 
+LTEB4: B4, B5, B12, B13, B29, 
+LTEB5: B2, B4, B30, 
+LTEB7: B3, B7, B20, 
+LTEB8: B1, 
+LTEB12: B2, B4, B30, 
+LTEB13: B2, B4, 
+LTEB20: B3, B7, 
+LTEB25: 
+LTEB26: 
+LTEB29: 
+LTEB30: B5, B12, B29, 
+LTEB41: B41, 
+
+Permitted Bands:
+Empty
+
+Prune_ca_combos:
+Empty
+```
+---
 ### Connectivity/Router Options
 + Windows 10 will block Hotspot/ICS mode, you cannot use Windows 10's ICS with this setup.
 + Linux doesn't care, it will happily route packets all day long. 
