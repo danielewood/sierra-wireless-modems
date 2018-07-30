@@ -125,6 +125,7 @@
     ```
     AT!ENTERCND="A710"
     ```
+
 3. Record current settings so you can revert if needed.
     ```
     AT!USBVID?
@@ -139,22 +140,23 @@
     Revision: 002.026
     Customer: Generic-Laptop
     ```
+
 4. Change Modem Identity (Generic, Lenovo, or Dell)
-    a. Change Modem into a Generic Sierra Wireless em7455/mc7455
+    + Change Modem into a Generic Sierra Wireless em7455/mc7455
         ```
         AT!USBVID=1199
         AT!USBPID=9071,9070
         AT!USBPRODUCT="EM7455"
         AT!PRIID="9904609","002.026","Generic-Laptop"
         ```
-    b. Change Modem into a Lenovo em7455/mc7455 (Use this if installing in a Lenovo)
+    + Change Modem into a Lenovo em7455/mc7455 (Use this if installing in a Lenovo)
         ```
 	AT!USBVID=1199
         AT!USBPID=9079,9078
         AT!USBPRODUCT="Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"
         AT!PRIID="9904609","002.026","Lenovo-Storm"
         ```
-    c. Change Modem into a Dell DW5811e em7455/mc7455
+    + Change Modem into a Dell DW5811e em7455/mc7455
         ```
         AT!USBVID=413C
         AT!USBPID=81B6,81B5
@@ -202,32 +204,32 @@ qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30
 
 ---
 ### Useful Commands/Info
-+ Enable Terminal Echo
+Enable Terminal Echo
     ```
     ATE1
     ```
 ---
-+ Enable Advanced Commands:
+Enable Advanced Commands:
     ```
     AT!ENTERCND="A710"
     ```
 ---
-+ Clear all Carrier Preferences/Firmwares other than current(You will want to flash the modem after this):
+Clear all Carrier Preferences/Firmwares other than current(You will want to flash the modem after this):
     ```
     AT!IMAGE?
     AT!IMAGE=0
     AT!RESET
     ```
 ---
-+ Clear all changes and restore to (Dell/Lenovo/Sierra) factory settings:
+Clear all changes and restore to (Dell/Lenovo/Sierra) factory settings:
     ```
     AT!ENTERCND="A710"
     AT!RMARESET=1
     AT!RESET
     ```
 ---
-+ [Lock LTE Bands](https://ltehacks.com/viewtopic.php?t=33)
-    + Pick one:
+[Lock LTE Bands](https://ltehacks.com/viewtopic.php?t=33)
+    Pick one:
     ```
     AT!BAND=10,"B2 (1900)",0,0000000000000002
     AT!BAND=10,"B4 (1700/2100)",0,0000000000000008
@@ -236,16 +238,16 @@ qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30
     AT!BAND=10,"B2B4",0,000000000000000A
     AT!BAND=10,"B2B4B5B12",0,000000000000081A
     ````
-    + Set Band Lock:
+    Set Band Lock:
     ```
     AT!BAND=10
     ```
-    + Clear Band Lock:
+    Clear Band Lock:
     ```
     AT!BAND=00
     ```
 ---
-+ `AT!LTEINFO?`
+`AT!LTEINFO?`
     ```
     !LTEINFO: 
     Serving:   EARFCN MCC MNC   TAC      CID Bd D U SNR PCI  RSRQ   RSRP   RSSI RXLV
@@ -259,7 +261,7 @@ qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30
                  5110            0           0        0 272 -12.1  -80.9  -50.6   0
     ```
 ---
-+ `AT!GSTATUS?`
+`AT!GSTATUS?`
     ```
 	!GSTATUS: 
 	Current Time:  22016		Temperature: 40
