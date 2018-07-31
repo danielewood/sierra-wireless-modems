@@ -111,6 +111,38 @@
 6. Save settings and reboot modem to apply
     + `AT!RESET`
 
+
+### EM7565 Basic Setup
+1. Enable Advanced Commands:
+    + `AT!ENTERCND="A710"`
+2. Set preferred image to GENERIC (Will error if Generic does not exist)
+    + `AT!IMPREF="GENERIC"`
+3. Set Interface bitmask to 0000100D (diag,nmea,modem,mbim).
+    + `AT!USBCOMP=1,3,0000100D`
+4. Set LTE Only (Disables UMTS/HSDPA/3G fallback, which you probably dont want)
+    + `AT!SELRAT=06`
+5. Set Modem to use all available LTE bands (Dont hide any bands)
+    + `AT!BAND=00`
+    + `AT!BAND=09`
+6. Save settings and reboot modem to apply
+    + `AT!RESET`
+
+### EM7565 ROOter Setup
+##### Work In progress
+```
+sed -i 's/ 9041 / 9091 /g' /usr/lib/rooter/connect/create_connect.sh
+sed -i '$s/^exit 0/echo "1199 9091" > \/sys\/bus\/usb-serial\/drivers\/option1\/new_id\nexit 0\n/' /etc/rc.local
+echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id
+
+
+AT!ENTERCND="A710"
+AT!BAND=00
+AT!BAND=09
+AT!SELRAT=06
+AT!USBCOMP=1,3,100D
+AT!RESET
+```
+
 ---
 ### Change Modem Identity (Sierra Wireless / Lenovo / Dell)
 ##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
