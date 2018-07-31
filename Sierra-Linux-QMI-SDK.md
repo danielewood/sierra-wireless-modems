@@ -1,4 +1,6 @@
 ## Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
+All instruction have been tested on **Ubuntu 18.04 using a LiveUSB without persistent storage**. AKA, booting for the first time and running these commands (and using firefox to download the firmwares) is all you need. If you want to use another version of Linux, that is completely on you and I will not help you at all.
+
 ### MC/EM 74XX Series
 + Stop and disable ModemManager during update process
     ```
@@ -38,7 +40,8 @@
     ```
 ---
 ### EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
-+ If the EM7565 is below Release 9, you must first upgrade to Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless. Due to the same changes, you must also flash the latest firmware twice to enable the modem to exit Low Power Mode.
+If the EM7565 is below Release 9, you must first upgrade to Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless. Due to the same changes, you must also flash the latest firmware twice to enable the modem to exit Low Power Mode.
+
 1. Stop and disable ModemManager during update process
     ```
     systemctl stop ModemManager
@@ -107,7 +110,7 @@
     ```
 ---
 ### EM7565 Stuck in QDLoader 
-+ Replace Step Six in to [EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9)
++ Replace Step Six in  [EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9)
 + Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000:
     ```
     devpath=`dmesg | grep 'Qualcomm USB modem converter now attached to ttyUSB' | tail -1 | sed 's/.*attached\ to\ //'`
