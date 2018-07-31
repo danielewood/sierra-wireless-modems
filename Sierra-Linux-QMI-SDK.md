@@ -152,7 +152,7 @@ You can clear all old images by:
     + In this case: Delete (0), FW (0), Slot (3)
     ```
     AT!ENTERCND="A710"
-    AT!IMAGE=0,0,1
+    AT!IMAGE=0,0,3
     AT!RESET
     ```
 + Sierra Release Notes:
