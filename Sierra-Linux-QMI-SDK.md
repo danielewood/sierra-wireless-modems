@@ -130,15 +130,15 @@ You can clear all old images by:
     ```
     AT!IMAGE?
     TYPE SLOT STATUS LRU FAILURES UNIQUE_ID   BUILD_ID
-    FW   1    GOOD   1   0 0      ?_?         01.00.02.00_?
+    FW   1    GOOD   1   0 0      ?_?         01.07.02.00_?
     FW   2    EMPTY  0   0 0
     FW   3    GOOD   127 0 0      ?_?         01.05.01.00_?
     FW   4    EMPTY  0   0 0
     Max FW images: 4
-    Active FW image is at slot 3
+    Active FW image is at slot 1
 
     TYPE SLOT STATUS LRU FAILURES UNIQUE_ID   BUILD_ID
-    PRI  FF   GOOD   0   0 0      001.028_000 01.05.01.00_GENERIC
+    PRI  FF   GOOD   0   0 0      002.004_000 01.07.02.00_GENERIC
     Max PRI images: 50
 
     AT!IMAGE=?
@@ -149,7 +149,7 @@ You can clear all old images by:
     AT!IMAGE?[<op>[,<type>]]
     ```
 + Clear each slot that contains an image you no longer want:
-    + In this case: Delete (0), FW (0), Slot (1)
+    + In this case: Delete (0), FW (0), Slot (3)
     ```
     AT!ENTERCND="A710"
     AT!IMAGE=0,0,1
