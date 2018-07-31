@@ -165,34 +165,9 @@
     ```
 ---
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
-+ Download and unzip the latest Generic Firmware (Linux)
-    + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
-    + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
-+ Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
-    + [SLQS04.00.15-lite.bin.tar](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
-    + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
-+ Flash the Modem `(if --dmreset doesnt work, try removing it)`:
-    ```
-    devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
-    devtype=`expr "$devpath" : '\(cdc-wdm\|qcqmi\)[0-9]$'`
-    case $devtype in
-        cdc-wdm) devtype="MBIM" ;;
-        qcqmi) devtype="QMI" ;;
-        *) printf "Unknown Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"; exit
-    esac
-    printf "Device Type = $devtype\r\nDevice Path = /dev/$devpath\r\n"
-    
-    ./fwdwl-litehostx86_64 \
-    --devmode $devtype  \
-    --devpath /dev/$devpath \
-    --modelfamily 3 \
-    --logfile "fwdwl-lite-$devpath.log" \
-    --enable \
-    --fwpath "./" \
-    --dmreset
-    ```
++ Moved to dedicated page.
 ---
-### Flash modem stuck in QDLoader mode using qmi-firmware-update
+### Flash modem stuck in QDLoader mode using qmi-firmware-update (Does not work on 75xx series)
 ```
 deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'`
 qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
@@ -217,10 +192,16 @@ AT!IMAGE=0
 AT!RESET
 ```
 ---
-Clear all changes and restore to (Dell/Lenovo/Sierra) factory settings:
+Clear all changes and restore to (Lenovo/Sierra) factory settings:
 ```
 AT!ENTERCND="A710"
 AT!RMARESET=1
+AT!RESET
+```
+Clear all changes and restore to (Dell) factory settings:
+```
+AT!ENTERCND="A710"
+AT!NVRESTORE=0
 AT!RESET
 ```
 ---
