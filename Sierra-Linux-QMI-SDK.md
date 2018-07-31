@@ -122,7 +122,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     ```
     systemctl enable ModemManager
     systemctl start ModemManager
-```
+    ```
 
 ### WARNING: Do not downgrade after upgrading to Release 10.
 + Sierra Release Notes:
