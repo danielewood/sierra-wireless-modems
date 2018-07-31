@@ -1,5 +1,10 @@
 ## Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
-All instruction have been tested on **Ubuntu 18.04 using a LiveUSB without persistent storage**. AKA, booting for the first time and running these commands (and using firefox to download the firmwares) is all you need. If you want to use another version of Linux, that is completely on you and I will not help you at all.
+All instruction have been tested on **Ubuntu 18.04 using a LiveUSB without persistent storage**. If you want to use another version of Linux, that is completely on you and I will not help you at all.
+
+### Baseline Setup
+1. Boot USB/CD
+2. Select Try Ubuntu
+2. Open Terminal and Firefox
 
 ### MC/EM 74XX Series
 + Stop and disable ModemManager during update process
