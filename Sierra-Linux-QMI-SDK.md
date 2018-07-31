@@ -82,6 +82,11 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     -e 1 \
     --fwpath "./swi_fw0105/"
     ```
+    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted.
+    ```
+    litefw_DownloadFW succeeded.
+    Waiting for modem to come up in ONLINE mode ...
+    ```
 7. Flash to **Latest Firmware** 
     ```
     devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
@@ -107,6 +112,11 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     mbim open respons type error  -2147480831
     Error in modem crash state checking!error code = 103
     Exiting Application!!!
+    ```
+    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted.
+    ```
+    litefw_DownloadFW succeeded.
+    Waiting for modem to come up in ONLINE mode ...
     ```
 9. Re-enable and start ModemManager
     ```
