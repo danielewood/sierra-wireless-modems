@@ -122,7 +122,12 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     ```
     systemctl enable ModemManager
     systemctl start ModemManager
-    ```
+```
+
+### WARNING: Do not downgrade after upgrading to Release 10.
++ Sierra Release Notes:
+    ![](https://i.imgur.com/ShSAThH.png)
+    
 ---
 ### EM7565 Stuck in QDLoader 
 + Replace Step Six in  [EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9)
