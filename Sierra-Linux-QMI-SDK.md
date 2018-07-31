@@ -82,7 +82,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     -e 1 \
     --fwpath "./swi_fw0105/"
     ```
-    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted.
+    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted. If it has, you are safe to hit CTRL+C.
     ```
     litefw_DownloadFW succeeded.
     Waiting for modem to come up in ONLINE mode ...
@@ -113,7 +113,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     Error in modem crash state checking!error code = 103
     Exiting Application!!!
     ```
-    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted.
+    + If you get stuck at the follow prompt for more than 60 seconds, check `dmesg` and see if the modem has already rebooted. If it has, you are safe to hit CTRL+C.
     ```
     litefw_DownloadFW succeeded.
     Waiting for modem to come up in ONLINE mode ...
