@@ -412,5 +412,3 @@ Revision: 0.5
 + Understanding LTE Signal Strength Values
     + http://usatcorp.com/faqs/understanding-lte-signal-strength-values/
     
-    
-    <meta name="google-site-verification" content="D23HMAX9fkc69S3JXkms5MFb3dozadPMyr0RzuFwlhQ" />
