@@ -224,6 +224,22 @@ AT!IMAGE?
 AT!IMAGE=0
 AT!RESET
 ```
+AT!IMAGE=?
+```
+AT!IMAGE=<op>[,<type>[,<slot>[,"<build_id>","<unique_id>"]]]
+op   - 0:delete 1:list 2:get max num images
+type - 0:FW 1:CONFIG
+slot - FW slot index - none implies all slots
+AT!IMAGE?[<op>[,<type>]]
+```
+Selectively Clear Firmwares:
++ Example: Delete (0), FW (0), Slot (3)
+
+```
+AT!ENTERCND="A710"
+AT!IMAGE=0,0,3
+AT!RESET
+```
 ---
 Clear all changes and restore to (Lenovo/Sierra) factory settings:
 ```
