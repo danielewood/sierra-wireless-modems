@@ -126,11 +126,13 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
 ---
 ### WARNING: Do not downgrade after upgrading to Release 10.
 You can clear all old images by:
-+ ```
+1. Clear all Images/PRIs
+```
 AT!ENTERCND="A710"
 AT!IMAGE=0
 AT!RESET
-+ ```
+```
+2. Repeat **Step 7** to Flash the [**Latest Firmware**](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9).
 + Sierra Release Notes:
 
     ![](https://i.imgur.com/ShSAThH.png)
