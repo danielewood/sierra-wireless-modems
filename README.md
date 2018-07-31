@@ -165,9 +165,10 @@
     ```
 ---
 ### Flash using Sierra Wireless Linux Flashing Tool (fwdwl-lite)
-+ Moved to dedicated page.
++ [Moved to dedicated page](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md).
 ---
-### Flash modem stuck in QDLoader mode using qmi-firmware-update (Does not work on 75xx series)
+### Flash modem stuck in QDLoader mode using qmi-firmware-update
++ For qmi-firmware-update does not work with the 75xx series. [Use this procedure instead](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-stuck-in-qdloader).
 ```
 deviceid=`lsusb | grep -i -E '1199:9070|1199:9078|413C:81B5' | awk '{print $6}'`
 qmi-firmware-update --update-qdl -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
@@ -237,6 +238,38 @@ InterFreq: EARFCN ThresholdLow ThresholdHi Priority PCI  RSRQ   RSRP   RSSI RXLV
              5110            0           0        0 272 -12.1  -80.9  -50.6   0
 ```
 ---
+Show available Carrier Aggregations for your modem:
+```
+AT!LTECA?
+Hardware:
+LTEB1: B8, 
+LTEB2: B2, B5, B12, B13, B29, 
+LTEB3: B7, B20, 
+LTEB4: B4, B5, B12, B13, B29, 
+LTEB5: B2, B4, B30, 
+LTEB7: B3, B7, B20, 
+LTEB8: B1, 
+LTEB12: B2, B4, B30, 
+LTEB13: B2, B4, 
+LTEB20: B3, B7, 
+LTEB25: 
+LTEB26: 
+LTEB29: 
+LTEB30: B5, B12, B29, 
+LTEB41: B41,
+
+Permitted Bands:
+Empty
+
+Prune_ca_combos:
+Empty
+
+AT!LTECA=?
+!LTECA=<flag>
+<flag>: 0 – disable CA
+	1 – enable CA
+```
+---
 `AT!GSTATUS?`
 ```
 !GSTATUS: 
@@ -263,32 +296,6 @@ SINR (dB):     23.8
 ```
 AT!HWID?
 Revision: 0.5
-```
----
-```
-AT!LTECA?
-Hardware:
-LTEB1: B8, 
-LTEB2: B2, B5, B12, B13, B29, 
-LTEB3: B7, B20, 
-LTEB4: B4, B5, B12, B13, B29, 
-LTEB5: B2, B4, B30, 
-LTEB7: B3, B7, B20, 
-LTEB8: B1, 
-LTEB12: B2, B4, B30, 
-LTEB13: B2, B4, 
-LTEB20: B3, B7, 
-LTEB25: 
-LTEB26: 
-LTEB29: 
-LTEB30: B5, B12, B29, 
-LTEB41: B41, 
-
-Permitted Bands:
-Empty
-
-Prune_ca_combos:
-Empty
 ```
 ---
 ### Connectivity/Router Options
