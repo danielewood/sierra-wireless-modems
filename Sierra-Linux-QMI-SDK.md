@@ -126,13 +126,35 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
 ---
 ### WARNING: Do not downgrade after upgrading to Release 10.
 You can clear all old images by:
-1. Clear all Images/PRIs
-```
-AT!ENTERCND="A710"
-AT!IMAGE=0
-AT!RESET
-```
-2. Repeat **Step 7** to Flash the [**Latest Firmware**](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9).
++ Identify Old Images:
+    ```
+    AT!IMAGE?
+    TYPE SLOT STATUS LRU FAILURES UNIQUE_ID   BUILD_ID
+    FW   1    GOOD   1   0 0      ?_?         01.00.02.00_?
+    FW   2    EMPTY  0   0 0
+    FW   3    GOOD   127 0 0      ?_?         01.05.01.00_?
+    FW   4    EMPTY  0   0 0
+    Max FW images: 4
+    Active FW image is at slot 3
+
+    TYPE SLOT STATUS LRU FAILURES UNIQUE_ID   BUILD_ID
+    PRI  FF   GOOD   0   0 0      001.028_000 01.05.01.00_GENERIC
+    Max PRI images: 50
+
+    AT!IMAGE=?
+    AT!IMAGE=<op>[,<type>[,<slot>[,"<build_id>","<unique_id>"]]]
+    op   - 0:delete 1:list 2:get max num images
+    type - 0:FW 1:CONFIG
+    slot - FW slot index - none implies all slots
+    AT!IMAGE?[<op>[,<type>]]
+    ```
++ Clear each slot that contains an image you no longer want:
+    + In this case: Delete (0), FW (0), Slot (1)
+    ```
+    AT!ENTERCND="A710"
+    AT!IMAGE=0,0,1
+    AT!RESET
+    ```
 + Sierra Release Notes:
 
     ![](https://i.imgur.com/ShSAThH.png)
