@@ -124,8 +124,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     systemctl start ModemManager
     ```
 ---
-### WARNING: Do not downgrade after upgrading to Release 10.
-You can clear all old images by:
+### WARNING: Do not downgrade the EM7565 after upgrading to Release 10.
 + Identify Old Images:
     ```
     AT!IMAGE?
@@ -149,7 +148,7 @@ You can clear all old images by:
     AT!IMAGE?[<op>[,<type>]]
     ```
 + Clear each slot that contains an image you no longer want:
-    + In this case: Delete (0), FW (0), Slot (3)
+    + Example: Delete (0), FW (0), Slot (3)
     ```
     AT!ENTERCND="A710"
     AT!IMAGE=0,0,3
