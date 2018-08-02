@@ -30,7 +30,7 @@
 ---
 ### Which Modem to Buy
 + For every use other than installing in a Lenovo \*70 Series.
-    + ~$55 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + ~$60 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
     + This model supports Bands 29 and 30, unlike the Lenovo.
     + When purchasing the Dell, I would recommend you get a production model. Engineering Samples will sometimes contain an early (SWI9X30C_00.08.02.00) firmware that can be a royal pain to flash due to `AT!BOOTHOLD` not being implemented.
     
@@ -48,8 +48,11 @@
 ---
 ### Adapters and Antennas
 ![](https://i.imgur.com/LjpCXCi.jpg)
-+ **Get USB adapter with SIM slot for modem, $20, shipped from China. This includes small 3dBi antennas.**
-	+ [NGFF(M.2) to USB Adapter With SIM card Slot for WWAN/LTE/4G Module](https://www.ebay.com/itm/NGFF-M-2-to-USB-Adapter-With-SIM-card-Slot-for-WWAN-LTE-4G-Module/282142120662)
++ **Get USB adapter with SIM slot for modem**
+    + $20, shipped from China. Includes small 3dBi antennas.
+	    + [NGFF(M.2) to USB Adapter With SIM card Slot for WWAN/LTE/4G Module](https://www.ebay.com/itm/NGFF-M-2-to-USB-Adapter-With-SIM-card-Slot-for-WWAN-LTE-4G-Module/282142120662)
+    + $26, shipped from Texas. Includes small 3dBi antennas.
+        + [USB To NGFF M.2 Key B Adapter Enclosure With SIM Card Slot](https://ltefix.com/shop/pcie-m-2/usb-to-ngff-m-2-key-b-adapter-enclosure/)
 + **If you are at the edge of coverage and need something better, look for 700-2700 MHz antennas with SMA connectors.**
 	+ Buy some [$0.75 SMA Female To RP-SMA Male Adapters](https://www.ebay.com/itm/RP-SMA-Male-Plug-to-SMA-Female-Jack-Straight-RF-Coax-Adapter-Convertor-Connector/181974337700) if you buy antennas, just to be sure you can use what you get.
 		+ SMA vs RP-SMA, [learn the difference](https://www.getfpv.com/rf-rp-sma-male-to-sma-female-adapter.html)
