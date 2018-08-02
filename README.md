@@ -126,15 +126,11 @@
     + `AT!BAND=09`
 6. Save settings and reboot modem to apply
     + `AT!RESET`
-
+---
 ### EM7565 ROOter Setup
-##### Work In progress
+#### For GoldenOrb 2017-12-15 Release
++ Run the following AT commands to set to LTE only, and set the USB Composition to something that works with ROOter.
 ```
-sed -i 's/ 9041 / 9091 /g' /usr/lib/rooter/connect/create_connect.sh
-sed -i '$s/^exit 0/echo "1199 9091" > \/sys\/bus\/usb-serial\/drivers\/option1\/new_id\nexit 0\n/' /etc/rc.local
-echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id
-
-
 AT!ENTERCND="A710"
 AT!BAND=00
 AT!BAND=09
@@ -142,7 +138,15 @@ AT!SELRAT=06
 AT!USBCOMP=1,3,100D
 AT!RESET
 ```
-
++ Run the following from SSH:
+```
+# Replace hooks for AirCard 340U (if you use a 340U, use PID 9041 as your sacrificial PID):
+sed -i 's/ 9051 / 9091 /g' /usr/lib/rooter/connect/create_connect.sh
+# Insert PID for EM7455 on every boot:
+sed -i '$s/^exit 0/echo "1199 9091" > \/sys\/bus\/usb-serial\/drivers\/option1\/new_id\nexit 0\n/' /etc/rc.local
+# Insert PID for EM7455 on immediately:
+echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id
+```
 ---
 ### Change Modem Identity (Sierra Wireless / Lenovo / Dell)
 ##### My [Automated Flashing of the EM7455/MC7455 with a Ubuntu Linux 18.04 LiveCD](https://www.ttl.one/2018/07/sierra-wireless-lte-autoflashing-em74xx.html) script will complete this task.
