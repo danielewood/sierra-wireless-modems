@@ -49,15 +49,13 @@
 ### Adapters and Antennas
 ![](https://i.imgur.com/LjpCXCi.jpg)
 + **Get USB adapter with SIM slot for modem**
-    + $20, shipped from China. Includes small 3dBi antennas.
-	    + [NGFF(M.2) to USB Adapter With SIM card Slot for WWAN/LTE/4G Module](https://www.ebay.com/itm/NGFF-M-2-to-USB-Adapter-With-SIM-card-Slot-for-WWAN-LTE-4G-Module/282142120662)
     + $26, shipped from Texas. Includes small 3dBi antennas.
         + [USB To NGFF M.2 Key B Adapter Enclosure With SIM Card Slot](https://ltefix.com/shop/pcie-m-2/usb-to-ngff-m-2-key-b-adapter-enclosure/)
 + **If you are at the edge of coverage and need something better, look for 700-2700 MHz antennas with SMA connectors.**
 	+ Buy some [$0.75 SMA Female To RP-SMA Male Adapters](https://www.ebay.com/itm/RP-SMA-Male-Plug-to-SMA-Female-Jack-Straight-RF-Coax-Adapter-Convertor-Connector/181974337700) if you buy antennas, just to be sure you can use what you get.
 		+ SMA vs RP-SMA, [learn the difference](https://www.getfpv.com/rf-rp-sma-male-to-sma-female-adapter.html)
 	+ Log-Periodic antennas offer excellent gain for a low cost and small footprint.
-		+ [$30 Log-periodic antenna 16dBi 800~2700mhz for CDMA/GSM DCS WCDMA LTE 2G 3G 4G NEW](https://www.ebay.com/itm/Log-periodic-antenna-16dBi-800-2700mhz-for-CDMA-GSM-DCS-WCDMA-LTE-2G-3G-4G-NEW/391778713733)
+		+ [$29 698-2700MHz Yagi Radome 9dBi-11dBi 4G LTE Directional Antenna](https://ltefix.com/shop/antennas/outdoor-antennas/698-2700mhz-yagi-radome-9dbi-11dbi-4g-lte-directional-antenna/)
 	+ Omni-Antennas can boost overall signal if you already have decent service and just want great service.
 		+ While not explicitly tuned to Band 12/13, a pair of [2.4GHz 9dBi RP-SMA Antennas](https://www.ebay.com/itm/2-4GHz-9dBi-RP-SMA-Male-Connector-Tilt-Swivel-Wireless-WiFi-Router-Antenna-O9W4/253375536787) will provide a nice signal boost.
 		
@@ -146,7 +144,7 @@ AT!RESET
 # Replace hooks for AirCard 340U (if you use a 340U, use PID 9041 as your sacrificial PID):
 sed -i 's/ 9051 / 9091 /g' /usr/lib/rooter/connect/create_connect.sh
 # Insert PID for EM7455 on every boot:
-sed -i '$s/^exit 0/echo "1199 9091" > \/sys\/bus\/usb-serial\/drivers\/option1\/new_id\nexit 0\n/' /etc/rc.local
+sed -i '$s%^exit 0%echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id\nexit 0\n%' /etc/rc.local
 # Insert PID for EM7455 on immediately:
 echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id
 ```
@@ -418,4 +416,4 @@ Revision: 0.5
     + https://frankrayal.com/2011/06/27/lte-peak-capacity/
 + Understanding LTE Signal Strength Values
     + http://usatcorp.com/faqs/understanding-lte-signal-strength-values/
-    
+   
