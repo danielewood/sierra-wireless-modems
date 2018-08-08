@@ -171,7 +171,7 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     -e 1 \
     --fwpath "./swi_fw0105/"
     ```
-
+---
 ### EM7565 wont flash from 01.00.02.00 to 01.05.01.00
 + Replace Step Six in  [EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)](https://github.com/danielewood/sierra-wireless-modems/blob/master/Sierra-Linux-QMI-SDK.md#em7565-from-version-01050100-release-9-to-latest-release-9)
 + Flash to SWI9X50C_01.05.01.00_00 (CWE Only):
@@ -193,6 +193,26 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     --fwpath "./swi_fw0105/SWI9X50C_01.05.01.00.cwe" \
     -i 1
     ```
+---
+### EM7565 Stuck in Low Power 
+```
+AT!IMPREF:
+ preferred fw version:    01.00.02.00
+ preferred carrier name:  GENERIC
+ preferred config name:   GENERIC_001.012_000
+ current fw version:      01.05.01.00
+ current carrier name:    GENERIC
+ current config name:     GENERIC_001.012_000
+
+
+ fw version mismatch
+ 
+
+AT!PCINFO?
+State: Low Power Mode
+LPM voters - Temp:0, Volt:0, User:0, W_DISABLE:0, IMSWITCH:1, BIOS:0, LWM2M:0, OMADM:0, FOTA:0, RFCAL:0
+LPM persistence - None
+```
 + Flash to SWI9X50C_01.05.01.00_00_GENERIC_001.028_000:
     ```
     devpath=`ls /dev | grep -i -E 'cdc-wdm|qcqmi'`
@@ -211,7 +231,6 @@ If the EM7565 is below Release 9, you must first upgrade to Release 9. This inte
     -e 1 \
     --fwpath "./swi_fw0105/"
     ```
-
 ---
 ### fwdwl-lite Help File
 ```
