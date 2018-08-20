@@ -1,6 +1,8 @@
 #!/bin/ash
 # Warning: Work in progress, still needs cleanup, but works on ROOter. Stock OpenWRT will need a change on the firewall zone.
-# Capabilities of a MT7621A with 25% CPU left to spare, over LTE: http://www.speedtest.net/result/7566309110.png
+# Capabilities of a MT7621A with 25% CPU left to spare, over LTE:
+# With Wireguard: http://www.speedtest.net/result/7566309110.png
+# Without Wireguard: http://www.speedtest.net/result/7566552283.png
 
 #User Defined Variables:
 endpoint_host="us2-wireguard"
