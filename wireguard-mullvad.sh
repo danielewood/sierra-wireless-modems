@@ -1,21 +1,29 @@
 
-#/bin/bash
+#!/bin/ash
 # Warning: Work in progress, still needs cleanup, but works on openwrt/ROOter.
-
+# Capabilities of a MT7621A with 25% CPU left to spare, over LTE: http://www.speedtest.net/result/7563956413.png
 
 #User Defined Variables:
 endpoint_host="us2-wireguard"
-mullvad_account='9199642831892489'
+mullvad_account='1546610031161156'
 
 
 # Begin Script
+if [ `opkg list-installed | grep ca-bundle | wc -l` -lt 1 ]; then
+    opkg update && opkg install curl ca-bundle
+fi
+#exit 0
+
 uci set dhcp.@dnsmasq[0].server='8.8.8.8'
 uci add_list dhcp.@dnsmasq[0].server='8.8.4.4'
+uci delete network.@wireguard_wg0[-1] 2> /dev/null
+uci delete network.@wireguard_wg0[-1] 2> /dev/null
+uci delete network.@wireguard_wg0[-1] 2> /dev/null
+uci delete network.wg0 2> /dev/null
 uci delete network.wg0 2> /dev/null
 uci commit
 /etc/init.d/network reload
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
-
 
 local_private_key=`wg genkey`
 local_public_key=`echo $local_private_key | wg pubkey`
@@ -38,19 +46,21 @@ echo "endpoint_host=$endpoint_host"
 endpoint_host=$(LC_ALL=C nslookup "$endpoint_host".mullvad.net 2>/dev/null  | sed -nr '/Name/,+1s|Address\ 1: *||p')
 
 uci set network.wg0=interface
+echo uci set network.wg0=interface
 uci set network.wg0.proto='wireguard'
 uci set network.wg0.listen_port="$local_listen_port"
 uci set network.wg0.private_key="$local_private_key"
 uci set network.wg0.addresses="$local_ipv4_address"
 uci add_list network.wg0.addresses="$local_ipv6_address"
 
-uci set network.@wireguard_wg0[0]=wireguard_wg0
-uci set network.@wireguard_wg0[0].endpoint_allowed_ips="$allowed_ips"
-uci set network.@wireguard_wg0[0].route_allowed_ips="$route_allowed_ips"
-uci set network.@wireguard_wg0[0].endpoint_port="$endpoint_port"
-uci set network.@wireguard_wg0[0].persistent_keepalive="$persistent_keepalive"
-uci set network.@wireguard_wg0[0].public_key="$endpoint_public_key"
-uci set network.@wireguard_wg0[0].endpoint_host="$endpoint_host"
+uci add network wireguard_wg0
+uci set network.@wireguard_wg0[-1]='wireguard_wg0'
+uci set network.@wireguard_wg0[-1].allowed_ips="$endpoint_allowed_ips"
+uci set network.@wireguard_wg0[-1].route_allowed_ips="$route_allowed_ips"
+uci set network.@wireguard_wg0[-1].endpoint_port="$endpoint_port"
+uci set network.@wireguard_wg0[-1].persistent_keepalive="$persistent_keepalive"
+uci set network.@wireguard_wg0[-1].public_key="$endpoint_public_key"
+uci set network.@wireguard_wg0[-1].endpoint_host="$endpoint_host"
 uci set firewall.vpnzone.network='VPN wg0'
 uci set dhcp.lan.dhcp_option='6,10.64.0.1'
 
