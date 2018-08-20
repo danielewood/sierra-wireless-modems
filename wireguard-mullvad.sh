@@ -1,11 +1,10 @@
-
 #!/bin/ash
 # Warning: Work in progress, still needs cleanup, but works on openwrt/ROOter.
 # Capabilities of a MT7621A with 25% CPU left to spare, over LTE: http://www.speedtest.net/result/7563956413.png
 
 #User Defined Variables:
 endpoint_host="us2-wireguard"
-mullvad_account='1546610031161156'
+mullvad_account='1940127723058875'
 
 
 # Begin Script
@@ -14,8 +13,8 @@ if [ `opkg list-installed | grep ca-bundle | wc -l` -lt 1 ]; then
 fi
 #exit 0
 
-uci set dhcp.@dnsmasq[0].server='8.8.8.8'
-uci add_list dhcp.@dnsmasq[0].server='8.8.4.4'
+uci set dhcp.@dnsmasq[-1].server='8.8.8.8'
+uci add_list dhcp.@dnsmasq[-1].server='8.8.4.4'
 uci delete network.@wireguard_wg0[-1] 2> /dev/null
 uci delete network.@wireguard_wg0[-1] 2> /dev/null
 uci delete network.@wireguard_wg0[-1] 2> /dev/null
@@ -52,6 +51,7 @@ uci set network.wg0.listen_port="$local_listen_port"
 uci set network.wg0.private_key="$local_private_key"
 uci set network.wg0.addresses="$local_ipv4_address"
 uci add_list network.wg0.addresses="$local_ipv6_address"
+uci set network.wg0.auto='1'
 
 uci add network wireguard_wg0
 uci set network.@wireguard_wg0[-1]='wireguard_wg0'
@@ -64,16 +64,17 @@ uci set network.@wireguard_wg0[-1].endpoint_host="$endpoint_host"
 uci set firewall.vpnzone.network='VPN wg0'
 uci set dhcp.lan.dhcp_option='6,10.64.0.1'
 
-uci set dhcp.@dnsmasq[0].nonwildcard='0'
-uci set dhcp.@dnsmasq[0].server='10.64.0.1'
-uci set dhcp.@dnsmasq[0].noresolv='1'
-uci set network.wg0.auto='1'
+uci set dhcp.@dnsmasq[-1].nonwildcard='0'
+uci set dhcp.@dnsmasq[-1].server='10.64.0.1'
+uci set dhcp.@dnsmasq[-1].noresolv='1'
 
 uci commit
-/etc/init.d/network restart
+/etc/init.d/network reload
 
 echo "endpoint_host=$endpoint_host"
 echo "endpoint_public_key=$endpoint_public_key"
 echo "local_private_key=$local_private_key"
 echo "network.wg0.addresses=$local_ipv4_address"
 echo "network.wg0.addresses=$local_ipv6_address"
+echo "Rebooting in 5 seconds..."
+sleep 5 && reboot
