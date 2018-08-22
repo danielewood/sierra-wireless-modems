@@ -19,8 +19,11 @@
 + **These are my peak results so far (B2+B12, 30MHz total):**
 
 	![Speed Test peak LTE Results](https://www.speedtest.net/result/7472005421.png)
-+ Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [~$200 EM7565](https://www.ebay.com/sch/i.html?_from=R40&_nkw=EM7565&_sacat=0&LH_BIN=1&_sop=15).
++ Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [$200 ebay em7565](https://www.ebay.com/sch/i.html?_from=R40&_nkw=em7565&_sacat=0&LH_BIN=1&_sop=15) / [$160 Aliexpress em7565](https://www.aliexpress.com/item/Global-LTE-coverage-EM7565-Sierra-super-high-speed-FDD-TDD-LTE-module-Bands-1-5-7/32784565376.html)
     + EM7565 allows 3CA of B2+B12+B30 for a total downlink of 40MHz on approximately 60% of AT&T towers (Assuming you are close and have a strong signal).
+    + **These are my peak results so far (B2+B12+B30, 40MHz total):**
+    + ![](http://www.speedtest.net/result/7543436236.png)![](http://www.speedtest.net/result/7545732497.png)
+	    
 ---
 ### Official Sierra Documents/Firmwares (May require free Sierra account)
 + [Sierra EM7455 Product Page](https://source.sierrawireless.com/devices/em-series/em7455/)
