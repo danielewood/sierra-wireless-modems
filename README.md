@@ -21,6 +21,7 @@
 	![Speed Test peak LTE Results](https://www.speedtest.net/result/7472005421.png)
 + Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [em7565](https://ltefix.com/shop/sierra-wireless-airprime-cards/sierra-wireless-em7565-cat-12-m-2-modem/)
     + EM7565 allows 3CA of B2+B12+B30 for a total downlink of 40MHz on approximately 60% of AT&T towers (Assuming you are close and have a strong signal).
+    + LTEFix now offers the [em7565 pre-flashed to the latest firmware](https://ltefix.com/shop/sierra-wireless-airprime-cards/sierra-wireless-em7565-cat-12-m-2-modem/). If the process of flashing seems daunting, I suggest you purchase through them and pay for the flashing service as you will receive a modem already in a usable state.
     + **These are my peak results so far (B2+B12+B30, 40MHz total):**
     
     ![](http://www.speedtest.net/result/7543436236.png)![](http://www.speedtest.net/result/7545732497.png)
