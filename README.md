@@ -19,7 +19,7 @@
 + **These are my peak results so far (B2+B12, 30MHz total):**
 
 	![Speed Test peak LTE Results](https://www.speedtest.net/result/7472005421.png)
-+ Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [$200 ebay em7565](https://www.ebay.com/sch/i.html?_from=R40&_nkw=em7565&_sacat=0&LH_BIN=1&_sop=15) / [$160 Aliexpress em7565](https://www.aliexpress.com/item/Global-LTE-coverage-EM7565-Sierra-super-high-speed-FDD-TDD-LTE-module-Bands-1-5-7/32784565376.html)
++ Higher speeds will require a modem capable of 3CA (Three Carrier Aggregation) such as the [em7565](https://ltefix.com/shop/sierra-wireless-airprime-cards/sierra-wireless-em7565-cat-12-m-2-modem/)
     + EM7565 allows 3CA of B2+B12+B30 for a total downlink of 40MHz on approximately 60% of AT&T towers (Assuming you are close and have a strong signal).
     + **These are my peak results so far (B2+B12+B30, 40MHz total):**
     
@@ -61,7 +61,7 @@
 	+ Log-Periodic antennas offer excellent gain for a low cost and small footprint.
 		+ [$29 698-2700MHz Yagi Radome 9dBi-11dBi 4G LTE Directional Antenna](https://ltefix.com/shop/antennas/outdoor-antennas/698-2700mhz-yagi-radome-9dbi-11dbi-4g-lte-directional-antenna/)
 	+ Omni-Antennas can boost overall signal if you already have decent service and just want great service.
-		+ While not explicitly tuned to Band 12/13, a pair of [2.4GHz 9dBi RP-SMA Antennas](https://www.ebay.com/itm/2-4GHz-9dBi-RP-SMA-Male-Connector-Tilt-Swivel-Wireless-WiFi-Router-Antenna-O9W4/253375536787) will provide a nice signal boost.
+		+ While not explicitly tuned to Band 12/13/17, a pair of [2.4GHz 9dBi RP-SMA Antennas](https://www.ebay.com/itm/2-4GHz-9dBi-RP-SMA-Male-Connector-Tilt-Swivel-Wireless-WiFi-Router-Antenna-O9W4/253375536787) will provide a nice signal boost.
 		
 ---
 ### Create Accessible COM Port
