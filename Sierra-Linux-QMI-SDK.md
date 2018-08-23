@@ -47,6 +47,8 @@ All instruction have been tested on **Ubuntu 18.04 using a LiveUSB without persi
 ### EM7565 from Version <01.05.01.00 (Release <9) to Latest Release (9+)
 If the EM7565 is below Release 9, you must first upgrade to Release 9. This intermediate step is required due to NVU signing implemented by Sierra Wireless. Due to the same changes, you must also flash the latest firmware twice to enable the modem to exit Low Power Mode.
 
+**NOTE:** LTEFix now offers the [em7565 pre-flashed to the latest firmware](https://ltefix.com/shop/sierra-wireless-airprime-cards/sierra-wireless-em7565-cat-12-m-2-modem/). If this process of flashing seems daunting, I suggest you purchase through them as you will receive a modem already in a usable state.
+
 1. Stop and disable ModemManager during update process
     ```
     systemctl stop ModemManager
