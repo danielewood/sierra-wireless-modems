@@ -6,7 +6,7 @@
 #.SYNOPSIS
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
 # - Changes all models of EM7455/MC7455 Modems to the Generic Sierra Wireless VID/PID
-# - Flashes the Current Generic Firmware as of 2018-07-18
+# - Flashes the Current Generic Firmware as of 2018-09-14
 
 #.DESCRIPTION
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
@@ -14,7 +14,7 @@
 # - Sets MBIM Mode with AT Commands Access 
 # - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
 # - Clears Band Restrictions and Places Modem in LTE only mode.
-# - Flashes the Current Generic Firmware as of 2018-07-18
+# - Flashes the Current Generic Firmware as of 2018-09-14
 
 #.NOTES
 # License: The Unlicense / CCZero / Public Domain
@@ -191,17 +191,17 @@ sleep 1
 sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 
 printf "${BLUE}---${NC}\n"
-echo 'Download and unzip SWI9X30C_02.24.05.06_GENERIC_002.026_000 firmware...'
-curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx 
-unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip
+echo 'Download and unzip SWI9X30C_02.30.01.01_Generic_002.045_000 firmware...'
+curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx
+unzip SWI9X30C_02.30.01.01_Generic_002.045_000.zip
 
-zipsha512actual=`sha512sum SWI9X30C_02.24.05.06_Generic_002.026_000.zip |  awk '{print $1}'`
-zipsha512expected='e2e3069c1c83f35b27111384524907ef24e2aebe94c990f8f0a33569e606b708919f618b840e125fb73c8afb7eec043e358fc734c09e18e498f29d6a5c2312e4'
+zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
+zipsha512expected='dad82310097c1ac66bb93da286c2e6f18b691cfea98df2756c8b044e5815087c9141325fc3e585c04f394c2a54e8d9b9bc2e5c5768cc7e0466d1321c1947cc8c'
 
 if [ "$zipsha512actual" != "$zipsha512expected" ]
 then 
     printf "${BLUE}---${NC}\n"
-    printf "Download of ${BLUE}SWI9X30C_02.24.05.06_Generic_002.026_000.zip${NC} failed, exiting...\n"
+    printf "Download of ${BLUE}SWI9X30C_02.30.01.01_Generic_002.045_000.zip${NC} failed, exiting...\n"
     exit
 fi
 
@@ -218,8 +218,8 @@ sudo pkill -9 cat &>/dev/null
 
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
-echo 'Flashing SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem...'
-qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+echo 'Flashing SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem...'
+qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.30.01.01.cwe SWI9X30C_02.30.01.01_GENERIC_002.045_000.nvu
 rc=$?
 if [[ $rc != 0 ]]
 then

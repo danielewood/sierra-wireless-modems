@@ -89,15 +89,15 @@
     + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
     + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
 2. Get the [latest firmware bundle](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
-    + `curl -o SWI9X30C_02.24.05.06_Generic_002.026_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_24_05_06/7430/swi9x30c_02.24.05.06_generic_002.026_000.ashx`
+    + `curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx`
 3. Extract firmware CWE and NVU.
-    `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
+    `unzip SWI9X30C_02.30.01.01_Generic_002.045_000.zip`
 4. Stop Modem Manager
     `systemctl stop ModemManager`
 5. Flash firmware
     ```
     deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
-    qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.24.05.06.cwe SWI9X30C_02.24.05.06_GENERIC_002.026_000.nvu
+    qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.30.01.01.cwe SWI9X30C_02.30.01.01_GENERIC_002.045_000.nvu
     ```
 6. Modem will reset with new firmware and carrier profile.
 
