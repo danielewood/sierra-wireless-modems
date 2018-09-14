@@ -217,7 +217,7 @@ done
 sudo pkill -9 cat &>/dev/null
 
 printf "${BLUE}---${NC}\n"
-# Flash SWI9X30C_02.24.05.06_GENERIC_002.026_000 onto Generic Sierra Modem
+# Flash SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem...'
 qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.30.01.01.cwe SWI9X30C_02.30.01.01_GENERIC_002.045_000.nvu
 rc=$?
