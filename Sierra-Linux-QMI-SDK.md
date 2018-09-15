@@ -13,8 +13,8 @@ All instruction have been tested on **Ubuntu 18.04 using a LiveUSB without persi
     systemctl disable ModemManager
     ```
 + Download and unzip the latest Generic Firmware (Linux)
-    + [SWI9X30C_02.24.05.06_Generic_002.026_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
-    + `unzip SWI9X30C_02.24.05.06_Generic_002.026_000.zip`
+    + [SWI9X30C_02.30.01.01_Generic_002.045_000.zip](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
+    + `unzip SWI9X30C_02.30.01.01_Generic_002.045_000.zip`
 + Download and Extract the latest Linux QMI SDK Software (fwdwl-litehostx86_64)
     + [SLQS04.00.15-lite.bin.tar.gz](https://source.sierrawireless.com/resources/airprime/software/linux-qmi-sdk-software-latest/)
     + `tar --extract --strip-components 3 --file SLQS04.00.15-lite.bin.tar.gz SampleApps/lite-fw-download/bin/fwdwl-litehostx86_64`
