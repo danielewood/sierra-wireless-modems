@@ -356,6 +356,10 @@ AT!HWID?
 Revision: 0.5
 ```
 ---
+### How to Calculate LTE Band Bitmasks
++ 
+
+---
 ### Connectivity/Router Options
 + Windows 10 will block Hotspot/ICS mode, you cannot use Windows 10's ICS with this setup.
 + Linux doesn't care, it will happily route packets all day long. 
@@ -421,4 +425,5 @@ Revision: 0.5
     + https://frankrayal.com/2011/06/27/lte-peak-capacity/
 + Understanding LTE Signal Strength Values
     + http://usatcorp.com/faqs/understanding-lte-signal-strength-values/
-   
++ OpenWrt-ModemManager
+    + https://bitbucket.org/aleksander0m/modemmanager-openwrt   
