@@ -1,3 +1,13 @@
+# [ROOter](https://www.ofmodemsandmen.com/) by Of Modems and Men
+## Flashing the RBM33G/RBM11G to ROOter
+
++ See guide in [Flash-RBM33G-RBM11G.md](Flash-RBM33G-RBM11G.md)
+
+## ROOter Development Thread
+
++ See [ROOter OpenWRT router Adventures with 3G/4G modems](https://forums.whirlpool.net.au/forum-replies.cfm?t=2689577&p=-1&#bottom)
+
+## Firmware Checksums:
 ```
 Algorithm : MD5
 Hash      : 463E0A2F9FFA4860B7BAF84A6BA0727F
