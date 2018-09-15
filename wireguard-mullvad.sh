@@ -1,4 +1,8 @@
 #!/bin/ash
+# ### Automatic setup of Wireguard for Mullvad
+# ### Works on 3-hour demo accounts, just create a new one and re-run the script wiht new info to continue testing.
+# ### Change endpoint and account number to your mullvad account, and run this script.
+#
 # Warning: Work in progress, still needs cleanup, but works on ROOter. Stock OpenWRT will need a change on the firewall zone.
 # Capabilities of a MT7621A with 25% CPU left to spare, over LTE:
 # With Wireguard: http://www.speedtest.net/result/7566309110.png
