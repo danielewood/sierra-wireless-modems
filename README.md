@@ -1,4 +1,4 @@
-## EM7455/MC7455 - Modem Configuration
+## EM7565/EM7455/MC7455 - Modem Configuration
 ### Index
   * [Modem Performance/Specifications](#modem-performancespecifications)
   * [Official Sierra Documents/Firmwares (May require free Sierra account)](#official-sierra-documentsfirmwares-may-require-free-sierra-account)
@@ -356,6 +356,65 @@ AT!HWID?
 Revision: 0.5
 ```
 ---
+### How to Calculate Bitmasks to Lock LTE Bands
+When you see something like `AT!BAND=10,"B2B4B5B12",0,000000000000081A`, you may wonder how that number on the end is derrived. It is a bitmask.
++ First, unlock Advanced/Admin mode:
+    + `AT!ENTERCND="A710"`
++ Next, check the bitmask options for your specific modem. There will be variations between modems, so always check what is actually available on your modem and reference that table.
+```
+AT!BAND=?
+Index, Name,                        GW Band Mask     L Band Mask      TDS Band Mask
+00, All bands                     0002000007C00000 00000100130818DF 0000000000000000
+01, Europe 3G                     0002000000400000 0000000000000000 0000000000000000
+02, North America 3G              0000000004800000 0000000000000000 0000000000000000
+06, Europe                        0002000000400000 00000000000800C5 0000000000000000
+07, North America                 0000000004800000 000000000300185A 0000000000000000
+08, WCDMA ALL                     0002000007C00000 0000000000000000 0000000000000000
+09, LTE ALL                       0000000000000000 00000100130818DF 0000000000000000
+
+                                                   0000010000000000 - B41    
+                                                   0000000010000000 - B29    
+                                                   0000000002000000 - B26    
+                                                   0000000001000000 - B25    
+                                                   0000000000080000 - B20    
+                                                   0000000000001000 - B13    
+                                                   0000000000000800 - B12    
+                                                   0000000000000080 - B8     
+                                                   0000000000000040 - B7     
+                                                   0000000000000010 - B5     
+                                                   0000000000000008 - B4     
+                                                   0000000000000004 - B3     
+                                                   0000000000000002 - B2     
+                                                   0000000000000001 - B1     
+                                  0002000000000000 - B8  (900)
+                                  0000000004000000 - B5  (850)
+                                  0000000002000000 - B4 (1700)
+                                  0000000001000000 - B3 (1700)
+                                  0000000000800000 - B2 (1900)
+                                  0000000000400000 - B1 (2100)
+
+OK
+```
++ Now, if we want to create a mask that combines 3G B2+B1 and LTE B3+B7+B20, we do the following:
+    + Look at the GW Band column for 3G band bit codes, note that:
+        + `0000000000400000 - B1 (2100)`
+        + `0000000000800000 - B2 (1900)`
+    + Add together the two masks, since we are dealing with hex, 10 = A, 11 = B, 12 = C, and so on:
+        + `0000000000C00000 - B1+B2`
++ Perform the same task for the LTE column (notice that the mask is different than the 3G mask):
+    + Look at the LTE Band column for LTE band bit codes, note that:
+        + `0000000000000004 - B3`
+        + `0000000000000040 - B7`
+        + `0000000000080000 - B20`
+    + Add together the three masks:
+        + `0000000000080044 - B3+B7+B20`
++ To tie it altogether, we issue our custom band command:
+    + `AT!BAND=10,"B2B1-B3B7B20",0000000000C00000,0000000000080044`
++ Finally, we set out custom band in slot 10:
+    + `AT!BAND=09`
+    
+
+---
 ### Connectivity/Router Options
 + Windows 10 will block Hotspot/ICS mode, you cannot use Windows 10's ICS with this setup.
 + Linux doesn't care, it will happily route packets all day long. 
@@ -421,4 +480,5 @@ Revision: 0.5
     + https://frankrayal.com/2011/06/27/lte-peak-capacity/
 + Understanding LTE Signal Strength Values
     + http://usatcorp.com/faqs/understanding-lte-signal-strength-values/
-   
++ OpenWrt-ModemManager
+    + https://bitbucket.org/aleksander0m/modemmanager-openwrt   
