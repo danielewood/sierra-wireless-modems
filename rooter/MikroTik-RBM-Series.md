@@ -23,7 +23,7 @@
     ![](https://i.imgur.com/0jXzvOm.png)
 
 1. Configure and start tftpd32/64
-    + Option 1: Overwrite tftpd32.ini with [this one](https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/rooter/tftpd32.ini) and start tftpd64.
+    + Option 1: Overwrite tftpd32.ini with [this one](tftpd32.ini) and start tftpd64.
     + Change the BootFile name if needed.
     
     ![](https://i.imgur.com/03dXtO0.png)
