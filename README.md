@@ -362,7 +362,7 @@ When you see something like `AT!BAND=10,"B2B4B5B12",0,000000000000081A`, you may
     + `AT!ENTERCND="A710"`
 + Next, check the bitmask options for your specific modem. There will be variations between modems, so always check what is actually available on your modem and reference that table.
     + ```
-AT!BAND=?
+    AT!BAND=?
 Index, Name,                        GW Band Mask     L Band Mask 1    L Band Mask 2    TDS Band Mask    L Band Mask 3    L Band Mask 4
 00, All bands                     100600000FC00000 0000A700BA0F19DF 0000000000000002 0000000000000000 0000000000000000 4800000000000000
 01, Europe 3G                     0002000000400000 0000000000000000 0000000000000000 0000000000000000 0000000000000000 0000000000000000
