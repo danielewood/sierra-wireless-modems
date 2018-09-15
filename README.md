@@ -401,7 +401,7 @@ OK
         + `0000000000800000 - B2 (1900)`
     + Add together the two masks, since we are dealing with hex, 10 = A, 11 = B, 12 = C, and so on:
         + `0000000000C00000 - B1+B2`
-+ Perform the same task for the LTE column (notice that the bask is different than the 3G mask):
++ Perform the same task for the LTE column (notice that the mask is different than the 3G mask):
     + Look at the LTE Band column for LTE band bit codes, note that:
         + `0000000000000004 - B3`
         + `0000000000000040 - B7`
