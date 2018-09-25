@@ -30,7 +30,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 if [ "$EUID" -ne 0 ]
-    then echo "Please run with sudo or as root"
+    then echo "Please run with sudo"
     exit
 fi
 
@@ -82,21 +82,25 @@ yes | cpan install UUID::Tiny IPC::Shareable JSON
 # apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
 # Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
 # So we'll pull the .deb files directly
-if [ ! -f minicom_2.7.1-1_amd64.deb ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
-    dpkg -i minicom_2.7.1-1_amd64.deb
+deb_minicom='minicom_2.7.1-1_amd64.deb'
+deb_libqmi_glib5='libqmi-glib5_1.20.0-1ubuntu1_amd64.deb'
+deb_libqmi_proxy='libqmi-proxy_1.20.0-1ubuntu1_amd64.deb'
+deb_libqmi_utils='libqmi-utils_1.20.0-1ubuntu1_amd64.deb'
+if [ ! -f $deb_minicom ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/$deb_minicom
+    dpkg -i $deb_minicom
 fi
-if [ ! -f libqmi-glib5_1.20.0-1ubuntu1_amd64.deb ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
-    dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
+if [ ! -f $deb_libqmi_glib5 ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/$deb_libqmi_glib5
+    dpkg -i $deb_libqmi_glib5
 fi
-if [ ! -f libqmi-proxy_1.20.0-1ubuntu1_amd64.deb ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
-    dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
+if [ ! -f $deb_libqmi_proxy ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/$deb_libqmi_proxy
+    dpkg -i $deb_libqmi_proxy
 fi
-if [ ! -f libqmi-utils_1.20.0-1ubuntu1_amd64.deb ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
-    dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
+if [ ! -f $deb_libqmi_utils ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/$deb_libqmi_utils
+    dpkg -i $deb_libqmi_utils
 fi
 
 # Install Modem Mode Switcher
