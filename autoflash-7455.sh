@@ -24,7 +24,7 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: 20180725
+# Version: 20180914
 
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
