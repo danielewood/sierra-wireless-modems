@@ -82,7 +82,6 @@ yes | cpan install UUID::Tiny IPC::Shareable JSON
 # apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
 # Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
 # So we'll pull the .deb files directly
-
 if [ ! -f minicom_2.7.1-1_amd64.deb ]; then
     wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
     dpkg -i minicom_2.7.1-1_amd64.deb
@@ -112,7 +111,7 @@ devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
-
+sleep 3
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
@@ -127,11 +126,11 @@ deviceid=''
 while [ -z $deviceid ]
 do
     echo 'Waiting for modem to reboot...'
-    sleep 1
+    sleep 3
     deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 done
 
-sleep 2
+sleep 5
 
 ttyUSB=`dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | tail -1`
 devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
@@ -203,13 +202,10 @@ sleep 1
 ' > script.txt
 sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 
-printf "${BLUE}---${NC}\n"
-
-
 zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
 zipsha512expected='dad82310097c1ac66bb93da286c2e6f18b691cfea98df2756c8b044e5815087c9141325fc3e585c04f394c2a54e8d9b9bc2e5c5768cc7e0466d1321c1947cc8c'
-
 if [ "$zipsha512actual" != "$zipsha512expected" ]; then
+    printf "${BLUE}---${NC}\n"
     echo 'Download and unzip SWI9X30C_02.30.01.01_Generic_002.045_000 firmware...'
     curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx
     unzip -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip
@@ -222,7 +218,6 @@ if [ "$zipsha512actual" != "$zipsha512expected" ]; then
     exit
 fi
 
-sleep 3
 deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 while [ -z $deviceid ]
 do
@@ -236,6 +231,7 @@ sudo pkill -9 cat &>/dev/null
 printf "${BLUE}---${NC}\n"
 # Flash SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem
 echo 'Flashing SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem...'
+sleep 5
 qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.30.01.01.cwe SWI9X30C_02.30.01.01_GENERIC_002.045_000.nvu
 rc=$?
 if [[ $rc != 0 ]]
@@ -277,7 +273,7 @@ send AT!USBPID=9071,9070
 sleep 1
 send AT!USBPRODUCT=\"EM7455\"
 sleep 1
-send AT!PRIID=\"9904609\",\"002.026\",\"Generic-Laptop\"
+send AT!PRIID=\"9904609\",\"002.030\",\"Generic-Laptop\"
 sleep 1
 send AT!SELRAT=06
 sleep 1
@@ -290,7 +286,7 @@ sleep 1
 send AT!RESET
 ! pkill minicom
 ' > script.txt
-#    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
 #Done, restart ModemManager
