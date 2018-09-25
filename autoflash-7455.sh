@@ -82,18 +82,29 @@ yes | cpan install UUID::Tiny IPC::Shareable JSON
 # apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
 # Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
 # So we'll pull the .deb files directly
-wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
-dpkg -i minicom_2.7.1-1_amd64.deb
-wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
-dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
-wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
-dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
-wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
-dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
+
+if [ ! -f minicom_2.7.1-1_amd64.deb ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/minicom_2.7.1-1_amd64.deb
+    dpkg -i minicom_2.7.1-1_amd64.deb
+fi
+if [ ! -f libqmi-glib5_1.20.0-1ubuntu1_amd64.deb ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
+    dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb
+fi
+if [ ! -f libqmi-proxy_1.20.0-1ubuntu1_amd64.deb ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
+    dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb
+fi
+if [ ! -f libqmi-utils_1.20.0-1ubuntu1_amd64.deb ]; then
+    wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb
+    dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb
+fi
 
 # Install Modem Mode Switcher
-wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
-chmod +x ./swi_setusbcomp.pl
+if [ ! -f swi_setusbcomp.pl ]; then
+    wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
+    chmod +x ./swi_setusbcomp.pl
+fi
 
 devpath=`ls /dev | grep -E 'cdc-wdm|qcqmi'`
 
@@ -160,6 +171,8 @@ send AT!BAND?
 sleep 1
 send AT!BAND=?
 sleep 1
+send AT!PCINFO?
+sleep 1
 send AT!IMAGE?
 sleep 1
 ! pkill minicom
@@ -191,15 +204,19 @@ sleep 1
 sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 
 printf "${BLUE}---${NC}\n"
-echo 'Download and unzip SWI9X30C_02.30.01.01_Generic_002.045_000 firmware...'
-curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx
-unzip SWI9X30C_02.30.01.01_Generic_002.045_000.zip
+
 
 zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
 zipsha512expected='dad82310097c1ac66bb93da286c2e6f18b691cfea98df2756c8b044e5815087c9141325fc3e585c04f394c2a54e8d9b9bc2e5c5768cc7e0466d1321c1947cc8c'
 
-if [ "$zipsha512actual" != "$zipsha512expected" ]
-then 
+if [ "$zipsha512actual" != "$zipsha512expected" ]; then
+    echo 'Download and unzip SWI9X30C_02.30.01.01_Generic_002.045_000 firmware...'
+    curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx
+    unzip -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip
+fi
+
+zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
+if [ "$zipsha512actual" != "$zipsha512expected" ]; then 
     printf "${BLUE}---${NC}\n"
     printf "Download of ${BLUE}SWI9X30C_02.30.01.01_Generic_002.045_000.zip${NC} failed, exiting...\n"
     exit
@@ -268,10 +285,12 @@ send AT!BAND=00
 sleep 1
 send AT!IMAGE?
 sleep 1
+send AT!PCINFO?
+sleep 1
 send AT!RESET
 ! pkill minicom
 ' > script.txt
-    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+#    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
 fi
 
 #Done, restart ModemManager
