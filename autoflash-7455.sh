@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 #.USAGE
 # To start, run:
 # wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
@@ -200,11 +200,14 @@ echo 'send AT!IMAGE=0
 sleep 1
 send AT!IMAGE?
 sleep 1
-send AT!RESET
-sleep 1
 ! pkill minicom
 ' > script.txt
 sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+
+# Reset Modem
+printf "${BLUE}---${NC}\n"
+echo 'Reseting modem...'
+./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
 
 zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
 zipsha512expected='dad82310097c1ac66bb93da286c2e6f18b691cfea98df2756c8b044e5815087c9141325fc3e585c04f394c2a54e8d9b9bc2e5c5768cc7e0466d1321c1947cc8c'
