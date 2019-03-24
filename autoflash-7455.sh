@@ -83,9 +83,9 @@ yes | cpan install UUID::Tiny IPC::Shareable JSON
 # Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
 # So we'll pull the .deb files directly
 deb_minicom='minicom_2.7.1-1_amd64.deb'
-deb_libqmi_glib5='libqmi-glib5_1.20.0-1ubuntu1_amd64.deb'
-deb_libqmi_proxy='libqmi-proxy_1.20.0-1ubuntu1_amd64.deb'
-deb_libqmi_utils='libqmi-utils_1.20.0-1ubuntu1_amd64.deb'
+deb_libqmi_glib5='libqmi-glib5_1.20.0-1.1ubuntu1_amd64.deb'
+deb_libqmi_proxy='libqmi-proxy_1.20.0-1.1ubuntu1_amd64.deb'
+deb_libqmi_utils='libqmi-utils_1.20.0-1.1ubuntu1_amd64.deb'
 if [ ! -f $deb_minicom ]; then
     wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/$deb_minicom
     dpkg -i $deb_minicom
