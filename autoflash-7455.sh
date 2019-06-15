@@ -116,10 +116,23 @@ printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
 sleep 3
+
+
+read -p  'please decide if you want the modem network interface to be set to QMI (q) or MBIM (m) protocol, or press enter for default selection (MBIM)
+' answer
+
+if [ "$answer" = 'q' ]; then
+# Modem Mode Switch to usbcomp=6 (DM   NMEA  AT    QMI)
+printf "${BLUE}---${NC}\n"
+echo 'Running Modem Mode Switch to usbcomp=6 (DM   NMEA  AT    QMI)'
+./swi_setusbcomp.pl --usbcomp=6 --device="/dev/$devpath"
+else
 # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
 printf "${BLUE}---${NC}\n"
 echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
 ./swi_setusbcomp.pl --usbcomp=8 --device="/dev/$devpath"
+fi
+
 
 # Reset Modem
 printf "${BLUE}---${NC}\n"
