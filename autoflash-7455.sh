@@ -11,10 +11,13 @@
 #.DESCRIPTION
 # - Only for use on Ubuntu 18.04 LTS LiveUSB
 # - All Needed Packages will Auto-Install
-# - Sets MBIM Mode with AT Commands Access 
+# - Sets MBIM Mode with AT Commands Access
 # - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
 # - Clears Band Restrictions and Places Modem in LTE only mode.
 # - Flashes the Current Generic Firmware
+# - Sets PCOFFEN=2 to tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
+# - Sets FASTENUMEN=2 to skip bootloader on warm-boots.
+#   - This, combined with PCOFFEN enables these modems to work in the X1G6/T470 and newer laptops.
 
 #.NOTES
 # License: The Unlicense / CCZero / Public Domain
@@ -154,6 +157,10 @@ send AT!BAND=?
 sleep 1
 send AT!PCINFO?
 sleep 1
+send AT!PCOFFEN?
+sleep 1
+send AT!CUSTOM?
+sleep 1
 send AT!IMAGE?
 sleep 1
 ! pkill minicom
@@ -282,6 +289,14 @@ sleep 1
 send AT!SELRAT=06
 sleep 1
 send AT!BAND=00
+sleep 1
+send AT!CUSTOM=\"FASTENUMEN\",2
+sleep 1
+send AT!PCOFFEN=2
+sleep 1
+send AT!PCOFFEN?
+sleep 1
+send AT!CUSTOM?
 sleep 1
 send AT!IMAGE?
 sleep 1
