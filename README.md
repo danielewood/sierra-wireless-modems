@@ -82,15 +82,10 @@
 
 ---
 ### Manual Flashing Procedure (Ubuntu Linux 18.04)
-1. Install libqmi-utils version 1.20 (It is not yet in the main repositories)
-    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+1. Install libqmi-utils version 1.20+
+    + `sudo add-apt-repository universe`
+    + `sudo apt update`
+    + `apt-get install libqmi-glib5 libqmi-proxy libqmi-utils -y`
 2. Get the [latest firmware bundle](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
     + `curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx`
 3. Extract firmware CWE and NVU.
@@ -135,6 +130,22 @@
     + `AT!BAND=09`
 6. Save settings and reboot modem to apply
     + `AT!RESET`
+---
+### Bypass Lenovo Whitelist for T470/Carbon X1 G6 and other newer Lenovo laptops
+1. Enable Advanced Commands:
+    + `AT!ENTERCND="A710"`
+2. Skip bootloader mode on warm-boots.
+    + `AT!CUSTOM="FASTENUMEN",2`
+    + Prevents device from showing up until it has been fully initialized. This causes the modem to stealth bypass BIOS whitelists as it will not show up until a few seconds after the BIOS has completed its checks.
+3. Tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
+    + `AT!PCOFFEN=2`
+4. Save settings and reboot modem to apply
+    + `AT!RESET`
+
+References:
+- [Reddit - Thinkpad X1C6/T480S: Sierra Wireless EM7455/EM7565 Tweaks](https://old.reddit.com/r/thinkpad/comments/bwmt20/thinkpad_x1c6t480s_sierra_wireless_em7455em7565/)
+- [Reddit - Sierra Wireless EM7455 seems working with my Thinkpad X1C6](https://old.reddit.com/r/thinkpad/comments/a3yd2j/sierra_wireless_em7455_seems_working_with_my/)
+- [Lenovo Forums - Getting Sierra EM7455 (and similar) to work on X1C6](https://forums.lenovo.com/t5/Ubuntu/Getting-Sierra-EM7455-and-similar-to-work-on-X1C6/td-p/4326043)
 ---
 ### EM7565 ROOter Setup
 #### For GoldenOrb 2017-12-15 Release
