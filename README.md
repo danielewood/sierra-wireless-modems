@@ -7,6 +7,7 @@
   * [Create Accessible COM Port](#create-accessible-com-port)
   * [Manual Flashing Procedure (Linux)](#manual-flashing-procedure-ubuntu-linux-1804)
   * [Basic Setup](#basic-setup)
+  * [Bypass Lenovo Whitelist for T470/Carbon X1 G6 and other newer Lenovo laptops](#bypass-lenovo-whitelist-for-t470carbon-x1-g6-and-other-newer-lenovo-laptops)
   * [Change Modem Identity (Sierra Wireless / Lenovo / Dell)](#change-modem-identity-sierra-wireless--lenovo--dell)
   * [Useful Commands/Info](#useful-commandsinfo)
   * [Connectivity/Router Options](#connectivityrouter-options)
@@ -34,25 +35,13 @@
 + [All firmwares](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
 ---
 ### Which Modem to Buy
-+ For every use other than installing in a Lenovo \*70 Series.
-    + ~$60 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
-    + This model supports Bands 29 and 30, unlike the Lenovo.
++ If your Laptop has a M.2 WWAN slot, get the Dell DW5811e em7455 and [change its identity according to your needs](#change-modem-identity-sierra-wireless--lenovo--dell).
+    + ~$30 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + This model (typically) supports Bands 29 and 30, unlike the Lenovo Branded Modem.
     + When purchasing the Dell, I would recommend you get a production model. Engineering Samples will sometimes contain an early (SWI9X30C_00.08.02.00) firmware that can be a royal pain to flash due to `AT!BOOTHOLD` not being implemented.
     
     ![](https://i.imgur.com/Q9JdEIe.png)
 
-+ For use in a [ThinkPad L470, L570, P51, P51s, P70, P71, T470, T470p, T470s, T570, TP25, X270](https://support.lenovo.com/cy/en/solutions/acc100362)
-    + [~$90 EM7455 module (4XC0M95181 / 01AX746)](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0M95181%2C01AX746%29&_sacat=0&LH_BIN=1&_sop=15)
-    + This is required due to a Lenovo Firmware lock. If you get the less expensive 4XC0L59128, your T470 will not recognize it when installed in the WWAN slot.
-    + Specs: https://download.lenovo.com/pccbbs/options_iso/tp_em7455_4g_lte_4xc0m95181.pdf
-
-**Note: The above statment may no longer be correct. See [Question: which modem for Carbon X1 6gen? #15](https://github.com/danielewood/sierra-wireless-modems/issues/15#issuecomment-501580265)**
-
-    
-+ ~~For use in a [ThinkPad T460, T460s, T460p, T560, X260, X1 Carbon, L460, P50, P70](https://pcsupport.lenovo.com/cy/en/accessories/acc100290)~~
-    + ~~[~$70 EM7455 module (4XC0L59128 / 00JT542):](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0L59128%2C00JT542%2Clenovo+em7455%29&_sacat=0&LH_BIN=1&_sop=15)~~
-    + ~~Specs: https://download.lenovo.com/pccbbs/options_iso/tp_em7455_4gltem_4xc0l59128.pdf~~
-    + Do not waste your money on the Lenovo EM7455 (4XC0L59128 / 00JT542). It lacks Bands 29 and 30. If you get the Dell, you can change its identity according to my instructions and it will work in a Lenovo \*60 series. I currently have a DW5811e in my T460s.
 ---
 ### Adapters and Antennas
 ![](https://i.imgur.com/LjpCXCi.jpg)
