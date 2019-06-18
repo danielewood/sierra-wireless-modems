@@ -209,21 +209,41 @@ printf "${BLUE}---${NC}\n"
 echo 'Reseting modem...'
 ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
 
-zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
-zipsha512expected='dad82310097c1ac66bb93da286c2e6f18b691cfea98df2756c8b044e5815087c9141325fc3e585c04f394c2a54e8d9b9bc2e5c5768cc7e0466d1321c1947cc8c'
-if [ "$zipsha512actual" != "$zipsha512expected" ]; then
-    printf "${BLUE}---${NC}\n"
-    echo 'Download and unzip SWI9X30C_02.30.01.01_Generic_002.045_000 firmware...'
-    curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx
-    unzip -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip
-fi
+# Find latest 7455 firmware and download it
+SWI9X30C_ZIP=`curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | grep -iEo '7455/swi9x30c[_0-9.]+_generic_[_0-9.]+' | cut -c 6- | tail -n1`
+SWI9X30C_ZIP="$SWI9X30C_ZIP"'zip'
 
-zipsha512actual=`sha512sum SWI9X30C_02.30.01.01_Generic_002.045_000.zip |  awk '{print $1}'`
-if [ "$zipsha512actual" != "$zipsha512expected" ]; then 
+SWI9X30C_URL='https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/7455/'"$SWI9X30C_ZIP"
+
+SWI9X30C_LENGTH=`curl -sI $SWI9X30C_URL | grep -i Content-Length | grep -Eo '[0-9]+'`
+
+# If remote file size is less than 40MiB, something went wrong, exit.
+if [[ $SWI9X30C_LENGTH -lt 40000000 ]]; then
     printf "${BLUE}---${NC}\n"
-    printf "Download of ${BLUE}SWI9X30C_02.30.01.01_Generic_002.045_000.zip${NC} failed, exiting...\n"
+    printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nFile size on server is too small, something is wrong, exiting...\n"
+    printf "Attempted download URL was: $SWI9X30C_URL\n"
+    printf "curl info:\n"
+    curl -sI $SWI9X30C_URL
+    printf "${BLUE}---${NC}\n"
     exit
 fi
+
+echo "Downloading $SWI9X30C_URL"
+curl -O $SWI9X30C_URL
+
+# If download size does not match what server says, exit:
+if [ $SWI9X30C_LENGTH -ne `stat --printf="%s" $SWI9X30C_ZIP` ]; then
+    printf "${BLUE}---${NC}\n"
+    printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nDownloaded file size is inconsistent with server, exiting...\n"
+    printf "${BLUE}---${NC}\n"
+    exit
+fi
+
+# Unzip SWI9X30C, force overwrite
+unzip -o "$SWI9X30C_ZIP"
+
+SWI9X30C_CWE=`find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+\.cwe' | cut -c 3- | tail -n1`
+SWI9X30C_NVU=`find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+generic[0-9_.]+\.nvu' | cut -c 3- | tail -n1`
 
 deviceid=`lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}'`
 while [ -z $deviceid ]
@@ -236,10 +256,9 @@ done
 sudo pkill -9 cat &>/dev/null
 
 printf "${BLUE}---${NC}\n"
-# Flash SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem
-echo 'Flashing SWI9X30C_02.30.01.01_Generic_002.045_000 onto Generic Sierra Modem...'
+echo "Flashing $SWI9X30C_CWE onto Generic Sierra Modem..."
 sleep 5
-qmi-firmware-update --update -d "$deviceid" SWI9X30C_02.30.01.01.cwe SWI9X30C_02.30.01.01_GENERIC_002.045_000.nvu
+qmi-firmware-update --update -d "$deviceid" "$SWI9X30C_CWE" "$SWI9X30C_NVU"
 rc=$?
 if [[ $rc != 0 ]]
 then
