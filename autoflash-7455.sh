@@ -14,7 +14,7 @@
 # - Sets MBIM Mode with AT Commands Access 
 # - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
 # - Clears Band Restrictions and Places Modem in LTE only mode.
-# - Flashes the Current Generic Firmware as of 2018-09-14
+# - Flashes the Current Generic Firmware
 
 #.NOTES
 # License: The Unlicense / CCZero / Public Domain
@@ -24,7 +24,7 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: 20180914
+# Version: 20190618
 
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
@@ -73,35 +73,13 @@ systemctl disable ModemManager
 
 printf "${BLUE}---${NC}\n"
 echo "Installing all needed prerequisites..."
-apt-get update
+
+sudo add-apt-repository universe
+sudo apt update 
 # need make and GCC for compiling perl modules
-apt-get install make gcc curl -y
+apt-get install make gcc curl minicom libqmi-glib5 libqmi-proxy libqmi-utils -y
 # Use cpan to install/compile all dependencies needed by swi_setusbcomp.pl
 yes | cpan install UUID::Tiny IPC::Shareable JSON
-
-# apt-get will fail to download minicom/qmi-utilities on LiveCD/LiveUSB without adding repositories
-# Also, if you add security.ubuntu.com bionic main universe, you'll get an older version of libqmi (1.18)
-# So we'll pull the .deb files directly
-deb_minicom='minicom_2.7.1-1_amd64.deb'
-deb_libqmi_glib5='libqmi-glib5_1.20.0-1.1ubuntu1_amd64.deb'
-deb_libqmi_proxy='libqmi-proxy_1.20.0-1.1ubuntu1_amd64.deb'
-deb_libqmi_utils='libqmi-utils_1.20.0-1.1ubuntu1_amd64.deb'
-if [ ! -f $deb_minicom ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/universe/m/minicom/$deb_minicom
-    dpkg -i $deb_minicom
-fi
-if [ ! -f $deb_libqmi_glib5 ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/$deb_libqmi_glib5
-    dpkg -i $deb_libqmi_glib5
-fi
-if [ ! -f $deb_libqmi_proxy ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/$deb_libqmi_proxy
-    dpkg -i $deb_libqmi_proxy
-fi
-if [ ! -f $deb_libqmi_utils ]; then
-    wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/$deb_libqmi_utils
-    dpkg -i $deb_libqmi_utils
-fi
 
 # Install Modem Mode Switcher
 if [ ! -f swi_setusbcomp.pl ]; then
