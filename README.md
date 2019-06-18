@@ -7,6 +7,7 @@
   * [Create Accessible COM Port](#create-accessible-com-port)
   * [Manual Flashing Procedure (Linux)](#manual-flashing-procedure-ubuntu-linux-1804)
   * [Basic Setup](#basic-setup)
+  * [Bypass Lenovo Whitelist for T470/Carbon X1 G6 and other newer Lenovo laptops](#bypass-lenovo-whitelist-for-t470carbon-x1-g6-and-other-newer-lenovo-laptops)
   * [Change Modem Identity (Sierra Wireless / Lenovo / Dell)](#change-modem-identity-sierra-wireless--lenovo--dell)
   * [Useful Commands/Info](#useful-commandsinfo)
   * [Connectivity/Router Options](#connectivityrouter-options)
@@ -34,25 +35,13 @@
 + [All firmwares](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
 ---
 ### Which Modem to Buy
-+ For every use other than installing in a Lenovo \*70 Series.
-    + ~$60 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
-    + This model supports Bands 29 and 30, unlike the Lenovo.
++ If your Laptop has a M.2 WWAN slot, get the Dell DW5811e em7455 and [change its identity according to your needs](#change-modem-identity-sierra-wireless--lenovo--dell).
+    + ~$30 [Dell DW5811e em7455](https://www.ebay.com/sch/i.html?_from=R40&_nkw=DW5811e&_sacat=0&LH_BIN=1&_sop=15)
+    + This model (typically) supports Bands 29 and 30, unlike the Lenovo Branded Modem.
     + When purchasing the Dell, I would recommend you get a production model. Engineering Samples will sometimes contain an early (SWI9X30C_00.08.02.00) firmware that can be a royal pain to flash due to `AT!BOOTHOLD` not being implemented.
     
     ![](https://i.imgur.com/Q9JdEIe.png)
 
-+ For use in a [ThinkPad L470, L570, P51, P51s, P70, P71, T470, T470p, T470s, T570, TP25, X270](https://support.lenovo.com/cy/en/solutions/acc100362)
-    + [~$90 EM7455 module (4XC0M95181 / 01AX746)](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0M95181%2C01AX746%29&_sacat=0&LH_BIN=1&_sop=15)
-    + This is required due to a Lenovo Firmware lock. If you get the less expensive 4XC0L59128, your T470 will not recognize it when installed in the WWAN slot.
-    + Specs: https://download.lenovo.com/pccbbs/options_iso/tp_em7455_4g_lte_4xc0m95181.pdf
-
-**Note: The above statment may no longer be correct. See [Question: which modem for Carbon X1 6gen? #15](https://github.com/danielewood/sierra-wireless-modems/issues/15#issuecomment-501580265)**
-
-    
-+ ~~For use in a [ThinkPad T460, T460s, T460p, T560, X260, X1 Carbon, L460, P50, P70](https://pcsupport.lenovo.com/cy/en/accessories/acc100290)~~
-    + ~~[~$70 EM7455 module (4XC0L59128 / 00JT542):](https://www.ebay.com/sch/i.html?_from=R40&_nkw=%284XC0L59128%2C00JT542%2Clenovo+em7455%29&_sacat=0&LH_BIN=1&_sop=15)~~
-    + ~~Specs: https://download.lenovo.com/pccbbs/options_iso/tp_em7455_4gltem_4xc0l59128.pdf~~
-    + Do not waste your money on the Lenovo EM7455 (4XC0L59128 / 00JT542). It lacks Bands 29 and 30. If you get the Dell, you can change its identity according to my instructions and it will work in a Lenovo \*60 series. I currently have a DW5811e in my T460s.
 ---
 ### Adapters and Antennas
 ![](https://i.imgur.com/LjpCXCi.jpg)
@@ -82,15 +71,10 @@
 
 ---
 ### Manual Flashing Procedure (Ubuntu Linux 18.04)
-1. Install libqmi-utils version 1.20 (It is not yet in the main repositories)
-    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-glib5_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/main/libq/libqmi/libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-proxy_1.20.0-1ubuntu1_amd64.deb`
-    + `wget http://security.ubuntu.com/ubuntu/pool/universe/libq/libqmi/libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
-    + `dpkg -i libqmi-utils_1.20.0-1ubuntu1_amd64.deb`
+1. Install libqmi-utils version 1.20+
+    + `sudo add-apt-repository universe`
+    + `sudo apt update`
+    + `apt-get install libqmi-glib5 libqmi-proxy libqmi-utils -y`
 2. Get the [latest firmware bundle](#official-sierra-documentsfirmwares-may-require-free-sierra-account) from Sierra Wireless.
     + `curl -o SWI9X30C_02.30.01.01_Generic_002.045_000.zip -L https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/02_30_01_01/7455/swi9x30c_02.30.01.01_generic_002.045_000.ashx`
 3. Extract firmware CWE and NVU.
@@ -135,6 +119,22 @@
     + `AT!BAND=09`
 6. Save settings and reboot modem to apply
     + `AT!RESET`
+---
+### Bypass Lenovo Whitelist for T470/Carbon X1 G6 and other newer Lenovo laptops
+1. Enable Advanced Commands:
+    + `AT!ENTERCND="A710"`
+2. Skip bootloader mode on warm-boots.
+    + `AT!CUSTOM="FASTENUMEN",2`
+    + Prevents device from showing up until it has been fully initialized. This causes the modem to stealth bypass BIOS whitelists as it will not show up until a few seconds after the BIOS has completed its checks.
+3. Tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
+    + `AT!PCOFFEN=2`
+4. Save settings and reboot modem to apply
+    + `AT!RESET`
+
+References:
+- [Reddit - Thinkpad X1C6/T480S: Sierra Wireless EM7455/EM7565 Tweaks](https://old.reddit.com/r/thinkpad/comments/bwmt20/thinkpad_x1c6t480s_sierra_wireless_em7455em7565/)
+- [Reddit - Sierra Wireless EM7455 seems working with my Thinkpad X1C6](https://old.reddit.com/r/thinkpad/comments/a3yd2j/sierra_wireless_em7455_seems_working_with_my/)
+- [Lenovo Forums - Getting Sierra EM7455 (and similar) to work on X1C6](https://forums.lenovo.com/t5/Ubuntu/Getting-Sierra-EM7455-and-similar-to-work-on-X1C6/td-p/4326043)
 ---
 ### EM7565 ROOter Setup
 #### For GoldenOrb 2017-12-15 Release
