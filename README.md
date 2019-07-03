@@ -121,6 +121,7 @@
     + `AT!RESET`
 ---
 ### Bypass Lenovo Whitelist for T470/Carbon X1 G6 and other newer Lenovo laptops
+Note: [Use a $10 M.2 USB Adapter to flash and configure the modem](https://www.ebay.com/sch/i.html?_from=R40&_nkw=ngff+sim+usb&_sacat=0&_sop=15)
 1. Enable Advanced Commands:
     + `AT!ENTERCND="A710"`
 2. Skip bootloader mode on warm-boots.
@@ -128,7 +129,10 @@
     + Prevents device from showing up until it has been fully initialized. This causes the modem to stealth bypass BIOS whitelists as it will not show up until a few seconds after the BIOS has completed its checks.
 3. Tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
     + `AT!PCOFFEN=2`
-4. Save settings and reboot modem to apply
+4. Force USB2 mode to enable compatibility with newer M.2 interfaces
+    + `AT!AT!USBSPEED=0`
+    + The EM7455 cannot exceed USB2 interface speeds anyways, there is no performance loss.
+5. Save settings and reboot modem to apply
     + `AT!RESET`
 
 References:
