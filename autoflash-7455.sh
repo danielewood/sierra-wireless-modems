@@ -296,6 +296,10 @@ send AT!PCOFFEN=2
 sleep 1
 send AT!PCOFFEN?
 sleep 1
+send AT!USBSPEED?
+sleep 1
+send AT!USBSPEED=0
+sleep 1
 send AT!CUSTOM?
 sleep 1
 send AT!IMAGE?
