@@ -132,7 +132,7 @@ Note: [Use a $10 M.2 USB Adapter to flash and configure the modem](https://www.e
 4. Force USB2 mode to enable compatibility with newer M.2 interfaces
     + `AT!AT!USBSPEED=0`
     + The EM7455 cannot exceed USB2 interface speeds anyways, there is no performance loss.
-4. Save settings and reboot modem to apply
+5. Save settings and reboot modem to apply
     + `AT!RESET`
 
 References:
