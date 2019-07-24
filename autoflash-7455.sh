@@ -132,12 +132,12 @@ function display_variables {
     echo "SWI9X30C_CWE=$SWI9X30C_CWE"
     echo "SWI9X30C_NVU=$SWI9X30C_NVU"
     echo "AT_PRIID_STRING=$AT_PRIID_STRING"
+    echo "AT_PRIID_PN=$AT_PRIID_PN"
     echo "AT_PRIID_REV=$AT_PRIID_REV"
-    echo "AT_PRIID_VER=$AT_PRIID_VER"
 }
 
 # See if QMI desired, otherwise default to MBIM
-if [[ ${AT_USBCOMP^^} =~ QMI|6 ]]; then
+if [[ ${AT_USBCOMP^^} =~ ^QMI$|^6$ ]]; then
     echo 'Setting QMI Mode for Modem'
     echo 'Interface bitmask: 0000010D (diag,nmea,modem,rmnet0)'
     AT_USBCOMP="1,1,0000010D"
@@ -150,7 +150,7 @@ else
 fi
 
 # Check for ALL/00 bands and set correct SELRAT/BAND, otherwise default to LTE
-if [[ ${AT_SELRAT^^} =~ ALL|^0$|^00$ ]]; then
+if [[ ${AT_SELRAT^^} =~ ^ALL$|^0$|^00$ ]]; then
     AT_SELRAT='00'
     AT_BAND='00'
 else
@@ -163,13 +163,12 @@ if [[ ! $AT_FASTENUMEN =~ ^[0-3]$ ]]; then
     AT_FASTENUMEN=2
 fi
 
-
-FASTENUMEN_MODES="0 = Disable fast enumeration [Default]
-1 = Enable fast enumeration for cold boot and disable for warm boot
-2 = Enable fast enumeration for warm boot and disable for cold boot
-3 = Enable fast enumeration for warm and cold boot"
-echo '"FASTENUMEN"—Enable/disable fast enumeration for warm/cold boot.'
-echo -n 'Set mode: ' && echo "$FASTENUMEN_MODES" | grep -E "^$AT_FASTENUMEN"
+#FASTENUMEN_MODES="0 = Disable fast enumeration [Default]
+#1 = Enable fast enumeration for cold boot and disable for warm boot
+#2 = Enable fast enumeration for warm boot and disable for cold boot
+#3 = Enable fast enumeration for warm and cold boot"
+#echo '"FASTENUMEN"—Enable/disable fast enumeration for warm/cold boot.'
+#echo -n 'Set mode: ' && echo "$FASTENUMEN_MODES" | grep -E "^$AT_FASTENUMEN"
 
 # Check desired USB interface mode, otherwise default to 0 (USB 2.0)
 if [[ ${AT_USBSPEED^^} =~ SUPER|USB3|1 ]]; then
@@ -371,7 +370,7 @@ send AT!USBPID=9071,9070
 sleep 1
 send AT!USBPRODUCT=\"EM7455\"
 sleep 1
-send AT!PRIID=\"$AT_PRIID_REV\",\"$AT_PRIID_VER\",\"Generic-Laptop\"
+send AT!PRIID=\"$AT_PRIID_PN\",\"$AT_PRIID_REV\",\"Generic-Laptop\"
 sleep 1
 send AT!SELRAT=$AT_SELRAT
 sleep 1
@@ -499,8 +498,8 @@ SWI9X30C_CWE=$(find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+\.cwe' | cut 
 SWI9X30C_NVU=$(find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+generic[0-9_.]+\.nvu' | cut -c 3- | tail -n1)
 
 AT_PRIID_STRING=$(strings "$SWI9X30C_NVU" | grep '^9999999_.*_SWI9X30C_' | sort -u | head -1)
-AT_PRIID_REV="$(echo $AT_PRIID_STRING | awk -F'_' '{print $2}')"
-AT_PRIID_VER="$(echo $AT_PRIID_STRING | grep -Eo '[0-9]{3}\.[0-9]{3}')"
+AT_PRIID_PN="$(echo $AT_PRIID_STRING | awk -F'_' '{print $2}')"
+AT_PRIID_REV="$(echo $AT_PRIID_STRING | grep -Eo '[0-9]{3}\.[0-9]{3}')"
 
 [[ $flash_modem_firmware_trigger ]] && flash_modem_firmware
 [[ $set_modem_settings_trigger ]] && set_modem_settings
