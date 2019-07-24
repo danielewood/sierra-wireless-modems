@@ -14,7 +14,7 @@ mullvad_account='1940127723058875'
 
 
 # Begin Script
-if [ `opkg list-installed | grep ca-bundle | wc -l` -lt 1 ]; then
+if [ $(opkg list-installed | grep ca-bundle | wc -l) -lt 1 ]; then
     opkg update && opkg install curl ca-bundle
 fi
 #exit 0
@@ -30,15 +30,15 @@ uci commit
 /etc/init.d/network reload
 echo "nameserver 8.8.8.8" >> /etc/resolv.conf
 
-local_private_key=`wg genkey`
-local_public_key=`echo $local_private_key | wg pubkey`
-mullvad_addresses=`curl https://api.mullvad.net/wg/ -d account="$mullvad_account"  --data-urlencode pubkey="$local_public_key"`
-local_ipv4_address="`echo $mullvad_addresses | awk -F',' '{print $1}'`"
-local_ipv6_address="`echo $mullvad_addresses | awk -F',' '{print $2}'`"
+local_private_key=$(wg genkey)
+local_public_key=$(echo $local_private_key | wg pubkey)
+mullvad_addresses=$(curl https://api.mullvad.net/wg/ -d account="$mullvad_account"  --data-urlencode pubkey="$local_public_key")
+local_ipv4_address="$(echo $mullvad_addresses | awk -F',' '{print $1}')"
+local_ipv6_address="$(echo $mullvad_addresses | awk -F',' '{print $2}')"
 
 
-mullvad_vpn_servers=`curl https://www.mullvad.net/en/servers/#wireguard | grep -E '\-wireguard<|\=<' | awk -F'[><]' '{print $3}'`
-endpoint_public_key=`echo "$mullvad_vpn_servers" | sed -n "/$endpoint_host/{n;p;}"`
+mullvad_vpn_servers=$(curl https://www.mullvad.net/en/servers/#wireguard | grep -E '\-wireguard<|\=<' | awk -F'[><]' '{print $3}')
+endpoint_public_key=$(echo "$mullvad_vpn_servers" | sed -n "/$endpoint_host/{n;p;}")
 
 
 endpoint_allowed_ips='0.0.0.0/0'
