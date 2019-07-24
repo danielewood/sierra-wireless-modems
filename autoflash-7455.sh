@@ -98,6 +98,26 @@ do
   esac
 done
 
+##################
+### Pre-Checks ###
+##################
+
+if [ "$EUID" -ne 0 ]
+    then echo "Please run with sudo"
+    exit
+fi
+
+lsbrelease=$(lsb_release -c | awk '{print $2}')
+if [ "$lsbrelease" != "bionic" ]
+    then echo "Please run on Ubuntu 18.04 LTS"
+    lsb_release -a
+    exit
+fi
+
+#################
+### Functions ###
+#################
+
 # If no options are set, use defaults of -Mgcdfs
 if [[ -z $get_modem_settings_trigger && -z $clear_modem_firmware_trigger \
     && -z $download_modem_firmware_trigger && -z $flash_modem_firmware_trigger \
@@ -176,23 +196,6 @@ function set_options() {
     fi
 }
 
-
-### Pre-Checks
-
-if [ "$EUID" -ne 0 ]
-    then echo "Please run with sudo"
-    exit
-fi
-
-lsbrelease=$(lsb_release -c | awk '{print $2}')
-if [ "$lsbrelease" != "bionic" ]
-    then echo "Please run on Ubuntu 18.04 LTS"
-    lsb_release -a
-    exit
-fi
-
-
-### Functions 
 function get_modem_deviceid() {
     deviceid=''
     while [ -z $deviceid ]
