@@ -1,4 +1,6 @@
 #!/bin/bash
+# shellcheck disable=SC2059
+#
 #.USAGE
 # To start, run:
 # wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
@@ -31,7 +33,7 @@
 
 
 #echo "Starting sctipt $0"
-display_usage() {
+function display_usage() {
   echo
   echo "Usage: $0"
   echo
@@ -69,16 +71,12 @@ display_usage() {
   exit 0
 }
 
-raise_error() {
-  local error_message="$@"
-  echo "${error_message}" 1>&2;
-}
-
 while getopts hu:m:b:e:Mgcdfsalqv option
 do
  case "${option}"
  in
- h) display_usage;;
+ h) display_usage
+      exit 0;;
  u) AT_USBSPEED=${OPTARG};;
  m) AT_USBCOMP=${OPTARG};;
  b) AT_SELRAT=${OPTARG};;
@@ -93,10 +91,9 @@ do
  l) SWI9X30C_ZIP='SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip';;
  q) quiet_trigger=1;;
  v) verbose_trigger=1;;
- #*) echo "usage: $0 [-v] [-r]" >&2
- #     exit 1 ;;
- *) raise_error "invalid input: ${OPTARG}";;
- esac
+ *) display_usage>&2
+      exit 1;;
+  esac
 done
 
 if [[ -z $get_modem_settings_trigger && -z $clear_modem_firmware_trigger && -z $download_modem_firmware_trigger && -z $flash_modem_firmware_trigger && -z $set_modem_settings_trigger && -z $set_swi_setusbcomp_trigger ]]; then
@@ -117,7 +114,7 @@ fi
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-function display_variables {
+function display_variables() {
     echo "AT_USBSPEED=$AT_USBSPEED"
     echo "AT_USBCOMP=$AT_USBCOMP"
     echo "AT_SELRAT=$AT_SELRAT"
@@ -136,46 +133,48 @@ function display_variables {
     echo "AT_PRIID_REV=$AT_PRIID_REV"
 }
 
-# See if QMI desired, otherwise default to MBIM
-if [[ ${AT_USBCOMP^^} =~ ^QMI$|^6$ ]]; then
-    echo 'Setting QMI Mode for Modem'
-    echo 'Interface bitmask: 0000010D (diag,nmea,modem,rmnet0)'
-    AT_USBCOMP="1,1,0000010D"
-    swi_usbcomp='6'
-else
-    echo 'Setting MBIM Mode for Modem'
-    echo 'Interface bitmask: 0000100D (diag,nmea,modem,mbim)'
-    AT_USBCOMP="1,1,0000100D"
-    swi_usbcomp='8'
-fi
+function set_options() {
+    # See if QMI desired, otherwise default to MBIM
+    if [[ ${AT_USBCOMP^^} =~ ^QMI$|^6$ ]]; then
+        echo 'Setting QMI Mode for Modem'
+        echo 'Interface bitmask: 0000010D (diag,nmea,modem,rmnet0)'
+        AT_USBCOMP="1,1,0000010D"
+        swi_usbcomp='6'
+    else
+        echo 'Setting MBIM Mode for Modem'
+        echo 'Interface bitmask: 0000100D (diag,nmea,modem,mbim)'
+        AT_USBCOMP="1,1,0000100D"
+        swi_usbcomp='8'
+    fi
 
-# Check for ALL/00 bands and set correct SELRAT/BAND, otherwise default to LTE
-if [[ ${AT_SELRAT^^} =~ ^ALL$|^0$|^00$ ]]; then
-    AT_SELRAT='00'
-    AT_BAND='00'
-else
-    AT_SELRAT='06'
-    AT_BAND='09'
-fi
+    # Check for ALL/00 bands and set correct SELRAT/BAND, otherwise default to LTE
+    if [[ ${AT_SELRAT^^} =~ ^ALL$|^0$|^00$ ]]; then
+        AT_SELRAT='00'
+        AT_BAND='00'
+    else
+        AT_SELRAT='06'
+        AT_BAND='09'
+    fi
 
-# Check if valid FASTENUMEN mode, otherwise default to 2
-if [[ ! $AT_FASTENUMEN =~ ^[0-3]$ ]]; then
-    AT_FASTENUMEN=2
-fi
+    # Check if valid FASTENUMEN mode, otherwise default to 2
+    if [[ ! $AT_FASTENUMEN =~ ^[0-3]$ ]]; then
+        AT_FASTENUMEN=2
+    fi
 
-#FASTENUMEN_MODES="0 = Disable fast enumeration [Default]
-#1 = Enable fast enumeration for cold boot and disable for warm boot
-#2 = Enable fast enumeration for warm boot and disable for cold boot
-#3 = Enable fast enumeration for warm and cold boot"
-#echo '"FASTENUMEN"—Enable/disable fast enumeration for warm/cold boot.'
-#echo -n 'Set mode: ' && echo "$FASTENUMEN_MODES" | grep -E "^$AT_FASTENUMEN"
+    #FASTENUMEN_MODES="0 = Disable fast enumeration [Default]
+    #1 = Enable fast enumeration for cold boot and disable for warm boot
+    #2 = Enable fast enumeration for warm boot and disable for cold boot
+    #3 = Enable fast enumeration for warm and cold boot"
+    #echo '"FASTENUMEN"—Enable/disable fast enumeration for warm/cold boot.'
+    #echo -n 'Set mode: ' && echo "$FASTENUMEN_MODES" | grep -E "^$AT_FASTENUMEN"
 
-# Check desired USB interface mode, otherwise default to 0 (USB 2.0)
-if [[ ${AT_USBSPEED^^} =~ SUPER|USB3|1 ]]; then
-    AT_USBSPEED=1
-else
-    AT_USBSPEED=0
-fi
+    # Check desired USB interface mode, otherwise default to 0 (USB 2.0)
+    if [[ ${AT_USBSPEED^^} =~ SUPER|USB3|1 ]]; then
+        AT_USBSPEED=1
+    else
+        AT_USBSPEED=0
+    fi
+}
 
 
 ### Pre-Checks
@@ -194,7 +193,7 @@ fi
 
 
 ### Functions 
-function get_modem_deviceid {
+function get_modem_deviceid() {
     deviceid=''
     while [ -z $deviceid ]
     do
@@ -203,21 +202,20 @@ function get_modem_deviceid {
         deviceid=$(lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | awk '{print $6}')
     done
     sleep 3
-    ttyUSB=$(dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep ttyUSB | sed 's/.*attached\ to\ //' | tail -1)
-    devpath=$(ls /dev | grep -E 'cdc-wdm|qcqmi')
+    ttyUSB=$(dmesg | grep '.3: Qualcomm USB modem converter detected' -A1 | grep -Eo 'ttyUSB[0-9]$' | tail -1)
+    devpath=$(find /dev -maxdepth 1 -regex '/dev/cdc-wdm[0-9]' -o -regex '/dev/qcqmi[0-9]')
 }
 
 function reset_modem {
     # Reset Modem
     printf "${BLUE}---${NC}\n"
     echo 'Reseting modem...'
-    ./swi_setusbcomp.pl --usbreset --device="/dev/$devpath" &>/dev/null
-
+    ./swi_setusbcomp.pl --usbreset --device="$devpath" &>/dev/null
 }
 
-function get_modem_settings {
+function get_modem_settings() {
     # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-    sudo cat /dev/$ttyUSB 2>&1 | tee -a modem.log &  
+    sudo cat /dev/"$ttyUSB" 2>&1 | tee -a modem.log &  
 
     # Display current modem settings
     printf "${BLUE}---${NC}\n"
@@ -267,12 +265,12 @@ sleep 1
 sleep 1
 ! pkill minicom
 ' > script.txt
-    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+    sudo minicom -b 115200 -D /dev/"$ttyUSB" -S script.txt &>/dev/null
 }
 
-function clear_modem_firmware {
+function clear_modem_firmware() {
     # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-    sudo cat /dev/$ttyUSB 2>&1 | tee -a modem.log &  
+    sudo cat /dev/"$ttyUSB" 2>&1 | tee -a modem.log &  
     # Clear Previous PRI/FW Entries
     echo 'send AT
 send AT!IMAGE=0
@@ -283,10 +281,10 @@ sleep 1
 sleep 1
 ! pkill minicom
 ' > script.txt
-    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+    sudo minicom -b 115200 -D /dev/"$ttyUSB" -S script.txt &>/dev/null
 }
 
-function download_modem_firmware {
+function download_modem_firmware() {
     # Find latest 7455 firmware and download it
     if [[ -z $SWI9X30C_ZIP ]]; then
         SWI9X30C_ZIP=$(curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | grep -iEo '7455/swi9x30c[_0-9.]+_generic_[_0-9.]+' | cut -c 6- | tail -n1)
@@ -294,7 +292,7 @@ function download_modem_firmware {
     fi
     SWI9X30C_URL='https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/7455/'"$SWI9X30C_ZIP"
 
-    SWI9X30C_LENGTH=$(curl -sI $SWI9X30C_URL | grep -i Content-Length | grep -Eo '[0-9]+')
+    SWI9X30C_LENGTH=$(curl -sI "$SWI9X30C_URL" | grep -i Content-Length | grep -Eo '[0-9]+')
 
     # If remote file size is less than 40MiB, something went wrong, exit.
     if [[ $SWI9X30C_LENGTH -lt 40000000 ]]; then
@@ -302,20 +300,20 @@ function download_modem_firmware {
         printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nFile size on server is too small, something is wrong, exiting...\n"
         printf "Attempted download URL was: $SWI9X30C_URL\n"
         printf "curl info:\n"
-        curl -sI $SWI9X30C_URL
+        curl -sI "$SWI9X30C_URL"
         printf "${BLUE}---${NC}\n"
         exit
     fi
 
-    if [[ $SWI9X30C_LENGTH -eq $(stat --printf="%s" $SWI9X30C_ZIP 2>/dev/null) ]]; then
+    if [[ $SWI9X30C_LENGTH -eq $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
         echo "Already downloaded $SWI9X30C_ZIP..."
     else
         echo "Downloading $SWI9X30C_URL"
-        curl -o $SWI9X30C_ZIP $SWI9X30C_URL
+        curl -o "$SWI9X30C_ZIP" "$SWI9X30C_URL"
     fi
 
     # If download size does not match what server says, exit:
-    if [[ $SWI9X30C_LENGTH -ne $(stat --printf="%s" $SWI9X30C_ZIP 2>/dev/null) ]]; then
+    if [[ $SWI9X30C_LENGTH -ne $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
         printf "${BLUE}---${NC}\n"
         printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nDownloaded file size is inconsistent with server, exiting...\n"
         printf "${BLUE}---${NC}\n"
@@ -323,14 +321,14 @@ function download_modem_firmware {
     fi
 
     # Cleanup old CWE/NVUs
-    rm -f *.cwe *.nvu 2>/dev/null
+    rm -f ./*.cwe ./*.nvu 2>/dev/null
     
     # Unzip SWI9X30C, force overwrite
     unzip -o "$SWI9X30C_ZIP"
 }
 
-function flash_modem_firmware {
-    #Kill cat processes used for monitoring status, if it hasnt already exited
+function flash_modem_firmware() {
+    # Kill cat processes used for monitoring status, if it hasnt already exited
     sudo pkill -9 cat &>/dev/null
 
     printf "${BLUE}---${NC}\n"
@@ -345,9 +343,9 @@ function flash_modem_firmware {
     fi
 }
 
-function set_modem_settings {
+function set_modem_settings() {
     # cat the serial port to monitor output and commands. cat will exit when AT!RESET kicks off.
-    sudo cat /dev/$ttyUSB 2>1 | tee -a modem.log &  
+    sudo cat /dev/"$ttyUSB" 2>&1 | tee -a modem.log &  
 
     # Set Generic Sierra Wireless VIDs/PIDs
     cat <<EOF > script.txt
@@ -397,19 +395,19 @@ sleep 1
 send AT!RESET
 ! pkill minicom
 EOF
-    sudo minicom -b 115200 -D /dev/$ttyUSB -S script.txt &>/dev/null
+    sudo minicom -b 115200 -D /dev/"$ttyUSB" -S script.txt &>/dev/null
 }
 
-function script_prechecks {
+function script_prechecks() {
     printf "${BLUE}---${NC}\n"
     echo 'Searching for EM7455/MC7455 USB modems...'
-    modemcount=$(lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | wc -l)
-    while [ $modemcount -eq 0 ]
+    modemcount=$(lsusb | grep -c -i -E '1199:9071|1199:9079|413C:81B6')
+    while [ "$modemcount" -eq 0 ]
     do
         printf "${BLUE}---${NC}\n"
         echo "Could not find any EM7455/MC7455 USB modems"
         echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
-        modemcount=$(lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6' | wc -l)
+        modemcount=$(lsusb | grep -c -i -E '1199:9071|1199:9079|413C:81B6')
         sleep 3
     done
 
@@ -418,7 +416,7 @@ function script_prechecks {
     $(lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6')
     "
 
-    if [ $modemcount -gt 1 ]
+    if [ "$modemcount" -gt 1 ]
     then 
         printf "${BLUE}---${NC}\n"
         echo "Found more than one EM7455/MC7455, remove the one you dont want to flash and try again."
@@ -439,26 +437,27 @@ function script_prechecks {
     apt-get install make gcc curl minicom libqmi-glib5 libqmi-proxy libqmi-utils -y
     # Use cpan to install/compile all dependencies needed by swi_setusbcomp.pl
     yes | cpan install UUID::Tiny IPC::Shareable JSON
-    reset_modem
-}
 
-
-function set_swi_setusbcomp {
     # Install Modem Mode Switcher
     if [ ! -f swi_setusbcomp.pl ]; then
         wget https://git.mork.no/wwan.git/plain/scripts/swi_setusbcomp.pl
     fi
     chmod +x ./swi_setusbcomp.pl
-    
-    # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
-    printf "${BLUE}---${NC}\n"
-    echo 'Running Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)'
-    ./swi_setusbcomp.pl --usbcomp=$swi_usbcomp --device="/dev/$devpath"
+
     reset_modem
 }
 
 
-function script_cleanup {
+function set_swi_setusbcomp() {
+    # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
+    printf "${BLUE}---${NC}\n"
+    echo "Running Modem Mode Switch to usbcomp=$swi_usbcomp"
+    ./swi_setusbcomp.pl --usbcomp=$swi_usbcomp --device="$devpath"
+    reset_modem
+}
+
+
+function script_cleanup() {
     # Restart ModemManager
     systemctl enable ModemManager &>/dev/null
     systemctl start ModemManager &>/dev/null
@@ -476,8 +475,9 @@ else
     script_prechecks
 fi
 
-devpath=$(ls /dev | grep -E 'cdc-wdm|qcqmi')
+set_options
 
+devpath=$(find /dev -maxdepth 1 -regex '/dev/cdc-wdm[0-9]' -o -regex '/dev/qcqmi[0-9]')
 
 if [[ $set_swi_setusbcomp_trigger ]]; then
     set_swi_setusbcomp
@@ -494,12 +494,12 @@ fi
 
 [[ $download_modem_firmware_trigger ]] && download_modem_firmware
 
-SWI9X30C_CWE=$(find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+\.cwe' | cut -c 3- | tail -n1)
-SWI9X30C_NVU=$(find -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+generic[0-9_.]+\.nvu' | cut -c 3- | tail -n1)
+SWI9X30C_CWE=$(find . -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+\.cwe' | cut -c 3- | tail -n1)
+SWI9X30C_NVU=$(find . -maxdepth 1 -type f -iregex '.*SWI9X30C[0-9_.]+generic[0-9_.]+\.nvu' | cut -c 3- | tail -n1)
 
 AT_PRIID_STRING=$(strings "$SWI9X30C_NVU" | grep '^9999999_.*_SWI9X30C_' | sort -u | head -1)
-AT_PRIID_PN="$(echo $AT_PRIID_STRING | awk -F'_' '{print $2}')"
-AT_PRIID_REV="$(echo $AT_PRIID_STRING | grep -Eo '[0-9]{3}\.[0-9]{3}')"
+AT_PRIID_PN="$(echo "$AT_PRIID_STRING" | awk -F'_' '{print $2}')"
+AT_PRIID_REV="$(echo "$AT_PRIID_STRING" | grep -Eo '[0-9]{3}\.[0-9]{3}')"
 
 [[ $flash_modem_firmware_trigger ]] && flash_modem_firmware
 [[ $set_modem_settings_trigger ]] && set_modem_settings
