@@ -31,8 +31,10 @@
 #.VERSION
 # Version: master
 
+### Variables
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-#echo "Starting sctipt $0"
 function display_usage() {
   echo
   echo "Usage: $0"
@@ -66,7 +68,7 @@ function display_usage() {
   echo " -l    Legacy Stable Firmware"
   echo '         Set SWI9X30C_ZIP="SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip"'
   echo " -q    Quiet Mode -- suppress most output"
-  echo " -v    Legacy Stable Firmware"
+  echo " -v    Verbose/Debug Mode"
   echo
   exit 0
 }
@@ -96,8 +98,11 @@ do
   esac
 done
 
-if [[ -z $get_modem_settings_trigger && -z $clear_modem_firmware_trigger && -z $download_modem_firmware_trigger && -z $flash_modem_firmware_trigger && -z $set_modem_settings_trigger && -z $set_swi_setusbcomp_trigger ]]; then
-  all_functions_trigger=1
+# If no options are set, use defaults of -Mgcdfs
+if [[ -z $get_modem_settings_trigger && -z $clear_modem_firmware_trigger \
+    && -z $download_modem_firmware_trigger && -z $flash_modem_firmware_trigger \
+    && -z $set_modem_settings_trigger && -z $set_swi_setusbcomp_trigger ]]; then
+        all_functions_trigger=1
 fi
 
 if [[ all_functions_trigger -eq 1 ]]; then
@@ -108,11 +113,6 @@ if [[ all_functions_trigger -eq 1 ]]; then
   set_modem_settings_trigger=1
   set_swi_setusbcomp_trigger=1
 fi
-
-
-### Variables
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
 
 function display_variables() {
     echo "AT_USBSPEED=$AT_USBSPEED"
@@ -447,7 +447,6 @@ function script_prechecks() {
     reset_modem
 }
 
-
 function set_swi_setusbcomp() {
     # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
     printf "${BLUE}---${NC}\n"
@@ -455,7 +454,6 @@ function set_swi_setusbcomp() {
     ./swi_setusbcomp.pl --usbcomp=$swi_usbcomp --device="$devpath"
     reset_modem
 }
-
 
 function script_cleanup() {
     # Restart ModemManager
@@ -468,7 +466,10 @@ function script_cleanup() {
     sudo pkill -9 cat &>/dev/null
 }
 
-### Script Execution
+########################
+### Script Execution ###
+########################
+
 if [[ $quiet_trigger ]]; then
     script_prechecks &>/dev/null
 else
@@ -506,3 +507,5 @@ AT_PRIID_REV="$(echo "$AT_PRIID_STRING" | grep -Eo '[0-9]{3}\.[0-9]{3}')"
 [[ $verbose_trigger ]] && display_variables
 
 script_cleanup
+
+# Done
