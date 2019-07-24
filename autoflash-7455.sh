@@ -6,12 +6,12 @@
 # wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
 #.SYNOPSIS
-# - Only for use on Ubuntu 18.04 LTS LiveUSB
+# - Only for use on Ubuntu 18 (Bionic) LiveUSB
 # - Changes all models of EM7455/MC7455 Modems to the Generic Sierra Wireless VID/PID
-# - Flashes the Current Generic Firmware as of 2018-09-14
+# - Flashes the Current Generic Firmware
 
 #.DESCRIPTION
-# - Only for use on Ubuntu 18.04 LTS LiveUSB
+# - Only for use on Ubuntu 18 (Bionic) LiveUSB
 # - All Needed Packages will Auto-Install
 # - Sets MBIM Mode with AT Commands Access
 # - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
@@ -29,47 +29,65 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: master
+# Version: 20190724
 
-### Variables
-BLUE='\033[0;34m'
+##################
+### Pre-Checks ###
+##################
+
+if [ "$EUID" -ne 0 ]
+    then echo "Please run with sudo"
+    exit
+fi
+
+lsbrelease=$(lsb_release -c | awk '{print $2}')
+if [ "$lsbrelease" != "bionic" ]
+    then echo "Please run on Ubuntu 18 (Bionic)"
+    lsb_release -a
+    exit
+fi
+
+#########################
+### Variables & Input ###
+#########################
+
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 function display_usage() {
-  echo
-  echo "Usage: $0"
-  echo
-  echo "Modem Modes"
-  echo " -h    Display usage instructions"
-  echo " -u    Set AT!USBSPEED"
-  echo "         0 - High Speed USB 2 [Default]"
-  echo "         1 - SuperSpeed USB 3"
-  echo " -m    Set AT!USBCOMP"
-  echo "         8 - MBIM mode (diag,nmea,modem,mbim) [Default]"
-  echo "         6 - QMI mode (diag,nmea,modem,rmnet0)"
-  echo " -b    Set AT!SELRAT and AT!BAND"
-  echo "         9 - LTE Only [Default]"  
-  echo "         0 - All Bands"  
-  echo " -e    Set AT!FASTENUMEN"
-  echo "         0 - Disable fast enumeration"
-  echo "         1 - Enable fast enumeration for cold boot and disable for warm boot"
-  echo "         2 - Enable fast enumeration for warm boot and disable for cold boot [Default]"
-  echo "         3 - Enable fast enumeration for warm and cold boot"
-  echo
-  echo "Script Modes:"
-  echo " -a    Enable All Script Functions [Default]"
-  echo "         Same as: $0 -Mgcdfs"
-  echo " -M    Use swi_setusbcomp.pl to set modem composition"
-  echo " -g    Display Modem Settings"
-  echo " -c    Clear Existing Modem Firmwares"
-  echo " -d    Download Modem Firmware"
-  echo " -f    Flash Modem Firmware"
-  echo " -s    Change Modem Settings/Modes"
-  echo " -l    Legacy Stable Firmware"
-  echo '         Set SWI9X30C_ZIP="SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip"'
-  echo " -q    Quiet Mode -- suppress most output"
-  echo " -v    Verbose/Debug Mode"
-  echo
+  printf "${CYAN}Usage:${NC} $0\n"
+  printf "\n"
+  printf "${CYAN}Modem Modes:${NC}\n"
+  printf " -h    Display usage instructions\n"
+  printf " -u    Set AT!USBSPEED\n"
+  printf "         0 - High Speed USB 2 ${CYAN}[Default]${NC}\n"
+  printf "         1 - SuperSpeed USB 3\n"
+  printf " -m    Set AT!USBCOMP\n"
+  printf "         8 - MBIM mode (diag,nmea,modem,mbim) ${CYAN}[Default]${NC}\n"
+  printf "         6 - QMI mode (diag,nmea,modem,rmnet0)\n"
+  printf " -b    Set AT!SELRAT and AT!BAND\n"
+  printf "         9 - LTE Only ${CYAN}[Default]${NC}\n"
+  printf "         0 - All Bands\n"  
+  printf " -e    Set AT!FASTENUMEN\n"
+  printf "         0 - Disable fast enumeration\n"
+  printf "         1 - Enable fast enumeration for cold boot and disable for warm boot\n"
+  printf "         2 - Enable fast enumeration for warm boot and disable for cold boot ${CYAN}[Default]${NC}\n"
+  printf "         3 - Enable fast enumeration for warm and cold boot\n"
+  printf "\n"
+  printf "${CYAN}Script Modes:${NC}\n"
+  printf " -a    Enable All Script Functions ${CYAN}[Default]${NC}\n"
+  printf "         Same as: $0 -Mgcdfs\n"
+  printf " -M    Use swi_setusbcomp.pl to set modem composition\n"
+  printf " -g    Display Modem Settings\n"
+  printf " -c    Clear Existing Modem Firmwares\n"
+  printf " -d    Download and Unpack Modem Firmware from Sierra Wireless\n"
+  printf " -f    Flash Modem Firmware\n"
+  printf " -s    Change Modem Settings/Modes\n"
+  printf " -l    Legacy Stable Firmware\n"
+  printf "         Set SWI9X30C_ZIP=\"SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip\"\n"
+  printf " -q    Quiet Mode -- suppress most output\n"
+  printf " -v    Verbose/Debug Mode\n"
+  printf "\n"
   exit 0
 }
 
@@ -98,21 +116,6 @@ do
   esac
 done
 
-##################
-### Pre-Checks ###
-##################
-
-if [ "$EUID" -ne 0 ]
-    then echo "Please run with sudo"
-    exit
-fi
-
-lsbrelease=$(lsb_release -c | awk '{print $2}')
-if [ "$lsbrelease" != "bionic" ]
-    then echo "Please run on Ubuntu 18.04 LTS"
-    lsb_release -a
-    exit
-fi
 
 #################
 ### Functions ###
@@ -211,7 +214,7 @@ function get_modem_deviceid() {
 
 function reset_modem {
     # Reset Modem
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo 'Reseting modem...'
     ./swi_setusbcomp.pl --usbreset --device="$devpath" &>/dev/null
 }
@@ -221,7 +224,7 @@ function get_modem_settings() {
     sudo cat /dev/"$ttyUSB" 2>&1 | tee -a modem.log &  
 
     # Display current modem settings
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo 'Current modem settings:'
     echo 'send AT
 send ATE1
@@ -299,12 +302,12 @@ function download_modem_firmware() {
 
     # If remote file size is less than 40MiB, something went wrong, exit.
     if [[ $SWI9X30C_LENGTH -lt 40000000 ]]; then
-        printf "${BLUE}---${NC}\n"
-        printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nFile size on server is too small, something is wrong, exiting...\n"
+        printf "${CYAN}---${NC}\n"
+        printf "Download of ${CYAN}$SWI9X30C_ZIP${NC} failed.\nFile size on server is too small, something is wrong, exiting...\n"
         printf "Attempted download URL was: $SWI9X30C_URL\n"
         printf "curl info:\n"
         curl -sI "$SWI9X30C_URL"
-        printf "${BLUE}---${NC}\n"
+        printf "${CYAN}---${NC}\n"
         exit
     fi
 
@@ -317,9 +320,9 @@ function download_modem_firmware() {
 
     # If download size does not match what server says, exit:
     if [[ $SWI9X30C_LENGTH -ne $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
-        printf "${BLUE}---${NC}\n"
-        printf "Download of ${BLUE}$SWI9X30C_ZIP${NC} failed.\nDownloaded file size is inconsistent with server, exiting...\n"
-        printf "${BLUE}---${NC}\n"
+        printf "${CYAN}---${NC}\n"
+        printf "Download of ${CYAN}$SWI9X30C_ZIP${NC} failed.\nDownloaded file size is inconsistent with server, exiting...\n"
+        printf "${CYAN}---${NC}\n"
         exit
     fi
 
@@ -334,7 +337,7 @@ function flash_modem_firmware() {
     # Kill cat processes used for monitoring status, if it hasnt already exited
     sudo pkill -9 cat &>/dev/null
 
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo "Flashing $SWI9X30C_CWE onto Generic Sierra Modem..."
     sleep 5
     qmi-firmware-update --update -d "$deviceid" "$SWI9X30C_CWE" "$SWI9X30C_NVU"
@@ -402,37 +405,37 @@ EOF
 }
 
 function script_prechecks() {
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo 'Searching for EM7455/MC7455 USB modems...'
     modemcount=$(lsusb | grep -c -i -E '1199:9071|1199:9079|413C:81B6')
     while [ "$modemcount" -eq 0 ]
     do
-        printf "${BLUE}---${NC}\n"
+        printf "${CYAN}---${NC}\n"
         echo "Could not find any EM7455/MC7455 USB modems"
         echo 'Unplug and reinsert the EM7455/MC7455 USB connector...'
         modemcount=$(lsusb | grep -c -i -E '1199:9071|1199:9079|413C:81B6')
         sleep 3
     done
 
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo "Found EM7455/MC7455: 
     $(lsusb | grep -i -E '1199:9071|1199:9079|413C:81B6')
     "
 
     if [ "$modemcount" -gt 1 ]
     then 
-        printf "${BLUE}---${NC}\n"
+        printf "${CYAN}---${NC}\n"
         echo "Found more than one EM7455/MC7455, remove the one you dont want to flash and try again."
         exit
     fi
 
     # Stop modem manager to prevent AT command spam and allow firmware-update
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo 'Stoping modem manager to prevent AT command spam and allow firmware-update, this may take a minute...'
     systemctl stop ModemManager
     systemctl disable ModemManager
 
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo "Installing all needed prerequisites..."
     add-apt-repository universe 1>/dev/null
     apt update -y
@@ -452,7 +455,7 @@ function script_prechecks() {
 
 function set_swi_setusbcomp() {
     # Modem Mode Switch to usbcomp=8 (DM   NMEA  AT    MBIM)
-    printf "${BLUE}---${NC}\n"
+    printf "${CYAN}---${NC}\n"
     echo "Running Modem Mode Switch to usbcomp=$swi_usbcomp"
     ./swi_setusbcomp.pl --usbcomp=$swi_usbcomp --device="$devpath"
     reset_modem
