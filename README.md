@@ -1,3 +1,5 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/danielewood/sierra-wireless-modems/badge/master)](https://www.codefactor.io/repository/github/danielewood/sierra-wireless-modems/overview/master)
+
 ## EM7565/EM7455/MC7455 - Modem Configuration
 ### Index
   * [Modem Performance/Specifications](#modem-performancespecifications)
