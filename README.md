@@ -126,7 +126,7 @@
 Note: [Use a $10 M.2 USB Adapter to flash and configure the modem](https://www.ebay.com/sch/i.html?_from=R40&_nkw=ngff+sim+usb&_sacat=0&_sop=15)
 1. Enable Advanced Commands:
     + `AT!ENTERCND="A710"`
-2. Skip bootloader mode on warm-boots.
+2. Do not skip full initialization on cold boots.
     + `AT!CUSTOM="FASTENUMEN",2`
     + Prevents device from showing up until it has been fully initialized. This causes the modem to stealth bypass BIOS whitelists as it will not show up until a few seconds after the BIOS has completed its checks.
 3. Tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
