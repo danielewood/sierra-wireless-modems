@@ -3,7 +3,7 @@
 #
 #.USAGE
 # To start, run:
-# wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
+# wget wget https://github.com/da6driver/sierra-wireless-modems/blob/patch-1/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
 #.SYNOPSIS
 # - Only for use on Ubuntu 18 (Bionic) LiveUSB
