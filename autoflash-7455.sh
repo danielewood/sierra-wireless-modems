@@ -1,39 +1,4 @@
-#!/bin/bash
-# shellcheck disable=SC2059
-#
-#.USAGE
-# To start, run:
-# wget wget https://github.com/da6driver/sierra-wireless-modems/blob/patch-1/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
-#.SYNOPSIS
-# - Only for use on Ubuntu 18 (Bionic) LiveUSB
-# - Changes all models of EM7455/MC7455 Modems to the Generic Sierra Wireless VID/PID
-# - Flashes the Current Generic Firmware
-
-#.DESCRIPTION
-# - Only for use on Ubuntu 18 (Bionic) LiveUSB
-# - All Needed Packages will Auto-Install
-# - Sets MBIM Mode with AT Commands Access
-# - Changes all models of EM74XX/MC74XX Modems to the Generic Sierra Wireless VID/PID
-# - Clears Band Restrictions and Places Modem in LTE only mode.
-# - Flashes the Current Generic Firmware
-# - Sets PCOFFEN=2 to tell the modem to ignore the W_DISABLE pin sent by many laptop's internal M2 slots.
-# - Sets FASTENUMEN=2 to skip bootloader on warm-boots.
-#   - This, combined with PCOFFEN enables these modems to work in the X1G6/T470 and newer laptops.
-
-#.NOTES
-# License: The Unlicense / CCZero / Public Domain
-# Author: Daniel Wood / https://github.com/danielewood
-
-#.LINK
-# https://github.com/danielewood/sierra-wireless-modems
-
-#.VERSION
-# Version: 20190724
-
-##################
-### Pre-Checks ###
-##################
 
 if [ "$EUID" -ne 0 ]
     then echo "Please run with sudo"
