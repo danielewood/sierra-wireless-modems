@@ -1,3 +1,5 @@
+## Have a question/comment? Please use the [Community Discussions](https://github.com/danielewood/sierra-wireless-modems/discussions) instead of opening an issue.
+
 [![CodeFactor](https://www.codefactor.io/repository/github/danielewood/sierra-wireless-modems/badge/master)](https://www.codefactor.io/repository/github/danielewood/sierra-wireless-modems/overview/master)
 
 ## EM7565/EM7455/MC7455 - Modem Configuration
