@@ -6,7 +6,7 @@
 # wget https://raw.githubusercontent.com/danielewood/sierra-wireless-modems/master/autoflash-7455.sh && sudo bash autoflash-7455.sh
 
 #.SYNOPSIS
-# - Only for use on Ubuntu 18 (Bionic) LiveUSB
+# - Only for use on Ubuntu 18.04 (or later) LiveUSB
 # - Changes all models of EM7455/MC7455 Modems to the Generic Sierra Wireless VID/PID
 # - Flashes the Current Generic Firmware
 
@@ -29,7 +29,7 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: 20200912
+# Version: 20201120
 
 ##################
 ### Pre-Checks ###
@@ -40,9 +40,8 @@ if [ "$EUID" -ne 0 ]
     exit
 fi
 
-lsbrelease=$(lsb_release -c | awk '{print $2}')
-if [ "$lsbrelease" != "bionic" ]
-    then echo "Please run on Ubuntu 18 (Bionic)"
+if [[ $(lsb_release -r | awk '{print ($2 >= "18.04")}') -eq 0 ]]; then 
+    echo "Please run on Ubuntu 18.04 (Bionic) or later"
     lsb_release -a
     exit
 fi
