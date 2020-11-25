@@ -439,7 +439,7 @@ function script_prechecks() {
     add-apt-repository universe -y 1>/dev/null
     apt update -y
     # need make and GCC for compiling perl modules
-    apt-get install make gcc curl minicom libqmi-glib5 libqmi-proxy libqmi-utils -y
+    apt-get install make gcc curl minicom libqmi-glib5 libqmi-proxy libqmi-utils unzip -y
     # Use cpan to install/compile all dependencies needed by swi_setusbcomp.pl
     yes | cpan install UUID::Tiny IPC::Shareable JSON
 
