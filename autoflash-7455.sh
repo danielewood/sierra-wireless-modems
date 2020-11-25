@@ -436,7 +436,7 @@ function script_prechecks() {
 
     printf "${CYAN}---${NC}\n"
     echo "Installing all needed prerequisites..."
-    add-apt-repository universe 1>/dev/null
+    add-apt-repository universe -y 1>/dev/null
     apt update -y
     # need make and GCC for compiling perl modules
     apt-get install make gcc curl minicom libqmi-glib5 libqmi-proxy libqmi-utils -y
