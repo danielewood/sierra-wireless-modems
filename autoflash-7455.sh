@@ -304,13 +304,11 @@ sleep 1
 
 function download_modem_firmware() {
     # Find latest 7455 firmware and download it
-    # Temporary hosting until Sierra recovers from Cryptolocker
-    # Reference: https://github.com/danielewood/sierra-wireless-modems/discussions/74
-   
     if [[ -z $SWI9X30C_ZIP ]]; then
-        SWI9X30C_ZIP='SWI9X30C_02.33.03.00_GENERIC_002.072_000.zip'
+        SWI9X30C_ZIP=$(curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | sed 's/,-d-,/./g' | grep -iEo '7455/swi9x30c[_0-9.]+_generic_[_0-9.]+' | cut -c 6- | tail -n1)
+        SWI9X30C_ZIP="${SWI9X30C_ZIP^^}"'zip'
     fi
-    SWI9X30C_URL='https://download.ttl.one/swi/7455/'"$SWI9X30C_ZIP"
+    SWI9X30C_URL='https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/7455/'"$SWI9X30C_ZIP"
 
     SWI9X30C_LENGTH=$(curl -sI "$SWI9X30C_URL" | grep -i Content-Length | grep -Eo '[0-9]+')
 
