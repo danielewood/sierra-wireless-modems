@@ -305,12 +305,12 @@ sleep 1
 function download_modem_firmware() {
     # Find latest 7455 firmware and download it
     if [[ -z $SWI9X30C_ZIP ]]; then
-        SWI9X30C_ZIP=$(curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | sed 's/,-d-,/./g' | grep -iEo '7455/swi9x30c[_0-9.]+_generic_[_0-9.]+' | cut -c 6- | tail -n1)
+        SWI9X30C_URL=$(curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | sed 's/,-d-,/./g' | grep -iPo 'href="\K.+/swi9x30c[_0-9.]+_generic_[_0-9.]+' | tail -n1)
+        SWI9X30C_ZIP=${SWI9X30C_URL##*/}
         SWI9X30C_ZIP="${SWI9X30C_ZIP^^}"'zip'
     fi
-    SWI9X30C_URL='https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/fw/7455/'"$SWI9X30C_ZIP"
-
-    SWI9X30C_LENGTH=$(curl -sI "$SWI9X30C_URL" | grep -i Content-Length | grep -Eo '[0-9]+')
+    SWI9X30C_URL="https://source.sierrawireless.com${SWI9X30C_URL}zip"
+    SWI9X30C_LENGTH=$(curl -sI "$SWI9X30C_URL" | grep -iPo '^Content-Length[^0-9]+\K[0-9]+')
 
     # If remote file size is less than 40MiB, something went wrong, exit.
     if [[ $SWI9X30C_LENGTH -lt 40000000 ]]; then
