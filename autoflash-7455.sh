@@ -1,4 +1,5 @@
 #!/bin/bash
+# Download and unzip your file "SWI9X30C_02.38.00.00_Generic_002.082_000" in /home/ubuntu
 # shellcheck disable=SC2059
 #
 #.USAGE
@@ -354,7 +355,7 @@ function flash_modem_firmware() {
     sleep 5
     qmi-firmware-update --reset -d "$deviceid"
     get_modem_bootloader_deviceid
-    qmi-firmware-update --update-download -d "$deviceid" "$SWI9X30C_CWE" "$SWI9X30C_NVU"
+    qmi-firmware-update --update-download -d "$deviceid" "/home/ubuntu/SWI9X30C_02.38.00.00_Generic_002.082_000/SWI9X30C_02.38.00.00.cwe" "/home/ubuntu/SWI9X30C_02.38.00.00_Generic_002.082_000/SWI9X30C_02.38.00.00_GENERIC_002.082_000.nvu"
     rc=$?
     if [[ $rc != 0 ]]
     then
