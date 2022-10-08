@@ -29,7 +29,7 @@
 # https://github.com/danielewood/sierra-wireless-modems
 
 #.VERSION
-# Version: 20210405
+# Version: 20221008
 
 ##################
 ### Pre-Checks ###
@@ -305,7 +305,7 @@ sleep 1
 function download_modem_firmware() {
     # Find latest 7455 firmware and download it
     if [[ -z $SWI9X30C_ZIP ]]; then
-        SWI9X30C_URL=$(curl https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/ 2> /dev/null | grep PTCRB -B1 | sed 's/,-d-,/./g' | grep -iPo 'href="\K.+/swi9x30c[_0-9.]+_generic_[_0-9.]+' | tail -n1)
+        SWI9X30C_URL=$(curl -s https://source.sierrawireless.com/resources/airprime/minicard/74xx/em_mc74xx-approved-fw-packages/ 2>/dev/null | grep 'GCF Approved' -B1 | grep '7455' | sed 's/,-d-,/./g' | grep -iPo 'href="\K.+/swi9x30c[_0-9.]+_generic_[_0-9.]+' | tail -n1)
         SWI9X30C_ZIP=${SWI9X30C_URL##*/}
         SWI9X30C_ZIP="${SWI9X30C_ZIP^^}"'zip'
     fi
