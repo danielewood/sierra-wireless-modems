@@ -41,7 +41,7 @@
 - [Sierra EM7455 Product Page](https://source.sierrawireless.com/devices/em-series/em7455/)
 - [Sierra Wireless AirPrime EM74xx-MC74xx AT Command Reference (PDF)](https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/4117727_airprime_em74xx-mc74xx_at_command_reference_r3.ashx)
 - [AirPrime - EM7455 - Product Technical Specification (PDF)](https://source.sierrawireless.com/~/media/support_downloads/airprime/74xx/4116236%20airprime%20em7455%20product%20technical%20specification%20r13.ashx)
-- [All firmwares](https://source.sierrawireless.com/resources/airprime/minicard/74xx/airprime-em_mc74xx-approved-fw-packages/)
+- [All firmwares](https://source.sierrawireless.com/resources/airprime/minicard/74xx/em_mc74xx-approved-fw-packages/)
 
 ---
 
