@@ -107,7 +107,8 @@ do
  f) flash_modem_firmware_trigger=1;;
  s) set_modem_settings_trigger=1;;
  a) all_functions_trigger=1;;
- l) SWI9X30C_ZIP='SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip';;
+ l) SWI9X30C_ZIP='SWI9X30C_02.30.01.01_GENERIC_002.045_001.zip'
+      SWI9X30C_URL='https://source.sierrawireless.com/-/media/support_downloads/airprime/74xx/fw/7455/swi9x30c_02,-d-,30,-d-,01,-d-,01_generic_002,-d-,045_001.ashx';;
  q) quiet_trigger=1;;
  v) verbose_trigger=1;;
  *) display_usage>&2
@@ -303,46 +304,124 @@ sleep 1
 }
 
 function download_modem_firmware() {
-    # Find latest 7455 firmware and download it
+    local page_url='https://source.sierrawireless.com/resources/airprime/minicard/74xx/em_mc74xx-approved-fw-packages/'
+
+    # If no URL was provided (e.g., by -l flag), scrape the latest from Sierra's page
+    if [[ -z $SWI9X30C_URL ]]; then
+        echo "Fetching latest firmware URL from Sierra Wireless..."
+        SWI9X30C_URL=$(curl -sL "$page_url" 2>/dev/null \
+            | grep -oP 'href="\K[^"]+/swi9x30c[^"]*_generic_[^"]*\.ashx' \
+            | grep '7455' \
+            | head -n1)
+
+        if [[ -z $SWI9X30C_URL ]]; then
+            printf "${CYAN}---${NC}\n"
+            printf "ERROR: Could not find 7455 firmware download link on Sierra Wireless page.\n"
+            printf "Please check: %s\n" "$page_url"
+            printf "${CYAN}---${NC}\n"
+            exit 1
+        fi
+
+        SWI9X30C_URL="https://source.sierrawireless.com${SWI9X30C_URL}"
+    fi
+
+    echo "Firmware URL: $SWI9X30C_URL"
+
+    # Derive ZIP filename if not already set (e.g., by -l flag)
     if [[ -z $SWI9X30C_ZIP ]]; then
-        SWI9X30C_URL=$(curl -s https://source.sierrawireless.com/resources/airprime/minicard/74xx/em_mc74xx-approved-fw-packages/ 2>/dev/null | grep 'GCF Approved' -B1 | grep '7455' | sed 's/,-d-,/./g' | grep -iPo 'href="\K.+/swi9x30c[_0-9.]+_generic_[_0-9.]+' | tail -n1)
-        SWI9X30C_ZIP=${SWI9X30C_URL##*/}
-        SWI9X30C_ZIP="${SWI9X30C_ZIP^^}"'zip'
-    fi
-    SWI9X30C_URL="https://source.sierrawireless.com${SWI9X30C_URL}zip"
-    SWI9X30C_LENGTH=$(curl -sI "$SWI9X30C_URL" | grep -iPo '^Content-Length[^0-9]+\K[0-9]+')
+        # Try Content-Disposition header first (most reliable)
+        local disposition
+        disposition=$(curl -sLI "$SWI9X30C_URL" | grep -iPo 'Content-Disposition:.*filename="\K[^"]+')
 
-    # If remote file size is less than 40MiB, something went wrong, exit.
-    if [[ $SWI9X30C_LENGTH -lt 40000000 ]]; then
-        printf "${CYAN}---${NC}\n"
-        printf "Download of ${CYAN}$SWI9X30C_ZIP${NC} failed.\nFile size on server is too small, something is wrong, exiting...\n"
-        printf "Attempted download URL was: $SWI9X30C_URL\n"
-        printf "curl info:\n"
-        curl -sI "$SWI9X30C_URL"
-        printf "${CYAN}---${NC}\n"
-        exit
+        if [[ -n $disposition ]]; then
+            SWI9X30C_ZIP="$disposition"
+        else
+            # Fallback: derive from URL — decode ,-d-, to dots, strip .ashx, uppercase
+            local url_basename="${SWI9X30C_URL##*/}"
+            url_basename="${url_basename%.ashx}"
+            url_basename=$(echo "$url_basename" | sed 's/,-d-,/./g')
+            SWI9X30C_ZIP="${url_basename^^}.zip"
+        fi
     fi
 
-    if [[ $SWI9X30C_LENGTH -eq $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
+    echo "Firmware file: $SWI9X30C_ZIP"
+
+    # Check HTTP status via HEAD request (follow redirects)
+    local http_status
+    http_status=$(curl -sL -o /dev/null -w '%{http_code}' --head "$SWI9X30C_URL")
+
+    if [[ $http_status -ne 200 ]]; then
+        printf "${CYAN}---${NC}\n"
+        printf "ERROR: Server returned HTTP %s for firmware URL.\n" "$http_status"
+        printf "URL: %s\n" "$SWI9X30C_URL"
+        printf "${CYAN}---${NC}\n"
+        exit 1
+    fi
+
+    # Get remote file size
+    local remote_size
+    remote_size=$(curl -sLI "$SWI9X30C_URL" | grep -iPo '^Content-Length[^0-9]+\K[0-9]+' | tail -1)
+
+    if [[ -z $remote_size || $remote_size -lt 40000000 ]]; then
+        printf "${CYAN}---${NC}\n"
+        printf "ERROR: Remote file size (%s bytes) is unexpectedly small or unavailable.\n" "${remote_size:-unknown}"
+        printf "URL: %s\n" "$SWI9X30C_URL"
+        printf "${CYAN}---${NC}\n"
+        exit 1
+    fi
+
+    # Download if not already cached with matching size
+    if [[ -f "$SWI9X30C_ZIP" && $remote_size -eq $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
         echo "Already downloaded $SWI9X30C_ZIP..."
     else
-        echo "Downloading $SWI9X30C_URL"
-        curl -o "$SWI9X30C_ZIP" "$SWI9X30C_URL"
+        echo "Downloading $SWI9X30C_ZIP ($remote_size bytes)..."
+        curl -L -o "$SWI9X30C_ZIP" "$SWI9X30C_URL"
+
+        # Verify download size matches
+        local local_size
+        local_size=$(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null)
+        if [[ $remote_size -ne ${local_size:-0} ]]; then
+            printf "${CYAN}---${NC}\n"
+            printf "ERROR: Download size mismatch. Expected %s bytes, got %s bytes.\n" "$remote_size" "${local_size:-0}"
+            printf "File: %s\n" "$SWI9X30C_ZIP"
+            printf "${CYAN}---${NC}\n"
+            exit 1
+        fi
     fi
 
-    # If download size does not match what server says, exit:
-    if [[ $SWI9X30C_LENGTH -ne $(stat --printf="%s" "$SWI9X30C_ZIP" 2>/dev/null) ]]; then
+    # Extract to temp directory first, verify contents before replacing old files
+    local tmpdir
+    tmpdir=$(mktemp -d)
+
+    if ! unzip -o "$SWI9X30C_ZIP" -d "$tmpdir"; then
         printf "${CYAN}---${NC}\n"
-        printf "Download of ${CYAN}$SWI9X30C_ZIP${NC} failed.\nDownloaded file size is inconsistent with server, exiting...\n"
+        printf "ERROR: Failed to unzip %s\n" "$SWI9X30C_ZIP"
+        rm -rf "$tmpdir"
         printf "${CYAN}---${NC}\n"
-        exit
+        exit 1
     fi
 
-    # Cleanup old CWE/NVUs
+    # Verify expected firmware files exist in extracted output
+    local cwe_count nvu_count
+    cwe_count=$(find "$tmpdir" -maxdepth 1 -iname '*.cwe' | wc -l)
+    nvu_count=$(find "$tmpdir" -maxdepth 1 -iname '*.nvu' | wc -l)
+
+    if [[ $cwe_count -eq 0 || $nvu_count -eq 0 ]]; then
+        printf "${CYAN}---${NC}\n"
+        printf "ERROR: Extracted archive is missing expected firmware files.\n"
+        printf "  .cwe files found: %d\n" "$cwe_count"
+        printf "  .nvu files found: %d\n" "$nvu_count"
+        rm -rf "$tmpdir"
+        printf "${CYAN}---${NC}\n"
+        exit 1
+    fi
+
+    # Safe to replace old firmware files now
     rm -f ./*.cwe ./*.nvu 2>/dev/null
+    mv "$tmpdir"/*.cwe "$tmpdir"/*.nvu . 2>/dev/null
+    rm -rf "$tmpdir"
 
-    # Unzip SWI9X30C, force overwrite
-    unzip -o "$SWI9X30C_ZIP"
+    echo "Firmware extracted successfully."
 }
 
 function flash_modem_firmware() {
