@@ -310,10 +310,9 @@ function download_modem_firmware() {
     if [[ -z $SWI9X30C_URL ]]; then
         echo "Fetching latest firmware URL from Sierra Wireless..."
         SWI9X30C_URL=$(curl -sL "$page_url" 2>/dev/null \
-            | grep -i 'GCF Approved' -B1 \
-            | grep -i '7455' \
-            | grep -iPo 'href="\K[^"]+\.ashx' \
-            | tail -n1)
+            | grep -oP 'href="\K[^"]+/swi9x30c[^"]*_generic_[^"]*\.ashx' \
+            | grep '7455' \
+            | head -n1)
 
         if [[ -z $SWI9X30C_URL ]]; then
             printf "${CYAN}---${NC}\n"
