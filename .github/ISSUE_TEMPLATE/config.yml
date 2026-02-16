@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support / Help / Questions
+    url: https://github.com/danielewood/sierra-wireless-modems/discussions
+    about: For help with your modem, troubleshooting, or general questions, please use Discussions instead of opening an issue. Issues are for code bugs only.
