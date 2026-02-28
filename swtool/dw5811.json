@@ -1,0 +1,441 @@
+{
+  "identity": {
+    "manufacturer": "Sierra Wireless, Incorporated",
+    "model": "EM7455B",
+    "revision": "SWI9X30C_02.24.05.06 r7040 CARMD-EV-FRMWR2 2017/05/19 06:23:09",
+    "hardware_rev": "1.0",
+    "meid": "35448008243466",
+    "imei": "354480082434669",
+    "imei_sv": "12",
+    "fsn": "LF103291240310",
+    "gcap": "+CGSM"
+  },
+  "firmware": {
+    "preferred": {
+      "version": "02.24.05.06",
+      "carrier_name": "GENERIC",
+      "config_name": "GENERIC_002.026_000"
+    },
+    "current": {
+      "version": "02.24.05.06",
+      "carrier_name": "GENERIC",
+      "config_name": "GENERIC_002.026_000"
+    },
+    "pri_id": {
+      "part_number": "9907375",
+      "revision": "001.001",
+      "customer": "PebbleCreekMLK",
+      "carrier_pri": "9999999_9904609_SWI9X30C_02.24.05.06_00_GENERIC_002.026_000"
+    }
+  },
+  "usb": {
+    "composition": {
+      "config_index": 1,
+      "config_type": "1 (Generic)",
+      "bitmask": "0000100D",
+      "interfaces": [
+        "diag",
+        "nmea",
+        "modem",
+        "mbim"
+      ]
+    },
+    "vid": "413C",
+    "pid": {
+      "app": "81B6",
+      "boot": "81B5"
+    },
+    "product": "DW5811e Snapdragon™ X7 LTE",
+    "speed": {
+      "supported": "Super-Speed",
+      "current": "High-Speed"
+    }
+  },
+  "network": {
+    "rat_selection": {
+      "index": 0,
+      "name": "Automatic"
+    },
+    "current_band": {
+      "index": 0,
+      "name": "All bands",
+      "gw_mask": "0002000007C00000",
+      "lte_mask": "00000100130818DF",
+      "tds_mask": "0000000000000000"
+    },
+    "available_bands": [
+      {
+        "index": 0,
+        "name": "All bands",
+        "gw_mask": "0002000007C00000",
+        "lte_mask": "00000100130818DF",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 1,
+        "name": "Europe 3G",
+        "gw_mask": "0002000000400000",
+        "lte_mask": "0000000000000000",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 2,
+        "name": "North America 3G",
+        "gw_mask": "0000000004800000",
+        "lte_mask": "0000000000000000",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 6,
+        "name": "Europe",
+        "gw_mask": "0002000000400000",
+        "lte_mask": "00000000000800C5",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 7,
+        "name": "North America",
+        "gw_mask": "0000000004800000",
+        "lte_mask": "000000000300185A",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 8,
+        "name": "WCDMA ALL",
+        "gw_mask": "0002000007C00000",
+        "lte_mask": "0000000000000000",
+        "tds_mask": "0000000000000000"
+      },
+      {
+        "index": 9,
+        "name": "LTE ALL",
+        "gw_mask": "0000000000000000",
+        "lte_mask": "00000100130818DF",
+        "tds_mask": "0000000000000000"
+      }
+    ]
+  },
+  "power": {
+    "state": "Online",
+    "pcoffen": 0,
+    "lpm_voters": {
+      "BIOS": 0,
+      "FOTA": 0,
+      "IMSWITCH": 0,
+      "LWM2M": 0,
+      "OMADM": 0,
+      "Temp": 0,
+      "User": 0,
+      "Volt": 0,
+      "W_DISABLE": 0
+    },
+    "lpm_persistence": "None"
+  },
+  "custom": {
+    "GPIOSARENABLE": "0x01",
+    "GPSENABLE": "0x04",
+    "GPSSEL": "0x01",
+    "IPV6ENABLE": "0x01",
+    "SIMLPM": "0x01",
+    "SINGLEAPNSWITCH": "0x01",
+    "USBSERIALENABLE": "0x01"
+  },
+  "images": {
+    "firmware": [
+      {
+        "type": "FW",
+        "slot": "1",
+        "status": "GOOD",
+        "lru": 1,
+        "failures": 0,
+        "unique_id": "?_?",
+        "build_id": "02.24.05.06_?"
+      },
+      {
+        "type": "FW",
+        "slot": "2",
+        "status": "EMPTY",
+        "lru": 0,
+        "failures": 0,
+        "unique_id": "",
+        "build_id": ""
+      },
+      {
+        "type": "FW",
+        "slot": "3",
+        "status": "EMPTY",
+        "lru": 0,
+        "failures": 0,
+        "unique_id": "",
+        "build_id": ""
+      },
+      {
+        "type": "FW",
+        "slot": "4",
+        "status": "EMPTY",
+        "lru": 0,
+        "failures": 0,
+        "unique_id": "",
+        "build_id": ""
+      }
+    ],
+    "max_firmware": 4,
+    "active_slot": 1,
+    "pri": [
+      {
+        "type": "PRI",
+        "slot": "FF",
+        "status": "GOOD",
+        "lru": 0,
+        "failures": 0,
+        "unique_id": "002.026_000",
+        "build_id": "02.24.05.06_GENERIC"
+      }
+    ],
+    "max_pri": 50
+  },
+  "diagnostics": {
+    "gstatus": {
+      "Cell ID": "064D308F (105721999)",
+      "Current Time": "1935",
+      "GMM (PS) state": "DEREGISTERED NO IMSI",
+      "LAC": "2B5D (11101)",
+      "MM (CS) state": "IDLE NO IMSI",
+      "Mode": "ONLINE",
+      "PS state": "Not attached",
+      "RRC state": "DISCONNECTED",
+      "Reset Counter": "2",
+      "RxD RSSI C0": "---",
+      "RxD RSSI C1": "---",
+      "RxM RSSI C0": "-86",
+      "RxM RSSI C1": "---",
+      "System mode": "UMTS",
+      "Temperature": "31",
+      "WCDMA L1 state": "L1M_PCH_SLEEP",
+      "WCDMA band": "WCDMA 850",
+      "WCDMA channel": "4413"
+    }
+  },
+  "gps": {
+    "session_status": "",
+    "fix_status": ""
+  },
+  "sim": {
+    "status": ""
+  },
+  "registration": {
+    "cs": {
+      "status": "",
+      "raw": ""
+    },
+    "eps": {
+      "status": "",
+      "raw": ""
+    },
+    "gprs": {
+      "status": "",
+      "raw": ""
+    }
+  },
+  "operator": "33420",
+  "apns": [
+    "1,\"IPV4V6\",\"\",\"0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0\",0,0,0,0"
+  ],
+  "lte_detail": {},
+  "lte_ca": {
+    "hardware": [
+      {
+        "primary": "B1",
+        "secondary": [
+          "B8"
+        ]
+      },
+      {
+        "primary": "B2",
+        "secondary": [
+          "B2",
+          "B5",
+          "B12",
+          "B13",
+          "B29"
+        ]
+      },
+      {
+        "primary": "B3",
+        "secondary": [
+          "B7",
+          "B20"
+        ]
+      },
+      {
+        "primary": "B4",
+        "secondary": [
+          "B4",
+          "B5",
+          "B12",
+          "B13",
+          "B29"
+        ]
+      },
+      {
+        "primary": "B5",
+        "secondary": [
+          "B2",
+          "B4",
+          "B30"
+        ]
+      },
+      {
+        "primary": "B7",
+        "secondary": [
+          "B3",
+          "B7",
+          "B20"
+        ]
+      },
+      {
+        "primary": "B8",
+        "secondary": [
+          "B1"
+        ]
+      },
+      {
+        "primary": "B12",
+        "secondary": [
+          "B2",
+          "B4",
+          "B30"
+        ]
+      },
+      {
+        "primary": "B13",
+        "secondary": [
+          "B2",
+          "B4"
+        ]
+      },
+      {
+        "primary": "B20",
+        "secondary": [
+          "B3",
+          "B7"
+        ]
+      },
+      {
+        "primary": "B25"
+      },
+      {
+        "primary": "B26"
+      },
+      {
+        "primary": "B29"
+      },
+      {
+        "primary": "B30",
+        "secondary": [
+          "B5",
+          "B12"
+        ]
+      },
+      {
+        "primary": "B41",
+        "secondary": [
+          "B41"
+        ]
+      }
+    ],
+    "permitted": [
+      {
+        "primary": "B1",
+        "secondary": [
+          "B8"
+        ]
+      },
+      {
+        "primary": "B2",
+        "secondary": [
+          "B2",
+          "B5",
+          "B12",
+          "B13",
+          "B29"
+        ]
+      },
+      {
+        "primary": "B3",
+        "secondary": [
+          "B7",
+          "B20"
+        ]
+      },
+      {
+        "primary": "B4",
+        "secondary": [
+          "B4",
+          "B5",
+          "B12",
+          "B13",
+          "B29"
+        ]
+      },
+      {
+        "primary": "B5",
+        "secondary": [
+          "B2",
+          "B4"
+        ]
+      },
+      {
+        "primary": "B7",
+        "secondary": [
+          "B3",
+          "B7",
+          "B20"
+        ]
+      },
+      {
+        "primary": "B8",
+        "secondary": [
+          "B1"
+        ]
+      },
+      {
+        "primary": "B12",
+        "secondary": [
+          "B2",
+          "B4"
+        ]
+      },
+      {
+        "primary": "B13",
+        "secondary": [
+          "B2",
+          "B4"
+        ]
+      },
+      {
+        "primary": "B20",
+        "secondary": [
+          "B3",
+          "B7"
+        ]
+      },
+      {
+        "primary": "B25"
+      },
+      {
+        "primary": "B26"
+      },
+      {
+        "primary": "B29"
+      },
+      {
+        "primary": "B41",
+        "secondary": [
+          "B41"
+        ]
+      }
+    ],
+    "pruned": "Empty"
+  }
+}

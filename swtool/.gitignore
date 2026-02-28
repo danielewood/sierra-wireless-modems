@@ -1,0 +1,9 @@
+libqmi-1.38.0
+*.nvu
+*.cwe
+swtool
+*.dsc
+*.xz
+*.gz
+*.zip
+nvu_extract/
