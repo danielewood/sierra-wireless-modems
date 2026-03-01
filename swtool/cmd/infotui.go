@@ -96,11 +96,10 @@ func runInfoTUI(dev *modem.Device, interval time.Duration, jsonOnExit bool, sect
 
 	final := result.(tuiModel)
 	if final.jsonDump {
-		// Prefer raw (latest actual) data for JSON; fall back to merged
-		info := final.rawInfo
-		if info == nil {
-			info = final.info
-		}
+		// Dump the merged view — matches what the user sees on screen.
+		// rawInfo is only the last streaming snapshot, which may be
+		// incomplete if the poll was still in-flight when 'j' was pressed.
+		info := final.info
 		if info != nil {
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
