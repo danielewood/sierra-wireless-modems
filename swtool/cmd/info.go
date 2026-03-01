@@ -688,8 +688,8 @@ var servingCellGStatusKeys = map[string]bool{
 
 // Cell table format constants (no trailing newline — callers add it).
 const (
-	cellTableFmt = "%-10s  %5s  %4s  %5s  %4s  %6s  %6s  %6s  %5s"
-	cellTableSep = "            -----  ----  -----  ----  ------  ------  ------  -----"
+	cellTableFmt = "%-10s  %6s  %4s  %7s  %4s  %6s  %6s  %6s  %5s"
+	cellTableSep = "            ------  ----  -------  ----  ------  ------  ------  -----"
 )
 
 // renderCellTable appends an aligned signal table with serving cell,

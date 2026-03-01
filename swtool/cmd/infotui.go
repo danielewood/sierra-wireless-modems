@@ -773,9 +773,9 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	styledRow := func(label string, earfcn, band, freq, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
 		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s  %s  %s\n",
 			staleStyle(fmt.Sprintf("%-10s", label), -1),
-			staleStyle(fmt.Sprintf("%5s", earfcn), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%6s", earfcn), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", band), ages[ageKey]),
-			staleStyle(fmt.Sprintf("%5s", freq), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%7s", freq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", pci), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrp), ages[ageKey]),
