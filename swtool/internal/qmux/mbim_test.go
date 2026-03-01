@@ -7,14 +7,15 @@ import (
 
 func TestMBIMUUID(t *testing.T) {
 	t.Parallel()
-	// Verify the mixed-endian UUID encoding matches the canonical
-	// UUID d1a30bc2-f97a-6e43-bf65-c7e24fb0f0d3.
+	// Verify the UUID bytes match the canonical QMI-over-MBIM UUID
+	// d1a30bc2-f97a-6e43-bf65-c7e24fb0f0d3 in big-endian (presentation)
+	// byte order, matching libmbim's wire format.
 	want := [16]byte{
-		0xc2, 0x0b, 0xa3, 0xd1, // d1a30bc2 LE
-		0x7a, 0xf9,             // f97a LE
-		0x43, 0x6e,             // 6e43 LE
-		0xbf, 0x65,             // bf65 BE
-		0xc7, 0xe2, 0x4f, 0xb0, 0xf0, 0xd3, // c7e24fb0f0d3 BE
+		0xd1, 0xa3, 0x0b, 0xc2,
+		0xf9, 0x7a,
+		0x6e, 0x43,
+		0xbf, 0x65,
+		0xc7, 0xe2, 0x4f, 0xb0, 0xf0, 0xd3,
 	}
 	if qmiOverMBIMUUID != want {
 		t.Errorf("UUID = %x, want %x", qmiOverMBIMUUID, want)

@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/danielewood/sierra-wireless-modems/swtool/firmware"
+	"github.com/danielewood/sierra-wireless-modems/swtool/internal/qmux"
 	"github.com/danielewood/sierra-wireless-modems/swtool/internal/sysutil"
 	"github.com/danielewood/sierra-wireless-modems/swtool/modem"
 	"github.com/danielewood/sierra-wireless-modems/swtool/qmi"
@@ -13,34 +13,26 @@ import (
 )
 
 var (
-	flagUSBMode       string
-	flagUSBSpeed      string
-	flagBands         string
-	flagFastEnum      int
-	flagFirmwareURL   string
-	flagLegacy        bool
-	flagSkipDownload  bool
-	flagSkipFlash     bool
-	flagSkipConfigure bool
+	flagFirmwareURL  string
+	flagLegacy       bool
+	flagSkipDownload bool
+	flagSkipFlash    bool
 )
 
 var flashCmd = &cobra.Command{
 	Use:   "flash",
-	Short: "Full flash workflow: download + flash + configure",
-	Long: `Downloads the latest firmware from Sierra Wireless, flashes it onto the modem,
-and configures the modem with generic VID/PID, band settings, and USB mode.
+	Short: "Full flash workflow: download + flash",
+	Long: `Downloads the latest firmware from Sierra Wireless and flashes it onto the modem.
 
+Use 'swtool configure' to change USB identity, bands, or other modem settings.
 This is the default command when swtool is run without a subcommand.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dev := requireModem()
-		comp := resolveUSBComposition(flagUSBMode)
-		selrat, band := resolveBands(flagBands)
-		usbSpeed := resolveUSBSpeed(flagUSBSpeed)
 
 		logger.Step(fmt.Sprintf("Starting flash workflow for %s (%s)", dev.Name, dev.ID))
 
 		if isDryRun() {
-			return flashDryRun(dev, comp, selrat, band, usbSpeed)
+			return flashDryRun(dev)
 		}
 
 		// Pre-flight checks
@@ -101,101 +93,37 @@ This is the default command when swtool is run without a subcommand.`,
 
 		// Step 3: Flash firmware
 		if !flagSkipFlash {
-			// Extract PRI ID from .nvu for later configuration.
-			// The carrier name must be passed to qmi-firmware-update with
-			// exact case matching the NVU binary — a case mismatch causes
-			// the IMSWITCH LPM voter to hold the modem in low-power mode.
-			priID, err := firmware.ExtractPRIID(fwFiles.NVU)
-			if err != nil {
-				return fmt.Errorf("extracting PRI ID from NVU: %w", err)
-			}
-			logger.Debugf("NVU carrier: %s, PRI: %s rev %s", priID.Carrier, priID.PartNumber, priID.Revision)
+			if dev.Bootloader {
+				// Modem is already in QDL/bootloader mode — flash directly
+				// without setting firmware preference (no QMI available).
+				if err := qmi.FlashFirmwareDownloadMode(logger, dev.ID.String(), fwFiles.CWE, fwFiles.NVU); err != nil {
+					return fmt.Errorf("flashing firmware: %w", err)
+				}
+			} else {
+				// Extract carrier name from NVU — must match exact case
+				// or the IMSWITCH LPM voter holds the modem in low-power.
+				priID, err := firmware.ExtractPRIID(fwFiles.NVU)
+				if err != nil {
+					return fmt.Errorf("extracting PRI ID from NVU: %w", err)
+				}
+				logger.Debugf("NVU carrier: %s, PRI: %s rev %s", priID.Carrier, priID.PartNumber, priID.Revision)
 
-			// Pre-flash: set power management and clear firmware images.
-			// PCOFFEN=2 and FASTENUMEN survive the flash and prevent the modem
-			// from getting stuck in low-power mode after rebooting.
-			if dev.ATPort == "" {
-				return fmt.Errorf("no AT port found — cannot prepare modem for flash")
-			}
-			port, err := modem.OpenPort(dev.ATPort, logger)
-			if err != nil {
-				return fmt.Errorf("opening AT port for pre-flash setup: %w", err)
-			}
-			if err := modem.PreFlashSetup(port, flagFastEnum); err != nil {
-				port.Close()
-				return fmt.Errorf("pre-flash setup: %w", err)
-			}
-			port.Close()
+				device, mbim := controlDevice(dev)
+				if device == "" {
+					return fmt.Errorf("no QMI control device found — cannot flash firmware")
+				}
 
-			// Flash firmware using --update, which handles the full lifecycle:
-			// set firmware preference → reset to bootloader → flash → reboot.
-			// This is critical for 9x30 devices — without updating the firmware
-			// preference, the modem boots into low-power after flash due to
-			// firmware version mismatch.
-			device, _ := controlDevice(dev)
-			if device == "" {
-				return fmt.Errorf("no QMI control device found — cannot flash firmware")
-			}
-
-			if err := qmi.FlashFirmware(logger, device, priID.Carrier, fwFiles.CWE, fwFiles.NVU); err != nil {
-				return fmt.Errorf("flashing firmware: %w", err)
+				if err := qmi.FlashFirmware(logger, device, mbim, priID.Carrier, fwFiles.CWE, fwFiles.NVU); err != nil {
+					return fmt.Errorf("flashing firmware: %w", err)
+				}
 			}
 
 			logger.Success("Firmware flashed successfully")
 
 			// Wait for modem to come back and verify it's online
 			logger.Step("Waiting for modem to reboot after flash...")
-			dev, err = waitForModemReady(180 * time.Second)
-			if err != nil {
+			if _, err := waitForModemReady(180 * time.Second); err != nil {
 				return fmt.Errorf("modem not ready after flash: %w", err)
-			}
-
-			// Step 5: Configure modem settings
-			if !flagSkipConfigure {
-				if dev.ATPort == "" {
-					return fmt.Errorf("no AT port found — cannot configure modem")
-				}
-
-				port, err := modem.OpenPort(dev.ATPort, logger)
-				if err != nil {
-					return fmt.Errorf("opening AT port for configuration: %w", err)
-				}
-
-				cfg := modem.ConfigureSettings{
-					USBComp:       comp.ATValue,
-					USBVID:        modem.Vendors["sierra"].VID,
-					USBPID:        fmt.Sprintf("%s,%s", modem.Vendors["sierra"].PIDApp, modem.Vendors["sierra"].PIDBoot),
-					USBProduct:    modem.Vendors["sierra"].Product,
-					PRIIDCustomer: "Generic-Laptop",
-					SelRat:        selrat,
-					Band:          band,
-					FastEnumEN:    flagFastEnum,
-					USBSpeed:      usbSpeed,
-				}
-
-				if priID != nil {
-					cfg.PRIIDPartNum = priID.PartNumber
-					cfg.PRIIDRev = priID.Revision
-				}
-
-				if err := modem.ApplySettings(port, cfg); err != nil {
-					return fmt.Errorf("applying settings: %w", err)
-				}
-				port.Close()
-
-				// Reset via QMI to apply settings
-				device, mbim := controlDevice(dev)
-				if device != "" {
-					logger.Step("Resetting modem to apply settings...")
-					if err := qmi.ResetViaQMI(logger, device, mbim); err != nil {
-						logger.Warnf("QMI reset failed: %v (settings may need manual reboot)", err)
-					} else {
-						dev, err = waitForModemReady(120 * time.Second)
-						if err != nil {
-							logger.Warnf("Modem did not come back online after configure: %v", err)
-						}
-					}
-				}
 			}
 		}
 
@@ -205,30 +133,27 @@ This is the default command when swtool is run without a subcommand.`,
 }
 
 // flashDryRun shows what would happen without executing anything.
-// Reads current modem settings to show before → after for each change.
-func flashDryRun(dev *modem.Device, comp modem.USBComposition, selrat, band string, usbSpeed int) error {
+func flashDryRun(dev *modem.Device) error {
 	logger.Infof("DRY RUN — pass --no-dry-run to execute")
 	logger.Infof("")
 
-	// Read current settings for before/after comparison (lightweight — ~8 AT commands)
-	var info *modem.Info
+	// Read current firmware version for context
 	if dev.ATPort != "" {
 		port, err := modem.OpenPort(dev.ATPort, logger)
 		if err == nil {
-			info = modem.GetConfigSummary(port)
+			info := modem.GetConfigSummary(port)
 			port.Close()
+			if info != nil {
+				logger.Infof("Current state:")
+				if info.Firmware.Current.Version != "" {
+					logger.Infof("  Firmware:  %s", info.Firmware.Current.Version)
+				}
+				if info.Firmware.Current.CarrierName != "" {
+					logger.Infof("  Carrier:   %s", info.Firmware.Current.CarrierName)
+				}
+				logger.Infof("")
+			}
 		}
-	}
-
-	if info != nil {
-		logger.Infof("Current state:")
-		if info.Firmware.Current.Version != "" {
-			logger.Infof("  Firmware:  %s", info.Firmware.Current.Version)
-		}
-		if info.Firmware.Current.CarrierName != "" {
-			logger.Infof("  Carrier:   %s", info.Firmware.Current.CarrierName)
-		}
-		logger.Infof("")
 	}
 
 	step := 1
@@ -253,177 +178,21 @@ func flashDryRun(dev *modem.Device, comp modem.USBComposition, selrat, band stri
 	step++
 
 	if !flagSkipFlash {
-		logger.Infof("  %d. Pre-flash setup", step)
-		logger.Infof("     Set PCOFFEN=2 (ignore W_DISABLE pin — prevents low-power lockup)")
-		logger.Infof("     Set FASTENUMEN=%d (%s)", flagFastEnum, fastEnumDescription(flagFastEnum))
-		step++
-
-		logger.Infof("  %d. Flash firmware via qmi-firmware-update --update", step)
-		logger.Infof("     Set firmware preference (version + carrier GENERIC)")
-		logger.Infof("     Reset to bootloader → flash → reboot")
-		logger.Infof("     Wait for modem to come online")
-		step++
-	}
-
-	if !flagSkipConfigure {
-		logger.Infof("  %d. Configure modem settings", step)
-
-		// Identity — make modem appear as generic Sierra Wireless EM7455
-		logger.Infof("")
-		v := modem.Vendors["sierra"]
-		logger.Infof("     USB identity (appear as generic Sierra Wireless EM7455):")
-		if info != nil {
-			showChange("       VID", info.USB.VID, v.VID)
-			showChange("       PID", info.USB.PID.App+","+info.USB.PID.Boot, v.PIDApp+","+v.PIDBoot)
-			showChange("       Product", info.USB.Product, v.Product)
-			// ConfigType may include description like "1 (Generic)" — strip to just the number
-			cfgType := strings.SplitN(info.USB.Composition.ConfigType, " ", 2)[0]
-			curComp := fmt.Sprintf("%d,%s,%s", info.USB.Composition.ConfigIndex,
-				cfgType, info.USB.Composition.Bitmask)
-			showChange("       USBCOMP", curComp, comp.ATValue)
+		if dev.Bootloader {
+			logger.Infof("  %d. Flash firmware via qmi-firmware-update --update-download", step)
+			logger.Infof("     Modem is in bootloader mode — flashing directly")
+			logger.Infof("     Wait for modem to come online")
 		} else {
-			logger.Infof("       VID → 1199, PID → 9071,9070, Product → EM7455")
-			logger.Infof("       USBCOMP → %s", comp.ATValue)
+			logger.Infof("  %d. Flash firmware via qmi-firmware-update --update", step)
+			logger.Infof("     Set firmware preference (version + carrier from NVU)")
+			logger.Infof("     Reset to bootloader → flash → reboot")
+			logger.Infof("     Wait for modem to come online")
 		}
-
-		// Carrier preference — unlock all carriers
-		logger.Infof("")
-		logger.Infof("     Carrier preference (unlock from OEM carrier lock):")
-		if info != nil {
-			showChange("       Carrier", info.Firmware.Current.CarrierName, "GENERIC")
-		} else {
-			logger.Infof("       Carrier → GENERIC")
-		}
-
-		// Network — RAT and band selection
-		selratName := selratDescription(selrat)
-		bandName := bandDescription(band)
-		logger.Infof("")
-		logger.Infof("     Network (RAT and band selection):")
-		if info != nil {
-			curSelrat := fmt.Sprintf("%02d", info.Network.RATSelection.Index)
-			if info.Network.RATSelection.Name != "" {
-				curSelrat += " (" + info.Network.RATSelection.Name + ")"
-			}
-			showChange("       SELRAT", curSelrat, selrat+" ("+selratName+")")
-
-			curBand := fmt.Sprintf("%02d", info.Network.CurrentBand.Index)
-			if info.Network.CurrentBand.Name != "" {
-				curBand += " (" + info.Network.CurrentBand.Name + ")"
-			}
-			showChange("       BAND", curBand, band+" ("+bandName+")")
-		} else {
-			logger.Infof("       SELRAT → %s (%s)", selrat, selratName)
-			logger.Infof("       BAND → %s (%s)", band, bandName)
-		}
-
-		// Power management
-		logger.Infof("")
-		logger.Infof("     Power management:")
-		if info != nil {
-			curFastEnum := customHexToDecimal(info.Custom["FASTENUMEN"])
-			showChange("       FASTENUMEN", curFastEnum, fmt.Sprintf("%d — %s", flagFastEnum, fastEnumDescription(flagFastEnum)))
-			showChange("       PCOFFEN", fmt.Sprintf("%d", info.Power.PCOFFEN), "2 — ignore W_DISABLE pin")
-		} else {
-			logger.Infof("       FASTENUMEN → %d — %s", flagFastEnum, fastEnumDescription(flagFastEnum))
-			logger.Infof("       PCOFFEN → 2 — ignore W_DISABLE pin")
-		}
-
-		// USB speed
-		targetSpeed := usbSpeedName(usbSpeed)
-		logger.Infof("")
-		logger.Infof("     USB interface speed:")
-		if info != nil && info.USB.Speed.Current != "" {
-			showChange("       USBSPEED", info.USB.Speed.Current, targetSpeed)
-		} else {
-			logger.Infof("       USBSPEED → %s", targetSpeed)
-		}
-
-		logger.Infof("")
 		step++
 	}
 
 	logger.Infof("  %d. Restart ModemManager", step)
 	return nil
-}
-
-// customHexToDecimal converts a hex custom value like "0x02" to decimal "2".
-// Returns "(not set)" if the value is empty or unparseable.
-func customHexToDecimal(hex string) string {
-	hex = strings.TrimSpace(hex)
-	if hex == "" {
-		return "(not set)"
-	}
-	trimmed := strings.TrimPrefix(hex, "0x")
-	trimmed = strings.TrimPrefix(trimmed, "0X")
-	var val int64
-	if _, err := fmt.Sscanf(trimmed, "%x", &val); err == nil {
-		return fmt.Sprintf("%d", val)
-	}
-	return hex
-}
-
-// selratDescription returns a human-readable description for a SELRAT value.
-func selratDescription(selrat string) string {
-	switch selrat {
-	case "00":
-		return "automatic"
-	case "01":
-		return "GSM only"
-	case "02":
-		return "WCDMA only"
-	case "06":
-		return "LTE only"
-	default:
-		return "unknown"
-	}
-}
-
-// bandDescription returns a human-readable description for a BAND index.
-func bandDescription(band string) string {
-	switch band {
-	case "00":
-		return "all bands"
-	case "09":
-		return "LTE all"
-	default:
-		return "custom"
-	}
-}
-
-// fastEnumDescription returns a human-readable description for FASTENUMEN.
-func fastEnumDescription(val int) string {
-	switch val {
-	case 0:
-		return "disabled"
-	case 1:
-		return "cold boot only"
-	case 2:
-		return "warm boot only"
-	case 3:
-		return "warm and cold boot"
-	default:
-		return "unknown"
-	}
-}
-
-// usbSpeedName returns the human-readable name for a USBSPEED AT value.
-func usbSpeedName(speed int) string {
-	if speed == 1 {
-		return "Super-Speed"
-	}
-	return "High-Speed"
-}
-
-// showChange logs a before → after line, highlighting when values differ.
-func showChange(label, before, after string) {
-	before = strings.TrimSpace(before)
-	after = strings.TrimSpace(after)
-	if before == after {
-		logger.Infof("%s: %s (no change)", label, after)
-	} else {
-		logger.Infof("%s: %s → %s", label, before, after)
-	}
 }
 
 // waitForModemReady waits for the modem to appear in sysfs and reach online
@@ -511,9 +280,12 @@ func waitForModemReady(timeout time.Duration) (*modem.Device, error) {
 }
 
 // controlDevice returns the QMI control device path and whether it uses MBIM.
+// For cdc-wdm devices, the transport is determined by checking the sysfs
+// driver: cdc_mbim → MBIM, qmi_wwan → raw QMI. This is needed so external
+// tools (qmi-firmware-update, qmicli) get the correct --device-open-mbim flag.
 func controlDevice(dev *modem.Device) (string, bool) {
 	if dev.CDCDevice != "" {
-		return dev.CDCDevice, true
+		return dev.CDCDevice, qmux.IsMBIMDevice(dev.CDCDevice)
 	}
 	if dev.QCQMIDevice != "" {
 		return dev.QCQMIDevice, false
@@ -522,21 +294,10 @@ func controlDevice(dev *modem.Device) (string, bool) {
 }
 
 func init() {
-	flashCmd.Flags().StringVar(&flagUSBMode, "usb-mode", "mbim", "USB composition mode")
-	flashCmd.Flags().StringVar(&flagUSBSpeed, "usb-speed", "2.0", "USB interface speed")
-	flashCmd.Flags().StringVar(&flagBands, "bands", "lte", "band selection")
-	flashCmd.Flags().IntVar(&flagFastEnum, "fast-enum", 2, "fast enumeration mode (0-3)")
 	flashCmd.Flags().StringVar(&flagFirmwareURL, "firmware-url", "", "override firmware download URL")
 	flashCmd.Flags().BoolVar(&flagLegacy, "legacy", false, "use legacy stable firmware")
 	flashCmd.Flags().BoolVar(&flagSkipDownload, "skip-download", false, "skip firmware download")
 	flashCmd.Flags().BoolVar(&flagSkipFlash, "skip-flash", false, "skip firmware flash")
-	flashCmd.Flags().BoolVar(&flagSkipConfigure, "skip-configure", false, "skip modem configuration")
-
-	// Register completions for enum flags
-	flashCmd.RegisterFlagCompletionFunc("usb-mode", completeUSBMode)
-	flashCmd.RegisterFlagCompletionFunc("usb-speed", completeUSBSpeed)
-	flashCmd.RegisterFlagCompletionFunc("bands", completeBands)
-	flashCmd.RegisterFlagCompletionFunc("fast-enum", completeFastEnum)
 
 	rootCmd.AddCommand(flashCmd)
 }

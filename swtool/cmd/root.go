@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -50,6 +51,10 @@ Running without a subcommand is equivalent to 'swtool flash'.`,
 		logger.Step("Searching for EM7455/MC7455 modem...")
 
 		dev, err := modem.Detect(logger)
+		if errors.Is(err, modem.ErrNoModemFound) {
+			// No online modem — check for bootloader/QDL mode
+			dev, err = modem.DetectBootloader(logger)
+		}
 		if err != nil {
 			return err
 		}

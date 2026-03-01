@@ -696,6 +696,7 @@ var checkDisplayNames = map[string]string{
 	"network_registration": "Network Registration",
 	"usb_identity":         "USB Identity",
 	"usb_composition":      "USB Composition",
+	"imei":                 "IMEI",
 }
 
 // checkDisplayName returns the human-readable display name for a check.

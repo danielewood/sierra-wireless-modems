@@ -27,7 +27,7 @@ type Info struct {
 	LTECA        LTECAInfo         `json:"lte_ca,omitempty"`
 }
 
-// DiagInfo holds live diagnostic data from AT!GSTATUS?, AT+CSQ, etc.
+// DiagInfo holds live diagnostic data from AT!GSTATUS? and QMI queries.
 type DiagInfo struct {
 	GStatus    map[string]string `json:"gstatus,omitempty"`
 	SignalBars int               `json:"signal_bars,omitempty"`
@@ -386,6 +386,120 @@ func GetInfoStreaming(port *Port, send func(*Info)) {
 	send(snapshotInfo(info)) // #8
 }
 
+// GetInfoForSection queries only the AT commands needed for a single info
+// section. Much faster than GetInfoStreaming for targeted queries like
+// "swtool info signal". Returns a partial Info with only the relevant
+// fields populated.
+func GetInfoForSection(port *Port, section string) *Info {
+	info := &Info{
+		Custom: make(map[string]string),
+	}
+	info.Diagnostics.GStatus = make(map[string]string)
+
+	port.SendCommand("ATE1")
+
+	// Most AT! commands need engineering mode.
+	if !port.engineeringMode {
+		if _, err := port.SendCommand(`AT!ENTERCND="A710"`); err == nil {
+			port.engineeringMode = true
+		}
+	}
+
+	switch section {
+	case "identity":
+		if resp, err := port.SendCommand("ATI"); err == nil {
+			info.Identity = parseATI(resp)
+		}
+		if resp, err := port.SendCommand("AT!HWID?"); err == nil {
+			info.Identity.HardwareRev = parseHWID(resp)
+		}
+	case "power":
+		if resp, err := port.SendCommand("AT!PCOFFEN?"); err == nil {
+			info.Power.PCOFFEN = parseIntValue(cleanATResponse(resp, "AT!PCOFFEN?"))
+		}
+		if resp, err := port.SendCommand("AT!PCINFO?"); err == nil {
+			info.Power.State, info.Power.LPMVoters, info.Power.LPMPersistence = parsePCINFO(resp)
+		}
+	case "sim":
+		if resp, err := port.SendCommand("AT+CPIN?"); err == nil {
+			info.SIM.Status = parseCPIN(resp)
+		}
+		if resp, err := port.SendCommand("AT+CIMI"); err == nil {
+			info.SIM.IMSI = parseCIMI(resp)
+		}
+		if resp, err := port.SendCommand("AT+ICCID?"); err == nil {
+			info.SIM.ICCID = parseICCID(resp)
+		}
+	case "network":
+		// AT+COPS?, AT+CREG?, AT+CEREG?, AT+CGREG? removed — QMI provides
+		// operator, registration status, and system mode.
+		if resp, err := port.SendCommand("AT!SELRAT?"); err == nil {
+			info.Network.RATSelection = parseSELRAT(resp)
+		}
+		if resp, err := port.SendCommand("AT!BAND?"); err == nil {
+			bands := parseBandTable(resp)
+			if len(bands) > 0 {
+				info.Network.CurrentBand = bands[0]
+			}
+		}
+		if resp, err := port.SendCommand("AT+CGDCONT?"); err == nil {
+			info.APNs = parseCGDCONT(resp)
+		}
+	case "firmware":
+		if resp, err := port.SendCommand("AT!IMPREF?"); err == nil {
+			info.Firmware.Preferred, info.Firmware.Current = parseIMPREF(resp)
+		}
+	case "priid":
+		if resp, err := port.SendCommand("AT!PRIID?"); err == nil {
+			info.Firmware.PRIID = parsePRIID(resp)
+		}
+	case "usb":
+		if resp, err := port.SendCommand("AT!USBVID?"); err == nil {
+			info.USB.VID = parseSingleLineValue(resp)
+		}
+		if resp, err := port.SendCommand("AT!USBPID?"); err == nil {
+			info.USB.PID = parseUSBPID(resp)
+		}
+		if resp, err := port.SendCommand("AT!USBCOMP?"); err == nil {
+			info.USB.Composition = parseUSBCOMP(resp)
+		}
+		if resp, err := port.SendCommand("AT!USBPRODUCT?"); err == nil {
+			info.USB.Product = cleanATResponse(resp, "AT!USBPRODUCT?")
+		}
+		if resp, err := port.SendCommand("AT!USBSPEED?"); err == nil {
+			info.USB.Speed = parseUSBSpeed(resp)
+		}
+	case "images":
+		if resp, err := port.SendCommand("AT!IMAGE?"); err == nil {
+			info.Images = parseIMAGE(resp)
+		}
+	case "signal":
+		// AT+CSQ and AT!LTEINFO? removed — QMI provides signal and cell data.
+		// AT!GSTATUS? stays: Sierra-specific fields (band, EMM/RRC state, Tx Power, etc.).
+		if resp, err := port.SendCommand("AT!GSTATUS?"); err == nil {
+			info.Diagnostics.GStatus = parseGSTATUS(resp)
+		}
+	case "gps":
+		if resp, err := port.SendCommand("AT!GPSSTATUS?"); err == nil {
+			info.GPS = parseGPSSTATUS(resp)
+		}
+	case "bands":
+		if resp, err := port.SendCommand("AT!BAND=?"); err == nil {
+			info.Network.AvailableBands = parseBandTable(resp)
+		}
+	case "custom":
+		if resp, err := port.SendCommand("AT!CUSTOM?"); err == nil {
+			info.Custom = parseCUSTOM(resp)
+		}
+	case "ca":
+		if resp, err := port.SendCommand("AT!LTECA?"); err == nil {
+			info.LTECA = parseLTECA(resp)
+		}
+	}
+
+	return info
+}
+
 // GetConfigSummary queries only the settings that flash/configure would change.
 // Much faster than GetInfo (~8 AT commands vs 30+). Returns partial Info with
 // only Firmware, USB, and Network fields populated.
@@ -457,36 +571,6 @@ func ClearFirmwareImages(port *Port) error {
 	if err != nil {
 		return fmt.Errorf("clearing firmware images: %w", err)
 	}
-	return nil
-}
-
-// PreFlashSetup sets power management settings that survive a firmware flash.
-// This prevents the modem from getting stuck in low-power mode after rebooting
-// with new firmware.
-//
-// Settings applied:
-//   - PCOFFEN=2 — ignore W_DISABLE pin (prevents low-power lockup)
-//   - FASTENUMEN — fast USB enumeration on warm boot
-//
-// Note: does NOT clear firmware images (AT!IMAGE=0). The qmi-firmware-update
-// --update flag manages image slots. Clearing images separately is dangerous —
-// if the flash fails, the modem is left with no firmware images.
-func PreFlashSetup(port *Port, fastEnum int) error {
-	if err := EnterCommandMode(port); err != nil {
-		return err
-	}
-
-	port.log.Step("Setting power management before flash...")
-
-	for _, cmd := range []string{
-		"AT!PCOFFEN=2",
-		fmt.Sprintf(`AT!CUSTOM="FASTENUMEN",%d`, fastEnum),
-	} {
-		if _, err := port.SendCommand(cmd); err != nil {
-			port.log.Warnf("%s failed: %v (continuing)", cmd, err)
-		}
-	}
-
 	return nil
 }
 
@@ -1311,9 +1395,14 @@ func parseLTEINFO(resp string) LTECellInfo {
 			continue
 		}
 
-		// Parse data row
+		// Non-LTE section header (e.g. "WCDMA:", "UMTS:") — stop parsing.
+		// Data rows start with numbers, not "WORD:".
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
+			continue
+		}
+		if strings.HasSuffix(fields[0], ":") {
+			currentSection = ""
 			continue
 		}
 

@@ -37,20 +37,19 @@ const (
 	mbimCommandDoneHeaderLen = mbimHeaderLen + 36
 )
 
-// qmiOverMBIMUUID is the QMI-over-MBIM device service UUID in MBIM
-// mixed-endian wire format:
+// qmiOverMBIMUUID is the QMI-over-MBIM device service UUID.
 //
 //	UUID: d1a30bc2-f97a-6e43-bf65-c7e24fb0f0d3
-//	Wire: c2 0b a3 d1 7a f9 43 6e bf 65 c7 e2 4f b0 f0 d3
 //
-// MBIM UUIDs use mixed-endian: first 3 groups are little-endian,
-// last 2 groups are big-endian (inherited from Microsoft COM).
+// MBIM UUIDs are written in big-endian (presentation) byte order,
+// matching libmbim's MbimUuid struct which is memcpy'd directly
+// to the wire without byte-swapping.
 var qmiOverMBIMUUID = [16]byte{
-	0xc2, 0x0b, 0xa3, 0xd1, // d1a30bc2 reversed
-	0x7a, 0xf9,             // f97a reversed
-	0x43, 0x6e,             // 6e43 reversed
-	0xbf, 0x65,             // bf65 (big-endian)
-	0xc7, 0xe2, 0x4f, 0xb0, 0xf0, 0xd3, // c7e24fb0f0d3 (big-endian)
+	0xd1, 0xa3, 0x0b, 0xc2,
+	0xf9, 0x7a,
+	0x6e, 0x43,
+	0xbf, 0x65,
+	0xc7, 0xe2, 0x4f, 0xb0, 0xf0, 0xd3,
 }
 
 // mbimTransport wraps QMUX frames in MBIM COMMAND messages for
@@ -177,7 +176,7 @@ func (t *mbimTransport) Receive() ([]byte, error) {
 			return nil, fmt.Errorf("MBIM COMMAND_DONE too short: %d bytes", len(resp))
 		}
 
-		// Extract InformationBufferLength at the same offset as COMMAND.
+		// Extract InformationBufferLength.
 		off := mbimHeaderLen + 8 + 16 + 4 + 4 // skip frag + UUID + CID + Status
 		infoLen := binary.LittleEndian.Uint32(resp[off : off+4])
 		off += 4

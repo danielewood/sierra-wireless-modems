@@ -31,7 +31,7 @@ const DefaultReadTimeout = 5 * time.Second
 // For /dev/qcqmi* devices, raw QMI is always used.
 func OpenTransport(devicePath string) (Transport, error) {
 	if strings.Contains(devicePath, "cdc-wdm") {
-		if isMBIMDevice(devicePath) {
+		if IsMBIMDevice(devicePath) {
 			return openMBIMTransport(devicePath)
 		}
 		return OpenRawTransport(devicePath)
@@ -39,10 +39,11 @@ func OpenTransport(devicePath string) (Transport, error) {
 	return OpenRawTransport(devicePath)
 }
 
-// isMBIMDevice checks sysfs to determine if a cdc-wdm device uses the
+// IsMBIMDevice checks sysfs to determine if a cdc-wdm device uses the
 // cdc_mbim driver (MBIM) vs qmi_wwan (raw QMI).
 // Falls back to assuming MBIM if the driver can't be determined.
-func isMBIMDevice(devicePath string) bool {
+// Use this to decide whether external tools need --device-open-mbim.
+func IsMBIMDevice(devicePath string) bool {
 	// Extract device name: "/dev/cdc-wdm0" → "cdc-wdm0"
 	devName := filepath.Base(devicePath)
 	driverLink, err := os.Readlink(filepath.Join("/sys/class/usbmisc", devName, "device/driver"))

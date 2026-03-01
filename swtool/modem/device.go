@@ -19,8 +19,9 @@ type Device struct {
 	Name        string // Human name, e.g. "Dell DW5811e"
 	SysfsPath   string // e.g. "/sys/bus/usb/devices/1-3"
 	ATPort      string // e.g. "/dev/ttyUSB2"
-	CDCDevice   string // e.g. "/dev/cdc-wdm0" (MBIM mode)
-	QCQMIDevice string // e.g. "/dev/qcqmi0" (QMI mode)
+	CDCDevice   string // e.g. "/dev/cdc-wdm0" (MBIM or QMI via qmi_wwan)
+	QCQMIDevice string // e.g. "/dev/qcqmi0" (QMI via GobiNet)
+	Bootloader  bool   // true when modem is in QDL/bootloader mode
 }
 
 // OnlineIDs maps known VID:PID pairs for modems in normal operating mode.

@@ -1,4 +1,5 @@
-libqmi-1.38.0
+libqmi-*
+libmbim-*
 *.nvu
 *.cwe
 swtool
@@ -7,3 +8,4 @@ swtool
 *.gz
 *.zip
 nvu_extract/
+*.deb

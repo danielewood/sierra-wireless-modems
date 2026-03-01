@@ -7,12 +7,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/danielewood/sierra-wireless-modems/swtool/internal/keygen"
 	"github.com/danielewood/sierra-wireless-modems/swtool/modem"
 	"github.com/danielewood/sierra-wireless-modems/swtool/qmi"
 	"github.com/spf13/cobra"
 )
 
-var flagRepairJSON bool
+var (
+	flagRepairJSON bool
+	flagRepairIMEI string
+)
 
 var repairCmd = &cobra.Command{
 	Use:     "repair",
@@ -25,6 +29,7 @@ Fixable conditions:
   - PCOFFEN not set to 2 (W_DISABLE pin can force low-power)
   - Firmware preference carrier mismatch (causes low-power lockup)
   - Modem stuck in low-power or offline mode
+  - IMEI corrupted or mismatched (with --imei flag)
 
 Non-fixable conditions are reported with guidance:
   - Firmware image issues → run 'swtool flash'
@@ -35,6 +40,13 @@ Non-fixable conditions are reported with guidance:
 This is a mutating command — runs in dry-run mode by default.
 Pass --no-dry-run to actually apply fixes.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Validate --imei flag early before any modem communication.
+		if flagRepairIMEI != "" {
+			if err := modem.ValidateIMEI(flagRepairIMEI); err != nil {
+				return fmt.Errorf("invalid IMEI %q: %w", flagRepairIMEI, err)
+			}
+		}
+
 		dev := requireModem()
 
 		if dev.ATPort == "" {
@@ -87,6 +99,11 @@ Pass --no-dry-run to actually apply fixes.`,
 
 		// Build repair plan from checks.
 		plan := buildRepairPlan(checks, info, qmiMode, storedImages, fwPref)
+
+		// Add IMEI repair entry if --imei flag is set.
+		if flagRepairIMEI != "" {
+			plan = append(plan, buildIMEIRepairEntry(info, flagRepairIMEI))
+		}
 
 		// If everything passes, nothing to do.
 		if allPass(plan) {
@@ -150,6 +167,7 @@ Pass --no-dry-run to actually apply fixes.`,
 
 func init() {
 	repairCmd.Flags().BoolVar(&flagRepairJSON, "json", false, "output as JSON")
+	repairCmd.Flags().StringVar(&flagRepairIMEI, "imei", "", "IMEI to write (15 digits, Luhn-validated)")
 	rootCmd.AddCommand(repairCmd)
 }
 
@@ -332,6 +350,7 @@ func executeRepairs(dev *modem.Device, info *modem.Info, plan []RepairResult, st
 	needsPCOFFEN := false
 	needsFWPref := false
 	needsOnline := false
+	needsIMEI := false
 	for _, r := range plan {
 		if r.Status != repairWouldFix {
 			continue
@@ -343,6 +362,8 @@ func executeRepairs(dev *modem.Device, info *modem.Info, plan []RepairResult, st
 			needsFWPref = true
 		case "power_state":
 			needsOnline = true
+		case "imei":
+			needsIMEI = true
 		}
 	}
 
@@ -388,6 +409,11 @@ func executeRepairs(dev *modem.Device, info *modem.Info, plan []RepairResult, st
 	// Fix 3: Bring modem online via QMI.
 	if needsOnline {
 		applyOnlineFix(plan, device, mbim)
+	}
+
+	// Fix 4: Write IMEI via AT!NVENCRYPTIMEI (requires AT!OPENLOCK + AT!NVIMEIUNLOCK).
+	if needsIMEI {
+		applyIMEIFix(dev, plan, flagRepairIMEI)
 	}
 
 	return plan
@@ -659,4 +685,111 @@ func printRepairSummary(w *os.File, results []RepairResult) {
 	} else {
 		fmt.Fprintf(w, "🎉 %s\n", strings.Join(parts, ", "))
 	}
+}
+
+// buildIMEIRepairEntry creates the repair plan entry for IMEI writing.
+func buildIMEIRepairEntry(info *modem.Info, targetIMEI string) RepairResult {
+	current := info.Identity.IMEI
+	if current == targetIMEI {
+		return RepairResult{
+			Name:    "imei",
+			Status:  repairPass,
+			Summary: fmt.Sprintf("IMEI already %s", current),
+		}
+	}
+
+	summary := fmt.Sprintf("Would write IMEI %s", targetIMEI)
+	if current != "" {
+		summary = fmt.Sprintf("Would write IMEI %s (currently %s)", targetIMEI, current)
+	}
+	return RepairResult{
+		Name:    "imei",
+		Status:  repairWouldFix,
+		Summary: summary,
+	}
+}
+
+// applyIMEIFix writes a new IMEI using the AT!OPENLOCK + AT!NVIMEIUNLOCK +
+// AT!NVENCRYPTIMEI sequence. Requires engineering unlock via the keygen algorithm.
+func applyIMEIFix(dev *modem.Device, plan []RepairResult, targetIMEI string) {
+	port, err := modem.OpenPort(dev.ATPort, logger)
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("could not open AT port: %v", err))
+		return
+	}
+	defer port.Close()
+
+	// Step 1: Get revision for generation detection.
+	resp, err := port.SendCommand("ATI")
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("ATI failed: %v", err))
+		return
+	}
+	revision, model := parseATIForUnlock(resp)
+	if revision == "" {
+		markPlanEntry(plan, "imei", repairFailed, "could not parse revision from ATI")
+		return
+	}
+
+	gen, err := keygen.DetectGeneration(revision, model)
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("unknown generation: %v", err))
+		return
+	}
+	logger.Debugf("IMEI repair: detected generation %s", gen.Name)
+
+	// Step 2: Enter engineering command mode.
+	if err := modem.EnterCommandMode(port); err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("engineering mode: %v", err))
+		return
+	}
+
+	// Step 3: AT!OPENLOCK challenge-response.
+	logger.Step("Performing AT!OPENLOCK for IMEI write...")
+	challengeResp, err := port.SendCommand("AT!OPENLOCK?")
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("AT!OPENLOCK? failed: %v", err))
+		return
+	}
+	challenge := parseChallenge(challengeResp)
+	if challenge == "" {
+		markPlanEntry(plan, "imei", repairFailed, "could not parse AT!OPENLOCK challenge")
+		return
+	}
+
+	response, err := keygen.Solve(challenge, gen, keygen.KeyOpenLock)
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("keygen failed: %v", err))
+		return
+	}
+
+	unlockCmd := fmt.Sprintf(`AT!OPENLOCK="%s"`, response)
+	if _, err := port.SendCommand(unlockCmd); err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("AT!OPENLOCK failed: %v", err))
+		return
+	}
+	logger.Debugf("AT!OPENLOCK succeeded")
+
+	// Step 4: Unlock NV IMEI storage.
+	logger.Step("Unlocking IMEI NV storage...")
+	if _, err := port.SendCommand("AT!NVIMEIUNLOCK"); err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("AT!NVIMEIUNLOCK failed: %v", err))
+		return
+	}
+
+	// Step 5: Write IMEI as BCD-encoded bytes.
+	bcd, err := modem.EncodeIMEIBCD(targetIMEI)
+	if err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("encoding IMEI: %v", err))
+		return
+	}
+
+	writeCmd := fmt.Sprintf("AT!NVENCRYPTIMEI=%s", bcd)
+	logger.Step(fmt.Sprintf("Writing IMEI: %s", writeCmd))
+	if _, err := port.SendCommand(writeCmd); err != nil {
+		markPlanEntry(plan, "imei", repairFailed, fmt.Sprintf("AT!NVENCRYPTIMEI failed: %v", err))
+		return
+	}
+
+	markPlanEntry(plan, "imei", repairFixed, fmt.Sprintf("Wrote IMEI %s", targetIMEI))
 }

@@ -43,7 +43,8 @@ type spinnerTickMsg struct{}
 type tuiModel struct {
 	dev      *modem.Device
 	interval time.Duration
-	jsonDump bool // if true, dump JSON on exit
+	section  string // optional section filter (e.g. "signal")
+	jsonDump bool   // if true, dump JSON on exit
 
 	info    *modem.Info // merged display info (sticky values)
 	rawInfo *modem.Info // last raw poll result (for JSON dump)
@@ -73,7 +74,8 @@ type tuiModel struct {
 }
 
 // runInfoTUI launches the bubbletea TUI for live modem info.
-func runInfoTUI(dev *modem.Device, interval time.Duration, jsonOnExit bool) error {
+// If section is non-empty, only that section is polled and displayed.
+func runInfoTUI(dev *modem.Device, interval time.Duration, jsonOnExit bool, section string) error {
 	if !isTerminal(os.Stdin) {
 		return fmt.Errorf("--watch requires an interactive terminal")
 	}
@@ -81,6 +83,7 @@ func runInfoTUI(dev *modem.Device, interval time.Duration, jsonOnExit bool) erro
 	m := tuiModel{
 		dev:          dev,
 		interval:     interval,
+		section:      section,
 		fieldAges:    make(map[string]int),
 		cycleUpdated: make(map[string]bool),
 		qmiCache:     &qmiCache{},
@@ -131,7 +134,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.polling {
 				m.polling = true
 				m.cycleUpdated = make(map[string]bool)
-				ch := startStreamPoll(m.dev, m.qmiCache)
+				ch := startStreamPoll(m.dev, m.qmiCache, m.section)
 				return m, tea.Batch(waitStreamUpdate(ch), spinnerTick())
 			}
 		case "up", "k":
@@ -160,7 +163,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case initMsg:
 		m.polling = true
-		ch := startStreamPoll(m.dev, m.qmiCache)
+		ch := startStreamPoll(m.dev, m.qmiCache, m.section)
 		return m, tea.Batch(waitStreamUpdate(ch), tickAfter(m.interval), spinnerTick())
 
 	case streamUpdateMsg:
@@ -169,9 +172,8 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.rawInfo = msg.result.info
 			newFields := extractFields(msg.result.info)
-			oldFields := extractFields(m.info)
 			for k, nv := range newFields {
-				if nv != "" && nv != oldFields[k] {
+				if nv != "" {
 					m.fieldAges[k] = 0
 					m.cycleUpdated[k] = true
 				}
@@ -198,7 +200,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.polling = true
 		m.cycleUpdated = make(map[string]bool)
-		ch := startStreamPoll(m.dev, m.qmiCache)
+		ch := startStreamPoll(m.dev, m.qmiCache, m.section)
 		return m, tea.Batch(waitStreamUpdate(ch), tickAfter(m.interval), spinnerTick())
 	}
 
@@ -239,21 +241,27 @@ func (m tuiModel) View() string {
 
 	// Header line 1: title with spinner
 	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14"))
-	title := fmt.Sprintf(" 🩺 swtool info  %s", m.lastOK.Format("15:04:05"))
+	titleSection := ""
+	if m.section != "" {
+		titleSection = " " + m.section
+	}
+	title := fmt.Sprintf(" 🩺 swtool info%s  %s", titleSection, m.lastOK.Format("15:04:05"))
 	if m.polling {
 		frame := clSpinnerFrames[m.spinnerFrame%len(clSpinnerFrames)]
 		title += fmt.Sprintf("  %s updating", frame)
 	}
 	header := titleStyle.Width(m.width).Render(title)
 
-	// Header line 2: health badge bar
+	// Header line 2: health badge bar (hidden in section-filtered mode)
 	var badgeLine string
-	if checks := m.computeChecks(); len(checks) > 0 {
-		var badges []string
-		for _, c := range checks {
-			badges = append(badges, fmt.Sprintf("%s %s", diagBadge(c.Status), checkDisplayName(c.Name)))
+	if m.section == "" {
+		if checks := m.computeChecks(); len(checks) > 0 {
+			var badges []string
+			for _, c := range checks {
+				badges = append(badges, fmt.Sprintf("%s %s", diagBadge(c.Status), checkDisplayName(c.Name)))
+			}
+			badgeLine = " " + strings.Join(badges, "  ")
 		}
-		badgeLine = " " + strings.Join(badges, "  ")
 	}
 
 	// Error line (fixed)
@@ -309,9 +317,10 @@ func (m tuiModel) renderContent() string {
 	a := m.fieldAges
 	checks := m.computeChecks()
 
-	// Panel width for two-column vs single-column layout
+	// Panel width for two-column vs single-column layout.
+	// Section-filtered mode always uses full width.
 	panelW := m.width
-	if m.width >= minTwoColWidth {
+	if m.section == "" && m.width >= minTwoColWidth {
 		panelW = m.width/2 - 1
 	}
 	labelW := max(12, panelW/3)
@@ -335,9 +344,11 @@ func (m tuiModel) renderContent() string {
 
 	signal := renderPanel("Signal", "", panelW, func(b *strings.Builder) {
 		d := info.Diagnostics
+		shown := make(map[string]bool)
 		if d.RSSI != 0 {
 			bars := renderBars(d.SignalBars, 5)
 			pf(b, "RSSI", fmt.Sprintf("%s %d dBm", bars, d.RSSI), a["RSSI"], labelW)
+			shown["RSSI (dBm)"] = true // bars already show RSSI
 		}
 		importantKeys := []string{
 			"System mode", "PS state", "LTE band", "LTE bw",
@@ -345,8 +356,10 @@ func (m tuiModel) renderContent() string {
 			"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
 			"Tx Power", "TAC", "Cell ID", "Current Time",
 		}
-		shown := make(map[string]bool)
 		for _, key := range importantKeys {
+			if shown[key] {
+				continue
+			}
 			if v, ok := d.GStatus[key]; ok {
 				pf(b, key, formatGStatusValue(key, v), a[key], labelW)
 				shown[key] = true
@@ -364,6 +377,19 @@ func (m tuiModel) renderContent() string {
 		slices.Sort(remaining)
 		for _, key := range remaining {
 			pf(b, key, formatGStatusValue(key, d.GStatus[key]), a[key], labelW)
+		}
+		// LTE neighbor cells — serving cell data is already in signal fields above.
+		if len(info.LTEDetail.IntraFreq) > 0 {
+			fmt.Fprintln(b, staleStyle("Neighbor Cells (IntraFreq):", -1))
+			for _, cell := range info.LTEDetail.IntraFreq {
+				renderStyledCellRow(b, cell, a)
+			}
+		}
+		if len(info.LTEDetail.InterFreq) > 0 {
+			fmt.Fprintln(b, staleStyle("Neighbor Cells (InterFreq):", -1))
+			for _, cell := range info.LTEDetail.InterFreq {
+				renderStyledCellRow(b, cell, a)
+			}
 		}
 	})
 
@@ -482,11 +508,11 @@ func (m tuiModel) renderContent() string {
 		}
 	})
 
-	// Wide sections that always go full-width
-	var wideSections []string
+	// Wide sections — always full-width in both layouts.
+	var images, ca, bands string
 
 	if len(info.Images.Firmware) > 0 || len(info.Images.PRI) > 0 {
-		wideSections = append(wideSections, renderPanel("Firmware Images", sectionBadge(checks, "firmware_images"), m.width, func(b *strings.Builder) {
+		images = renderPanel("Firmware Images", sectionBadge(checks, "firmware_images"), m.width, func(b *strings.Builder) {
 			if len(info.Images.Firmware) > 0 {
 				fmt.Fprintf(b, "FW Slots (max %d, active: %d):\n", info.Images.MaxFW, info.Images.ActiveSlot)
 				for _, s := range info.Images.Firmware {
@@ -501,34 +527,11 @@ func (m tuiModel) renderContent() string {
 						s.Slot, s.Status, s.LRU, s.Failures, s.UniqueID, s.BuildID)
 				}
 			}
-		}))
-	}
-
-	if len(info.LTEDetail.Serving) > 0 || len(info.LTEDetail.IntraFreq) > 0 || len(info.LTEDetail.InterFreq) > 0 {
-		wideSections = append(wideSections, renderPanel("LTE Cell Detail", "", m.width, func(b *strings.Builder) {
-			if len(info.LTEDetail.Serving) > 0 {
-				fmt.Fprintln(b, "Serving:")
-				for _, cell := range info.LTEDetail.Serving {
-					renderCellRow(b, cell)
-				}
-			}
-			if len(info.LTEDetail.IntraFreq) > 0 {
-				fmt.Fprintln(b, "IntraFreq:")
-				for _, cell := range info.LTEDetail.IntraFreq {
-					renderCellRow(b, cell)
-				}
-			}
-			if len(info.LTEDetail.InterFreq) > 0 {
-				fmt.Fprintln(b, "InterFreq:")
-				for _, cell := range info.LTEDetail.InterFreq {
-					renderCellRow(b, cell)
-				}
-			}
-		}))
+		})
 	}
 
 	if len(info.LTECA.Hardware) > 0 || len(info.LTECA.Permitted) > 0 {
-		wideSections = append(wideSections, renderPanel("Carrier Aggregation", "", m.width, func(b *strings.Builder) {
+		ca = renderPanel("Carrier Aggregation", "", m.width, func(b *strings.Builder) {
 			if len(info.LTECA.Hardware) > 0 {
 				fmt.Fprintln(b, "Hardware:")
 				for _, c := range info.LTECA.Hardware {
@@ -552,19 +555,43 @@ func (m tuiModel) renderContent() string {
 			if info.LTECA.Pruned != "" {
 				pf(b, "Pruned", info.LTECA.Pruned, 0, labelW)
 			}
-		}))
+		})
 	}
 
 	if len(info.Network.AvailableBands) > 0 {
-		wideSections = append(wideSections, renderPanel("Available Bands", "", m.width, func(b *strings.Builder) {
+		bands = renderPanel("Available Bands", "", m.width, func(b *strings.Builder) {
 			for _, band := range info.Network.AvailableBands {
 				fmt.Fprintf(b, "%02d  %-24s LTE=%s\n", band.Index, band.Name, band.LTEMask)
 			}
-		}))
+		})
 	}
 
 	// --- Layout ---
 	var result strings.Builder
+
+	// Section-filtered mode: show only the matching panel.
+	if m.section != "" {
+		sectionPanels := map[string]string{
+			"identity": identity,
+			"sim":      sim,
+			"signal":   signal,
+			"firmware": firmware,
+			"priid":    priID,
+			"network":  network,
+			"usb":      usb,
+			"power":    power,
+			"custom":   custom,
+			"gps":      gps,
+			"images":   images,
+			"ca":       ca,
+			"bands":    bands,
+		}
+		if p := sectionPanels[m.section]; strings.TrimSpace(p) != "" {
+			result.WriteString(p)
+			result.WriteString("\n")
+		}
+		return result.String()
+	}
 
 	if m.width >= minTwoColWidth {
 		colWidth := m.width / 2
@@ -608,9 +635,11 @@ func (m tuiModel) renderContent() string {
 		result.WriteString("\n")
 	}
 
-	for _, ws := range wideSections {
-		result.WriteString(ws)
-		result.WriteString("\n")
+	for _, ws := range []string{images, ca, bands} {
+		if strings.TrimSpace(ws) != "" {
+			result.WriteString(ws)
+			result.WriteString("\n")
+		}
 	}
 
 	return result.String()
@@ -729,6 +758,27 @@ func joinNonEmpty(parts []string, sep string) string {
 		}
 	}
 	return strings.Join(filtered, sep)
+}
+
+// renderStyledCellRow writes a cell row with TUI staleness styling.
+// Keys are rendered faint (like labels); values use age-based styling.
+func renderStyledCellRow(b *strings.Builder, cell map[string]string, ages map[string]int) {
+	var parts []string
+	for _, key := range []string{"EARFCN", "MCC", "MNC", "TAC", "CID", "Bd", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"} {
+		v, ok := cell[key]
+		if !ok {
+			continue
+		}
+		if key == "EARFCN" {
+			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+				v = modem.FormatEARFCN(n)
+			}
+		}
+		parts = append(parts, staleStyle(key+"=", -1)+staleStyle(v, ages[key]))
+	}
+	if len(parts) > 0 {
+		fmt.Fprintf(b, "  %s\n", joinStrings(parts, "  "))
+	}
 }
 
 func renderCellRow(b *strings.Builder, cell map[string]string) {
@@ -1051,12 +1101,18 @@ func mergeStr(dst *string, old string) {
 // QMI-sourced telemetry is overlaid when qmicli and a control device are available.
 // Signal info is queried every callback; slower queries use the shared cache
 // and only refresh on the first callback of each cycle.
-func startStreamPoll(dev *modem.Device, cache *qmiCache) <-chan pollResultMsg {
+//
+// When section is non-empty, only that section's AT commands are queried
+// (via GetInfoForSection) and a single result is sent.
+func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan pollResultMsg {
 	ch := make(chan pollResultMsg, 2)
 	go func() {
 		defer close(ch)
 
 		qc := createQMIClient(dev)
+		if qc != nil {
+			defer qc.Close()
+		}
 
 		port, err := modem.OpenPort(dev.ATPort, logger)
 		if err != nil {
@@ -1064,6 +1120,15 @@ func startStreamPoll(dev *modem.Device, cache *qmiCache) <-chan pollResultMsg {
 			return
 		}
 		defer port.Close()
+
+		if section != "" {
+			info := modem.GetInfoForSection(port, section)
+			if qc != nil {
+				overlayQMIData(qc, info)
+			}
+			ch <- pollResultMsg{info: info}
+			return
+		}
 
 		first := true
 		modem.GetInfoStreaming(port, func(info *modem.Info) {

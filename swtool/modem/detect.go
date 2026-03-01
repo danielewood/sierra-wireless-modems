@@ -32,7 +32,12 @@ func Detect(l *log.Logger) (*Device, error) {
 
 // DetectBootloader scans sysfs for a modem in bootloader/QDL mode.
 func DetectBootloader(l *log.Logger) (*Device, error) {
-	return detectWithIDs(l, BootloaderIDs)
+	dev, err := detectWithIDs(l, BootloaderIDs)
+	if err != nil {
+		return nil, err
+	}
+	dev.Bootloader = true
+	return dev, nil
 }
 
 // WaitForModem polls for an online modem until found or timeout.

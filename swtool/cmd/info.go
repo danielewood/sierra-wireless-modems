@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -13,15 +14,24 @@ import (
 )
 
 var (
-	flagInfoJSON    bool
-	flagInfoWatch   bool
+	flagInfoJSON     bool
+	flagInfoWatch    bool
 	flagInfoInterval time.Duration
 )
 
+// validSections lists the allowed section names for `swtool info [section]`.
+// "ltedetail" is an alias for "signal" (LTE detail is shown inside Signal).
+var validSections = []string{
+	"identity", "power", "sim", "network", "firmware", "priid",
+	"usb", "images", "signal", "gps", "bands", "custom", "ca",
+}
+
 var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Display current modem settings (read-only, safe)",
-	Long:  `Queries the modem via AT commands and displays all configuration settings.`,
+	Use:       "info [section]",
+	Short:     "Display current modem settings (read-only, safe)",
+	Long:      "Queries the modem via AT commands and displays all configuration settings.\n\nOptionally pass a section name to show only that section in plain format.\nValid sections: " + strings.Join(validSections, ", "),
+	Args:      cobra.MaximumNArgs(1),
+	ValidArgs: validSections,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dev := requireModem()
 
@@ -29,8 +39,21 @@ var infoCmd = &cobra.Command{
 			return fmt.Errorf("no AT port found for modem %s", dev.Name)
 		}
 
+		// Resolve optional section filter.
+		var section string
+		if len(args) > 0 {
+			section = strings.ToLower(args[0])
+			// "ltedetail" is an alias for "signal"
+			if section == "ltedetail" {
+				section = "signal"
+			}
+			if !slices.Contains(validSections, section) {
+				return fmt.Errorf("unknown section %q (valid: %s)", section, strings.Join(validSections, ", "))
+			}
+		}
+
 		if flagInfoWatch {
-			return runInfoTUI(dev, flagInfoInterval, flagInfoJSON)
+			return runInfoTUI(dev, flagInfoInterval, flagInfoJSON, section)
 		}
 
 		port, err := modem.OpenPort(dev.ATPort, logger)
@@ -47,10 +70,18 @@ var infoCmd = &cobra.Command{
 			}
 			if qc := createQMIClient(dev); qc != nil {
 				overlayQMIData(qc, info)
+				qc.Close()
 			}
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			return enc.Encode(info)
+		}
+
+		// Filtered path: query only the AT commands needed for this section.
+		if section != "" {
+			info := modem.GetInfoForSection(port, section)
+			printInfoSection(dev, info, section)
+			return nil
 		}
 
 		printInfoStreaming(dev, port)
@@ -67,12 +98,17 @@ func init() {
 
 // printInfoStreaming queries the modem with GetInfoStreaming and prints
 // bordered panels progressively as each AT command group completes.
-// Panels are printed when their required data first becomes available,
-// not based on the numbered send order from GetInfoStreaming.
+// QMI data is queried once upfront and overlaid into each streaming snapshot.
 func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 	const panelW = 80
 	const labelW = 20
 	w := os.Stdout
+
+	// Pre-query QMI data once — overlaid into every streaming callback.
+	qc := createQMIClient(dev)
+	if qc != nil {
+		defer qc.Close()
+	}
 
 	// Print device paths as a header — these are known before any AT commands.
 	fmt.Fprintf(w, " %s  AT: %s", dev.SysfsPath, dev.ATPort)
@@ -87,6 +123,10 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 	printed := make(map[string]bool)
 
 	modem.GetInfoStreaming(port, func(info *modem.Info) {
+		if qc != nil {
+			overlayQMIData(qc, info)
+		}
+
 		// Identity — available after ATI (before first send point).
 		if !printed["identity"] && info.Identity.Manufacturer != "" {
 			printed["identity"] = true
@@ -105,8 +145,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// Power — available once AT!PCINFO? has been queried.
 		if !printed["power"] && info.Power.State != "" {
 			printed["power"] = true
-			c := checkPowerState(info, "")
-			printPanel(w, "Power", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "Power", diagBadge(checkPowerState(info, "").Status), panelW, labelW, func(b *strings.Builder) {
 				sf(b, "State", info.Power.State, labelW)
 				if info.Power.PCOFFEN != 0 {
 					sf(b, "PCOFFEN", fmt.Sprintf("%d", info.Power.PCOFFEN), labelW)
@@ -132,8 +171,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// SIM — available once AT+CPIN? has been queried.
 		if !printed["sim"] && info.SIM.Status != "" {
 			printed["sim"] = true
-			c := checkSIMStatus(info)
-			printPanel(w, "SIM", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "SIM", diagBadge(checkSIMStatus(info).Status), panelW, labelW, func(b *strings.Builder) {
 				sf(b, "Status", info.SIM.Status, labelW)
 				sf(b, "IMSI", info.SIM.IMSI, labelW)
 				sf(b, "ICCID", info.SIM.ICCID, labelW)
@@ -143,8 +181,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// Network — available once registration queries complete.
 		if !printed["network"] && info.Registration.EPS.Status != "" {
 			printed["network"] = true
-			c := checkNetworkRegistration(info)
-			printPanel(w, "Network", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "Network", diagBadge(checkNetworkRegistration(info).Status), panelW, labelW, func(b *strings.Builder) {
 				if op := info.Operator; op != "" && op != "0" {
 					sf(b, "Operator", op, labelW)
 				}
@@ -157,8 +194,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// Firmware preference — available once AT!IMPREF? returns.
 		if !printed["firmware"] && info.Firmware.Preferred.Version != "" {
 			printed["firmware"] = true
-			c := checkFirmwarePreference(info)
-			printPanel(w, "Firmware", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "Firmware", diagBadge(checkFirmwarePreference(info).Status), panelW, labelW, func(b *strings.Builder) {
 				f := info.Firmware
 				sf(b, "Cur FW", f.Current.Version, labelW)
 				sf(b, "Cur Carrier", f.Current.CarrierName, labelW)
@@ -184,8 +220,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// USB — wait for composition data so the panel is complete.
 		if !printed["usb"] && info.USB.Composition.Bitmask != "" {
 			printed["usb"] = true
-			c := checkUSBIdentity(info)
-			printPanel(w, "USB", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "USB", diagBadge(checkUSBIdentity(info).Status), panelW, labelW, func(b *strings.Builder) {
 				u := info.USB
 				sf(b, "VID", u.VID, labelW)
 				sf(b, "PID (App)", u.PID.App, labelW)
@@ -204,8 +239,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		// Firmware images — available once AT!IMAGE? returns.
 		if !printed["images"] && (len(info.Images.Firmware) > 0 || len(info.Images.PRI) > 0) {
 			printed["images"] = true
-			c := checkFirmwareImages(info)
-			printPanel(w, "Firmware Images", diagBadge(c.Status), panelW, labelW, func(b *strings.Builder) {
+			printPanel(w, "Firmware Images", diagBadge(checkFirmwareImages(info).Status), panelW, labelW, func(b *strings.Builder) {
 				if len(info.Images.Firmware) > 0 {
 					fmt.Fprintf(b, "FW Slots (max %d, active: %d):\n", info.Images.MaxFW, info.Images.ActiveSlot)
 					for _, s := range info.Images.Firmware {
@@ -259,14 +293,16 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 			})
 		}
 
-		// Signal / GStatus — available once AT!GSTATUS? returns.
+		// Signal / GStatus — available once AT!GSTATUS? or QMI data is present.
 		if !printed["signal"] && len(info.Diagnostics.GStatus) > 0 {
 			printed["signal"] = true
 			printPanel(w, "Signal", "", panelW, labelW, func(b *strings.Builder) {
 				d := info.Diagnostics
+				skip := make(map[string]bool)
 				if d.RSSI != 0 {
 					bars := renderBars(d.SignalBars, 5)
 					sf(b, "RSSI", fmt.Sprintf("%s %d dBm", bars, d.RSSI), labelW)
+					skip["RSSI (dBm)"] = true // bars already show RSSI
 				}
 				for _, key := range []string{
 					"System mode", "PS state", "LTE band", "LTE bw",
@@ -274,6 +310,9 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 					"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
 					"Tx Power", "TAC", "Cell ID", "Current Time",
 				} {
+					if skip[key] {
+						continue
+					}
 					if v, ok := d.GStatus[key]; ok {
 						sf(b, key, formatGStatusValue(key, v), labelW)
 					}
@@ -281,6 +320,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 				if url := cellLookupURL(d.GStatus); url != "" {
 					sf(b, "Cell Lookup", url, labelW)
 				}
+				renderLTEDetail(b, info, labelW)
 			})
 		}
 
@@ -295,31 +335,6 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 				sf(b, "Altitude (m)", info.GPS.Altitude, labelW)
 				if info.GPS.Satellites > 0 {
 					sf(b, "Satellites", fmt.Sprintf("%d", info.GPS.Satellites), labelW)
-				}
-			})
-		}
-
-		// LTE Cell Detail — available once AT!LTEINFO? returns.
-		if !printed["ltedetail"] && (len(info.LTEDetail.Serving) > 0 || len(info.LTEDetail.IntraFreq) > 0 || len(info.LTEDetail.InterFreq) > 0) {
-			printed["ltedetail"] = true
-			printPanel(w, "LTE Cell Detail", "", panelW, labelW, func(b *strings.Builder) {
-				if len(info.LTEDetail.Serving) > 0 {
-					fmt.Fprintln(b, "Serving:")
-					for _, cell := range info.LTEDetail.Serving {
-						renderCellRow(b, cell)
-					}
-				}
-				if len(info.LTEDetail.IntraFreq) > 0 {
-					fmt.Fprintln(b, "IntraFreq:")
-					for _, cell := range info.LTEDetail.IntraFreq {
-						renderCellRow(b, cell)
-					}
-				}
-				if len(info.LTEDetail.InterFreq) > 0 {
-					fmt.Fprintln(b, "InterFreq:")
-					for _, cell := range info.LTEDetail.InterFreq {
-						renderCellRow(b, cell)
-					}
 				}
 			})
 		}
@@ -368,6 +383,232 @@ func printPanel(w *os.File, title, badge string, panelW, labelW int, render func
 		b.WriteString(body.String())
 	})
 	fmt.Fprintln(w, panel)
+}
+
+// printInfoSection renders a single section in plain format from pre-queried data.
+// Called when the user specifies a section filter (e.g. "swtool info signal").
+func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
+	const labelW = 20
+	w := os.Stdout
+
+	// QMI-first: overlay QMI data for sections where it replaces AT commands.
+	if section == "signal" || section == "network" {
+		if qc := createQMIClient(dev); qc != nil {
+			overlayQMIData(qc, info)
+			qc.Close()
+		}
+	}
+
+	switch section {
+	case "identity":
+		printSectionFields(w, "Identity", labelW, func(b *strings.Builder) {
+			sf(b, "Manufacturer", info.Identity.Manufacturer, labelW)
+			sf(b, "Model", info.Identity.Model, labelW)
+			sf(b, "Revision", info.Identity.Revision, labelW)
+			sf(b, "HW Rev", info.Identity.HardwareRev, labelW)
+			sf(b, "IMEI", info.Identity.IMEI, labelW)
+			sf(b, "MEID", info.Identity.MEID, labelW)
+			sf(b, "IMEI SV", info.Identity.IMEISV, labelW)
+			sf(b, "FSN", info.Identity.FSN, labelW)
+		})
+	case "power":
+		printSectionFields(w, "Power", labelW, func(b *strings.Builder) {
+			sf(b, "State", info.Power.State, labelW)
+			if info.Power.PCOFFEN != 0 {
+				sf(b, "PCOFFEN", fmt.Sprintf("%d", info.Power.PCOFFEN), labelW)
+			}
+			sf(b, "LPM Persist", info.Power.LPMPersistence, labelW)
+			if len(info.Power.LPMVoters) > 0 {
+				fmt.Fprintln(b, "LPM Voters:")
+				for _, name := range lpmVoterOrder {
+					val, ok := info.Power.LPMVoters[name]
+					if !ok {
+						continue
+					}
+					indicator := "🟢"
+					if val != 0 {
+						indicator = "🔴"
+					}
+					fmt.Fprintf(b, " %s %-12s %s\n", indicator, name, lpmVoterDescriptions[name])
+				}
+			}
+		})
+	case "sim":
+		printSectionFields(w, "SIM", labelW, func(b *strings.Builder) {
+			sf(b, "Status", info.SIM.Status, labelW)
+			sf(b, "IMSI", info.SIM.IMSI, labelW)
+			sf(b, "ICCID", info.SIM.ICCID, labelW)
+		})
+	case "network":
+		printSectionFields(w, "Network", labelW, func(b *strings.Builder) {
+			if op := info.Operator; op != "" && op != "0" {
+				sf(b, "Operator", op, labelW)
+			}
+			sf(b, "EPS", info.Registration.EPS.Status, labelW)
+			sf(b, "CS", info.Registration.CS.Status, labelW)
+			sf(b, "GPRS", info.Registration.GPRS.Status, labelW)
+			if info.Network.RATSelection.Name != "" {
+				sf(b, "RAT", fmt.Sprintf("%02d (%s)", info.Network.RATSelection.Index, info.Network.RATSelection.Name), labelW)
+			}
+			if info.Network.CurrentBand.Name != "" {
+				sf(b, "Current Band", fmt.Sprintf("%02d - %s", info.Network.CurrentBand.Index, info.Network.CurrentBand.Name), labelW)
+			}
+			for i, apn := range info.APNs {
+				sf(b, fmt.Sprintf("APN %d", i+1), apn, labelW)
+			}
+		})
+	case "firmware":
+		printSectionFields(w, "Firmware", labelW, func(b *strings.Builder) {
+			f := info.Firmware
+			sf(b, "Cur FW", f.Current.Version, labelW)
+			sf(b, "Cur Carrier", f.Current.CarrierName, labelW)
+			sf(b, "Cur Config", f.Current.ConfigName, labelW)
+			sf(b, "Pref FW", f.Preferred.Version, labelW)
+			sf(b, "Pref Carrier", f.Preferred.CarrierName, labelW)
+			sf(b, "Pref Config", f.Preferred.ConfigName, labelW)
+		})
+	case "priid":
+		printSectionFields(w, "PRI ID", labelW, func(b *strings.Builder) {
+			p := info.Firmware.PRIID
+			sf(b, "Part Number", p.PartNumber, labelW)
+			sf(b, "Revision", p.Revision, labelW)
+			sf(b, "Customer", p.Customer, labelW)
+			sf(b, "Carrier PRI", p.CarrierPRI, labelW)
+		})
+	case "usb":
+		printSectionFields(w, "USB", labelW, func(b *strings.Builder) {
+			u := info.USB
+			sf(b, "VID", u.VID, labelW)
+			sf(b, "PID (App)", u.PID.App, labelW)
+			sf(b, "PID (Boot)", u.PID.Boot, labelW)
+			sf(b, "Product", u.Product, labelW)
+			sf(b, "Speed Supported", u.Speed.Supported, labelW)
+			sf(b, "Speed Current", u.Speed.Current, labelW)
+			comp := u.Composition.Bitmask
+			if len(u.Composition.Interfaces) > 0 {
+				comp = fmt.Sprintf("%s (%s)", u.Composition.Bitmask, joinStrings(u.Composition.Interfaces, ", "))
+			}
+			sf(b, "Composition", comp, labelW)
+		})
+	case "images":
+		printSectionFields(w, "Firmware Images", labelW, func(b *strings.Builder) {
+			if len(info.Images.Firmware) > 0 {
+				fmt.Fprintf(b, "FW Slots (max %d, active: %d):\n", info.Images.MaxFW, info.Images.ActiveSlot)
+				for _, s := range info.Images.Firmware {
+					fmt.Fprintf(b, "  Slot %-4s %-6s LRU=%d Fail=%d  %s  %s\n",
+						s.Slot, s.Status, s.LRU, s.Failures, s.UniqueID, s.BuildID)
+				}
+			}
+			if len(info.Images.PRI) > 0 {
+				fmt.Fprintf(b, "PRI Slots (max %d):\n", info.Images.MaxPRI)
+				for _, s := range info.Images.PRI {
+					fmt.Fprintf(b, "  Slot %-4s %-6s LRU=%d Fail=%d  %s  %s\n",
+						s.Slot, s.Status, s.LRU, s.Failures, s.UniqueID, s.BuildID)
+				}
+			}
+		})
+	case "signal":
+		printSectionFields(w, "Signal", labelW, func(b *strings.Builder) {
+			d := info.Diagnostics
+			shown := make(map[string]bool)
+			if d.RSSI != 0 {
+				bars := renderBars(d.SignalBars, 5)
+				sf(b, "RSSI", fmt.Sprintf("%s %d dBm", bars, d.RSSI), labelW)
+				shown["RSSI (dBm)"] = true // bars already show RSSI
+			}
+			importantKeys := []string{
+				"System mode", "PS state", "LTE band", "LTE bw",
+				"LTE Rx chan", "LTE Tx chan", "EMM state", "RRC state",
+				"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
+				"Tx Power", "TAC", "Cell ID", "Current Time",
+			}
+			for _, key := range importantKeys {
+				if shown[key] {
+					continue
+				}
+				if v, ok := d.GStatus[key]; ok {
+					sf(b, key, formatGStatusValue(key, v), labelW)
+					shown[key] = true
+				}
+			}
+			if url := cellLookupURL(d.GStatus); url != "" {
+				sf(b, "Cell Lookup", url, labelW)
+			}
+			// Show ALL remaining GStatus keys (the point of filtering).
+			var remaining []string
+			for k := range d.GStatus {
+				if !shown[k] {
+					remaining = append(remaining, k)
+				}
+			}
+			slices.Sort(remaining)
+			for _, key := range remaining {
+				sf(b, key, formatGStatusValue(key, d.GStatus[key]), labelW)
+			}
+			renderLTEDetail(b, info, labelW)
+		})
+	case "gps":
+		printSectionFields(w, "GPS", labelW, func(b *strings.Builder) {
+			sf(b, "Session", info.GPS.SessionStatus, labelW)
+			sf(b, "Fix Status", info.GPS.FixStatus, labelW)
+			sf(b, "Latitude", info.GPS.Latitude, labelW)
+			sf(b, "Longitude", info.GPS.Longitude, labelW)
+			sf(b, "Altitude (m)", info.GPS.Altitude, labelW)
+			if info.GPS.Satellites > 0 {
+				sf(b, "Satellites", fmt.Sprintf("%d", info.GPS.Satellites), labelW)
+			}
+		})
+	case "bands":
+		printSectionFields(w, "Available Bands", labelW, func(b *strings.Builder) {
+			for _, band := range info.Network.AvailableBands {
+				fmt.Fprintf(b, "%02d  %-24s LTE=%s\n", band.Index, band.Name, band.LTEMask)
+			}
+		})
+	case "custom":
+		printSectionFields(w, "Custom Settings", labelW, func(b *strings.Builder) {
+			for k, v := range info.Custom {
+				sf(b, k, v, labelW)
+			}
+		})
+	case "ca":
+		printSectionFields(w, "Carrier Aggregation", labelW, func(b *strings.Builder) {
+			if len(info.LTECA.Hardware) > 0 {
+				fmt.Fprintln(b, "Hardware:")
+				for _, c := range info.LTECA.Hardware {
+					if len(c.Secondary) > 0 {
+						fmt.Fprintf(b, "  %-6s + %s\n", c.Primary, joinStrings(c.Secondary, ", "))
+					} else {
+						fmt.Fprintf(b, "  %-6s (no combos)\n", c.Primary)
+					}
+				}
+			}
+			if len(info.LTECA.Permitted) > 0 {
+				fmt.Fprintln(b, "Permitted:")
+				for _, c := range info.LTECA.Permitted {
+					if len(c.Secondary) > 0 {
+						fmt.Fprintf(b, "  %-6s + %s\n", c.Primary, joinStrings(c.Secondary, ", "))
+					} else {
+						fmt.Fprintf(b, "  %-6s (no combos)\n", c.Primary)
+					}
+				}
+			}
+			if info.LTECA.Pruned != "" {
+				sf(b, "Pruned", info.LTECA.Pruned, labelW)
+			}
+		})
+	}
+}
+
+// printSectionFields renders a section header and plain label-value lines
+// without box-drawing borders. Used for the filtered "swtool info <section>" path.
+func printSectionFields(w *os.File, title string, labelW int, render func(b *strings.Builder)) {
+	var body strings.Builder
+	render(&body)
+	if strings.TrimSpace(body.String()) == "" {
+		return
+	}
+	fmt.Fprintf(w, "== %s ==\n", title)
+	fmt.Fprint(w, body.String())
 }
 
 // sf writes a simple field (no staleness styling) for the non-watch path.
@@ -442,6 +683,24 @@ func formatHexDec(s string) string {
 		return fmt.Sprintf("%s (%d)", s, n)
 	}
 	return s
+}
+
+// renderLTEDetail appends neighbor cell rows to the signal panel body.
+// Serving cell data is omitted — it duplicates the signal fields above
+// (RSRP, RSRQ, SINR, TAC, Cell ID from QMI/GStatus).
+func renderLTEDetail(b *strings.Builder, info *modem.Info, labelW int) {
+	if len(info.LTEDetail.IntraFreq) > 0 {
+		fmt.Fprintln(b, "Neighbor Cells (IntraFreq):")
+		for _, cell := range info.LTEDetail.IntraFreq {
+			renderCellRow(b, cell)
+		}
+	}
+	if len(info.LTEDetail.InterFreq) > 0 {
+		fmt.Fprintln(b, "Neighbor Cells (InterFreq):")
+		for _, cell := range info.LTEDetail.InterFreq {
+			renderCellRow(b, cell)
+		}
+	}
 }
 
 // cellLookupURL constructs a CellMapper URL from GStatus fields.

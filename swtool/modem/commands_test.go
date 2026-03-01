@@ -684,6 +684,35 @@ func TestParseLTEINFO(t *testing.T) {
 	}
 }
 
+func TestParseLTEINFO_WCDMABoundary(t *testing.T) {
+	t.Parallel()
+	// AT!LTEINFO? output where InterFreq has column headers but no LTE data,
+	// followed by a WCDMA section. The WCDMA header must not be parsed as
+	// an LTE InterFreq data row.
+	resp := "AT!LTEINFO?\r\n!LTEINFO:\r\n" +
+		"Serving:   EARFCN MCC MNC   TAC      CID Bd D U SNR PCI  RSRQ   RSRP   RSSI RXLV\r\n" +
+		"            66486 311 480  4E00 0A2D0604 66 5 5  -- 45  -9.3  -97.8  -74.3 --\r\n\r\n" +
+		"IntraFreq:                                          PCI  RSRQ   RSRP   RSSI RXLV\r\n" +
+		"                                                     45  -9.3  -97.8  -74.3 --\r\n\r\n" +
+		"InterFreq: EARFCN ThresholdLow ThresholdHi Priority PCI  RSRQ   RSRP   RSSI RXLV\r\n" +
+		"WCDMA:  Prio PSC  RSCP  ECN0\r\n\r\nOK\r\n"
+
+	info := parseLTEINFO(resp)
+
+	if len(info.InterFreq) != 0 {
+		t.Errorf("InterFreq: got %d entries, want 0 (WCDMA header should not be parsed as LTE data)", len(info.InterFreq))
+		for i, cell := range info.InterFreq {
+			t.Errorf("  InterFreq[%d]: %v", i, cell)
+		}
+	}
+	if len(info.IntraFreq) != 1 {
+		t.Errorf("IntraFreq: got %d, want 1", len(info.IntraFreq))
+	}
+	if len(info.Serving) != 1 {
+		t.Errorf("Serving: got %d, want 1", len(info.Serving))
+	}
+}
+
 func TestParseLTECA(t *testing.T) {
 	t.Parallel()
 	resp := "AT!LTECA?\r\n!LTECA:\r\n" +
