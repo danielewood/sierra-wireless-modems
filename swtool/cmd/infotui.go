@@ -771,9 +771,10 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	}
 
 	// styledRow writes one table row with label faint and values styled by age.
-	styledRow := func(label string, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
-		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s\n",
+	styledRow := func(label string, earfcn, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
+		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s\n",
 			staleStyle(fmt.Sprintf("%-10s", label), -1),
+			staleStyle(fmt.Sprintf("%6s", earfcn), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", pci), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrp), ages[ageKey]),
@@ -782,13 +783,14 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	}
 
 	// Header + separator (always faint).
-	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
+	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "EARFCN", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
 	fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 
 	// Serving cell.
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		styledRow("Serving",
+			cellVal(s, "EARFCN"),
 			cellVal(s, "PCI"),
 			cellVal(s, "RSRQ"),
 			cellVal(s, "RSRP"),
@@ -796,7 +798,9 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 			cellVal(s, "SNR"),
 			"RSRP")
 	} else if hasGStatusSignal(gstatus) {
-		styledRow("Serving", "--",
+		styledRow("Serving",
+			valOr(gstatus, "LTE Rx chan", "--"),
+			"--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
 			valOr(gstatus, "RSRP (dBm)", "--"),
 			"--",
@@ -809,14 +813,14 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		styledRow("  RxD", "--", "--",
+		styledRow("  RxD", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--",
 			"PCC RxD RSRP (dBm)")
 	}
 	if rxmRSSI != "" {
-		styledRow("  RxM", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
+		styledRow("  RxM", "--", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
 	}
 
 	// IntraFreq neighbors.
@@ -824,6 +828,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 		for _, cell := range info.LTEDetail.IntraFreq {
 			styledRow("Intra",
+				cellVal(cell, "EARFCN"),
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -846,6 +851,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 				}
 			}
 			styledRow(label,
+				cellVal(cell, "EARFCN"),
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
