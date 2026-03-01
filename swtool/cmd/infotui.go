@@ -770,12 +770,13 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	}
 
 	// styledRow writes one table row with label faint and values styled by age.
-	styledRow := func(label string, earfcn, band, freq, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
-		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s  %s  %s\n",
-			staleStyle(fmt.Sprintf("%-10s", label), -1),
-			staleStyle(fmt.Sprintf("%6s", earfcn), ages[ageKey]),
+	styledRow := func(label string, earfcn, band, freq, bw, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
+		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s  %s  %s  %s\n",
+			staleStyle(fmt.Sprintf("%-12s", label), -1),
+			staleStyle(fmt.Sprintf("%5s", earfcn), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", band), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%7s", freq), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%3s", bw), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", pci), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrp), ages[ageKey]),
@@ -792,15 +793,21 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	}
 	servingBand, servingFreq := earfcnBandFreq(servingEARFCN)
 
+	// Resolve serving bandwidth from GStatus "LTE bw" (e.g. "20 MHz" → "20").
+	servingBW := "--"
+	if bw, ok := gstatus["LTE bw"]; ok && bw != "" {
+		servingBW = strings.TrimSuffix(bw, " MHz")
+	}
+
 	// Header + separator (always faint).
-	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "EARFCN", "Band", "Freq", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
+	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "EARFCN", "Band", "Freq", "BW", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
 	fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 
 	// Serving cell.
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		styledRow("Serving",
-			servingEARFCN, servingBand, servingFreq,
+			servingEARFCN, servingBand, servingFreq, servingBW,
 			cellVal(s, "PCI"),
 			cellVal(s, "RSRQ"),
 			cellVal(s, "RSRP"),
@@ -809,7 +816,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 			"RSRP")
 	} else if hasGStatusSignal(gstatus) {
 		styledRow("Serving",
-			servingEARFCN, servingBand, servingFreq,
+			servingEARFCN, servingBand, servingFreq, servingBW,
 			"--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
 			valOr(gstatus, "RSRP (dBm)", "--"),
@@ -823,14 +830,14 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		styledRow("  RxD", "--", "--", "--", "--", "--",
+		styledRow("Rx Diversity", "--", "--", "--", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--",
 			"PCC RxD RSRP (dBm)")
 	}
 	if rxmRSSI != "" {
-		styledRow("  RxM", "--", "--", "--", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
+		styledRow("Rx MIMO", "--", "--", "--", "--", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
 	}
 
 	// IntraFreq neighbors.
@@ -838,7 +845,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 		for _, cell := range info.LTEDetail.IntraFreq {
 			styledRow("Intra",
-				servingEARFCN, servingBand, servingFreq,
+				servingEARFCN, servingBand, servingFreq, servingBW,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -855,7 +862,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 			earfcn := cellVal(cell, "EARFCN")
 			band, freq := earfcnBandFreq(earfcn)
 			styledRow("Inter",
-				earfcn, band, freq,
+				earfcn, band, freq, "--",
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),

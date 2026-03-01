@@ -688,8 +688,8 @@ var servingCellGStatusKeys = map[string]bool{
 
 // Cell table format constants (no trailing newline — callers add it).
 const (
-	cellTableFmt = "%-10s  %6s  %4s  %7s  %4s  %6s  %6s  %6s  %5s"
-	cellTableSep = "            ------  ----  -------  ----  ------  ------  ------  -----"
+	cellTableFmt = "%-12s  %5s  %4s  %7s  %3s  %4s  %6s  %6s  %6s  %5s"
+	cellTableSep = "              -----  ----  -------  ---  ----  ------  ------  ------  -----"
 )
 
 // renderCellTable appends an aligned signal table with serving cell,
@@ -713,15 +713,21 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	}
 	servingBand, servingFreq := earfcnBandFreq(servingEARFCN)
 
+	// Resolve serving bandwidth from GStatus "LTE bw" (e.g. "20 MHz" → "20").
+	servingBW := "--"
+	if bw, ok := gstatus["LTE bw"]; ok && bw != "" {
+		servingBW = strings.TrimSuffix(bw, " MHz")
+	}
+
 	// Header
-	fmt.Fprintf(b, cellTableFmt+"\n", "", "EARFCN", "Band", "Freq", "PCI", "RSRQ", "RSRP", "RSSI", "SNR")
+	fmt.Fprintf(b, cellTableFmt+"\n", "", "EARFCN", "Band", "Freq", "BW", "PCI", "RSRQ", "RSRP", "RSSI", "SNR")
 	fmt.Fprintln(b, cellTableSep)
 
 	// Serving cell — prefer LTEDetail, fall back to GStatus.
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
-			servingEARFCN, servingBand, servingFreq,
+			servingEARFCN, servingBand, servingFreq, servingBW,
 			cellVal(s, "PCI"),
 			cellVal(s, "RSRQ"),
 			cellVal(s, "RSRP"),
@@ -729,7 +735,7 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 			cellVal(s, "SNR"))
 	} else if hasGStatusSignal(gstatus) {
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
-			servingEARFCN, servingBand, servingFreq,
+			servingEARFCN, servingBand, servingFreq, servingBW,
 			"--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
 			valOr(gstatus, "RSRP (dBm)", "--"),
@@ -742,13 +748,13 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "  RxD", "--", "--", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "Rx Diversity", "--", "--", "--", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--")
 	}
 	if rxmRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "  RxM", "--", "--", "--", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "Rx MIMO", "--", "--", "--", "--", "--", "--", "--",
 			rxmRSSI, "--")
 	}
 
@@ -757,7 +763,7 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.IntraFreq {
 			fmt.Fprintf(b, cellTableFmt+"\n", "Intra",
-				servingEARFCN, servingBand, servingFreq,
+				servingEARFCN, servingBand, servingFreq, servingBW,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -773,7 +779,7 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 			earfcn := cellVal(cell, "EARFCN")
 			band, freq := earfcnBandFreq(earfcn)
 			fmt.Fprintf(b, cellTableFmt+"\n", "Inter",
-				earfcn, band, freq,
+				earfcn, band, freq, "--",
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
