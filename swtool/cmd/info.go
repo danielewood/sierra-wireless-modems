@@ -307,7 +307,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 				for _, key := range []string{
 					"System mode", "PS state", "LTE band", "LTE bw",
 					"LTE Rx chan", "LTE Tx chan", "EMM state", "RRC state",
-					"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
+					"RSSI (dBm)",
 					"Tx Power", "TAC", "Cell ID", "Current Time",
 				} {
 					if skip[key] {
@@ -320,7 +320,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 				if url := cellLookupURL(d.GStatus); url != "" {
 					sf(b, "Cell Lookup", url, labelW)
 				}
-				renderLTEDetail(b, info, labelW)
+				renderCellDetail(b, info, labelW)
 			})
 		}
 
@@ -512,7 +512,7 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 			importantKeys := []string{
 				"System mode", "PS state", "LTE band", "LTE bw",
 				"LTE Rx chan", "LTE Tx chan", "EMM state", "RRC state",
-				"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
+				"RSSI (dBm)",
 				"Tx Power", "TAC", "Cell ID", "Current Time",
 			}
 			for _, key := range importantKeys {
@@ -527,6 +527,10 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 			if url := cellLookupURL(d.GStatus); url != "" {
 				sf(b, "Cell Lookup", url, labelW)
 			}
+			// Skip serving cell keys — shown in cell detail section below.
+			for k := range servingCellGStatusKeys {
+				shown[k] = true
+			}
 			// Show ALL remaining GStatus keys (the point of filtering).
 			var remaining []string
 			for k := range d.GStatus {
@@ -538,7 +542,7 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 			for _, key := range remaining {
 				sf(b, key, formatGStatusValue(key, d.GStatus[key]), labelW)
 			}
-			renderLTEDetail(b, info, labelW)
+			renderCellDetail(b, info, labelW)
 		})
 	case "gps":
 		printSectionFields(w, "GPS", labelW, func(b *strings.Builder) {
@@ -671,10 +675,34 @@ func formatHexDec(s string) string {
 	return s
 }
 
-// renderLTEDetail appends neighbor cell rows to the signal panel body.
-// Serving cell data is omitted — it duplicates the signal fields above
-// (RSRP, RSRQ, SINR, TAC, Cell ID from QMI/GStatus).
-func renderLTEDetail(b *strings.Builder, info *modem.Info, labelW int) {
+// servingCellGStatusKeys lists GStatus keys rendered in the serving cell
+// row or PCC detail line. These are skipped from the regular GStatus dump.
+var servingCellGStatusKeys = map[string]bool{
+	"RSRP (dBm)":         true,
+	"RSRQ (dB)":          true,
+	"SINR (dB)":          true,
+	"PCC RxD RSRP (dBm)": true,
+	"PCC RxD RSSI":       true,
+	"PCC RxM RSSI":       true,
+}
+
+// renderCellDetail appends serving cell, PCC diversity, and neighbor cell
+// rows to the signal panel body. Serving data comes from AT!LTEINFO? when
+// available, falling back to GStatus signal keys.
+func renderCellDetail(b *strings.Builder, info *modem.Info, labelW int) {
+	gstatus := info.Diagnostics.GStatus
+
+	// Serving cell — prefer LTEDetail (has PCI, EARFCN), fall back to GStatus.
+	if len(info.LTEDetail.Serving) > 0 {
+		fmt.Fprintln(b, "Serving Cell:")
+		renderCellRow(b, info.LTEDetail.Serving[0])
+		renderPCCDetail(b, gstatus)
+	} else if hasGStatusSignal(gstatus) {
+		fmt.Fprintln(b, "Serving Cell:")
+		renderServingFromGStatus(b, gstatus)
+		renderPCCDetail(b, gstatus)
+	}
+
 	if len(info.LTEDetail.IntraFreq) > 0 {
 		fmt.Fprintln(b, "Neighbor Cells (IntraFreq):")
 		for _, cell := range info.LTEDetail.IntraFreq {
@@ -687,6 +715,62 @@ func renderLTEDetail(b *strings.Builder, info *modem.Info, labelW int) {
 			renderCellRow(b, cell)
 		}
 	}
+}
+
+// hasGStatusSignal returns true if any primary signal keys are in GStatus.
+func hasGStatusSignal(gstatus map[string]string) bool {
+	for _, k := range []string{"RSRP (dBm)", "RSRQ (dB)", "SINR (dB)"} {
+		if _, ok := gstatus[k]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// renderServingFromGStatus writes a compact signal row from GStatus keys.
+func renderServingFromGStatus(b *strings.Builder, gstatus map[string]string) {
+	type field struct{ key, name, unit string }
+	fields := []field{
+		{"RSRQ (dB)", "RSRQ", "dB"},
+		{"RSRP (dBm)", "RSRP", "dBm"},
+		{"SINR (dB)", "SINR", "dB"},
+	}
+	var parts []string
+	for _, f := range fields {
+		if v, ok := gstatus[f.key]; ok {
+			parts = append(parts, fmt.Sprintf("%s=%s %s", f.name, v, f.unit))
+		}
+	}
+	if len(parts) > 0 {
+		fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
+	}
+}
+
+// renderPCCDetail writes PCC RxD/RxM diversity data as a sub-line.
+func renderPCCDetail(b *strings.Builder, gstatus map[string]string) {
+	rxdRSRP := gstatus["PCC RxD RSRP (dBm)"]
+	rxdRSSI := gstatus["PCC RxD RSSI"]
+	rxmRSSI := gstatus["PCC RxM RSSI"]
+	if rxdRSRP == "" && rxdRSSI == "" && rxmRSSI == "" {
+		return
+	}
+	var parts []string
+	needRxDLabel := true
+	if rxdRSRP != "" {
+		parts = append(parts, fmt.Sprintf("RxD: RSRP=%s dBm", rxdRSRP))
+		needRxDLabel = false
+	}
+	if rxdRSSI != "" {
+		if needRxDLabel {
+			parts = append(parts, fmt.Sprintf("RxD: RSSI=%s dBm", rxdRSSI))
+		} else {
+			parts = append(parts, fmt.Sprintf("RSSI=%s dBm", rxdRSSI))
+		}
+	}
+	if rxmRSSI != "" {
+		parts = append(parts, fmt.Sprintf("RxM: RSSI=%s dBm", rxmRSSI))
+	}
+	fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
 }
 
 // cellLookupURL constructs a CellMapper URL from GStatus fields.
