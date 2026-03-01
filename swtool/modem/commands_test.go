@@ -607,11 +607,14 @@ func TestGnssSystem(t *testing.T) {
 		want string
 	}{
 		{1, "GPS"}, {32, "GPS"},
+		{33, "SBAS"}, {64, "SBAS"},
 		{65, "GLONASS"}, {96, "GLONASS"},
 		{120, "SBAS"}, {158, "SBAS"},
+		{193, "QZSS"}, {194, "QZSS"}, {200, "QZSS"},
 		{201, "BeiDou"}, {263, "BeiDou"},
 		{301, "Galileo"}, {336, "Galileo"},
-		{400, "SV400"},
+		{401, "NavIC"}, {414, "NavIC"},
+		{500, "SV500"},
 	}
 	for _, tt := range tests {
 		if got := gnssSystem(tt.prn); got != tt.want {

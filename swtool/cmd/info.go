@@ -930,7 +930,7 @@ func gpsSatSummary(g *modem.GPSInfo) string {
 		counts[s.System]++
 	}
 	var parts []string
-	for _, sys := range []string{"GPS", "GLONASS", "Galileo", "BeiDou", "SBAS"} {
+	for _, sys := range []string{"GPS", "GLONASS", "Galileo", "BeiDou", "QZSS", "NavIC", "SBAS"} {
 		if n, ok := counts[sys]; ok {
 			parts = append(parts, fmt.Sprintf("%s:%d", sys, n))
 		}

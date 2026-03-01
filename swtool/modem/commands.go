@@ -1303,14 +1303,20 @@ func gnssSystem(prn int) string {
 	switch {
 	case prn >= 1 && prn <= 32:
 		return "GPS"
+	case prn >= 33 && prn <= 64:
+		return "SBAS"
 	case prn >= 65 && prn <= 96:
 		return "GLONASS"
 	case prn >= 120 && prn <= 158:
 		return "SBAS"
+	case prn >= 193 && prn <= 200:
+		return "QZSS"
 	case prn >= 201 && prn <= 263:
 		return "BeiDou"
 	case prn >= 301 && prn <= 336:
 		return "Galileo"
+	case prn >= 401 && prn <= 414:
+		return "NavIC"
 	default:
 		return fmt.Sprintf("SV%d", prn)
 	}
