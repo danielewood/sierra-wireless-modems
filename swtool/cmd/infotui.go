@@ -789,11 +789,11 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		styledRow("Serving",
-			valOr(s, "PCI", "--"),
-			valOr(s, "RSRQ", "--"),
-			valOr(s, "RSRP", "--"),
-			valOr(s, "RSSI", "--"),
-			valOr(s, "SNR", "--"),
+			cellVal(s, "PCI"),
+			cellVal(s, "RSRQ"),
+			cellVal(s, "RSRP"),
+			cellVal(s, "RSSI"),
+			cellVal(s, "SNR"),
 			"RSRP")
 	} else if hasGStatusSignal(gstatus) {
 		styledRow("Serving", "--",
@@ -824,11 +824,11 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 		for _, cell := range info.LTEDetail.IntraFreq {
 			styledRow("Intra",
-				valOr(cell, "PCI", "--"),
-				valOr(cell, "RSRQ", "--"),
-				valOr(cell, "RSRP", "--"),
-				valOr(cell, "RSSI", "--"),
-				valOr(cell, "SNR", "--"),
+				cellVal(cell, "PCI"),
+				cellVal(cell, "RSRQ"),
+				cellVal(cell, "RSRP"),
+				cellVal(cell, "RSSI"),
+				cellVal(cell, "SNR"),
 				"RSRQ")
 		}
 	}
@@ -846,11 +846,11 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 				}
 			}
 			styledRow(label,
-				valOr(cell, "PCI", "--"),
-				valOr(cell, "RSRQ", "--"),
-				valOr(cell, "RSRP", "--"),
-				valOr(cell, "RSSI", "--"),
-				valOr(cell, "SNR", "--"),
+				cellVal(cell, "PCI"),
+				cellVal(cell, "RSRQ"),
+				cellVal(cell, "RSRP"),
+				cellVal(cell, "RSSI"),
+				cellVal(cell, "SNR"),
 				"RSRQ")
 		}
 	}

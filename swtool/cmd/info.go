@@ -712,11 +712,11 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
-			valOr(s, "PCI", "--"),
-			valOr(s, "RSRQ", "--"),
-			valOr(s, "RSRP", "--"),
-			valOr(s, "RSSI", "--"),
-			valOr(s, "SNR", "--"))
+			cellVal(s, "PCI"),
+			cellVal(s, "RSRQ"),
+			cellVal(s, "RSRP"),
+			cellVal(s, "RSSI"),
+			cellVal(s, "SNR"))
 	} else if hasGStatusSignal(gstatus) {
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving", "--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
@@ -745,11 +745,11 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.IntraFreq {
 			fmt.Fprintf(b, cellTableFmt+"\n", "Intra",
-				valOr(cell, "PCI", "--"),
-				valOr(cell, "RSRQ", "--"),
-				valOr(cell, "RSRP", "--"),
-				valOr(cell, "RSSI", "--"),
-				valOr(cell, "SNR", "--"))
+				cellVal(cell, "PCI"),
+				cellVal(cell, "RSRQ"),
+				cellVal(cell, "RSRP"),
+				cellVal(cell, "RSSI"),
+				cellVal(cell, "SNR"))
 		}
 	}
 
@@ -766,11 +766,11 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 				}
 			}
 			fmt.Fprintf(b, cellTableFmt+"\n", label,
-				valOr(cell, "PCI", "--"),
-				valOr(cell, "RSRQ", "--"),
-				valOr(cell, "RSRP", "--"),
-				valOr(cell, "RSSI", "--"),
-				valOr(cell, "SNR", "--"))
+				cellVal(cell, "PCI"),
+				cellVal(cell, "RSRQ"),
+				cellVal(cell, "RSRP"),
+				cellVal(cell, "RSSI"),
+				cellVal(cell, "SNR"))
 		}
 	}
 }
@@ -799,6 +799,22 @@ func valOrDefault(s, fallback string) string {
 		return s
 	}
 	return fallback
+}
+
+// cellVal returns m[key] with trailing unit suffixes stripped, or "--" if
+// absent. Some AT!LTEINFO? firmware versions include " dB" / " dBm" in
+// values which would break fixed-width table columns.
+func cellVal(m map[string]string, key string) string {
+	v, ok := m[key]
+	if !ok || v == "" {
+		return "--"
+	}
+	for _, u := range []string{" dBm", " dB"} {
+		if strings.HasSuffix(v, u) {
+			return v[:len(v)-len(u)]
+		}
+	}
+	return v
 }
 
 // cellLookupURL constructs a CellMapper URL from GStatus fields.
