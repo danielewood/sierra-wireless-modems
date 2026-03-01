@@ -688,8 +688,8 @@ var servingCellGStatusKeys = map[string]bool{
 
 // Cell table format constants (no trailing newline — callers add it).
 const (
-	cellTableFmt = "%-12s  %5s  %4s  %7s  %3s  %4s  %6s  %6s  %6s  %5s"
-	cellTableSep = "              -----  ----  -------  ---  ----  ------  ------  ------  -----"
+	cellTableFmt = "%-11s  %6s  %4s  %7s  %3s  %4s  %6s  %6s  %6s  %5s"
+	cellTableSep = "             ------  ----  -------  ---  ----  ------  ------  ------  -----"
 )
 
 // renderCellTable appends an aligned signal table with serving cell,
@@ -748,13 +748,13 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "Rx Diversity", "--", "--", "--", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "RxDiversity", "--", "--", "--", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--")
 	}
 	if rxmRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "Rx MIMO", "--", "--", "--", "--", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "RxMIMO", "--", "--", "--", "--", "--", "--", "--",
 			rxmRSSI, "--")
 	}
 
