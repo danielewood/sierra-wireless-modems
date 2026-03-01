@@ -323,7 +323,7 @@ func (m tuiModel) renderContent() string {
 	if m.section == "" && m.width >= minTwoColWidth {
 		panelW = m.width/2 - 1
 	}
-	labelW := max(12, panelW/3)
+	labelW := min(20, max(12, panelW/3))
 
 	identity := renderPanel("Identity", "", panelW, func(b *strings.Builder) {
 		pf(b, "Manufacturer", info.Identity.Manufacturer, a["Manufacturer"], labelW)
