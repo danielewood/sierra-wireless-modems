@@ -732,36 +732,43 @@ func renderGPSFields(b *strings.Builder, g *modem.GPSInfo, labelW int) {
 	sf(b, "Longitude", g.Longitude, labelW)
 	sf(b, "Altitude (m)", g.Altitude, labelW)
 	sf(b, "HEPE (m)", g.HEPE, labelW)
-	if g.Satellites > 0 {
-		sf(b, "Satellites", fmt.Sprintf("%d", g.Satellites), labelW)
-	}
 	sf(b, "HDOP", g.HDOP, labelW)
 	sf(b, "PDOP", g.PDOP, labelW)
 	sf(b, "VDOP", g.VDOP, labelW)
 	sf(b, "Heading", g.Heading, labelW)
 	sf(b, "Velocity (m/s)", g.Velocity, labelW)
 	sf(b, "GPS Time", g.LocTimestamp, labelW)
-	if len(g.SatDetail) > 0 {
-		// Group by constellation for a compact summary.
-		counts := make(map[string]int)
-		for _, s := range g.SatDetail {
-			counts[s.System]++
-		}
-		var summary []string
-		for _, sys := range []string{"GPS", "GLONASS", "Galileo", "BeiDou", "SBAS"} {
-			if n, ok := counts[sys]; ok {
-				summary = append(summary, fmt.Sprintf("%s:%d", sys, n))
-			}
-		}
-		if len(summary) > 0 {
-			sf(b, "Constellations", strings.Join(summary, "  "), labelW)
-		}
-		fmt.Fprintln(b, "Satellites:")
-		for _, s := range g.SatDetail {
-			fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
-				s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
+	sf(b, "Satellites", gpsSatSummary(g), labelW)
+	for _, s := range g.SatDetail {
+		fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
+			s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
+	}
+}
+
+// gpsSatSummary returns a one-line satellite summary like "18 (GPS:8  GLONASS:5  Galileo:5)".
+// Returns "" when there are no satellites.
+func gpsSatSummary(g *modem.GPSInfo) string {
+	if g.Satellites == 0 && len(g.SatDetail) == 0 {
+		return ""
+	}
+	count := g.Satellites
+	if count == 0 {
+		count = len(g.SatDetail)
+	}
+	if len(g.SatDetail) == 0 {
+		return fmt.Sprintf("%d", count)
+	}
+	counts := make(map[string]int)
+	for _, s := range g.SatDetail {
+		counts[s.System]++
+	}
+	var parts []string
+	for _, sys := range []string{"GPS", "GLONASS", "Galileo", "BeiDou", "SBAS"} {
+		if n, ok := counts[sys]; ok {
+			parts = append(parts, fmt.Sprintf("%s:%d", sys, n))
 		}
 	}
+	return fmt.Sprintf("%d (%s)", count, strings.Join(parts, "  "))
 }
 
 // extractHexValue pulls the hex portion from a GStatus value.

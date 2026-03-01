@@ -491,21 +491,16 @@ func (m tuiModel) renderContent() string {
 		pf(b, "Longitude", g.Longitude, a["Longitude"], labelW)
 		pf(b, "Altitude (m)", g.Altitude, a["Altitude"], labelW)
 		pf(b, "HEPE (m)", g.HEPE, a["HEPE"], labelW)
-		if g.Satellites > 0 {
-			pf(b, "Satellites", fmt.Sprintf("%d", g.Satellites), a["Sats"], labelW)
-		}
 		pf(b, "HDOP", g.HDOP, a["HDOP"], labelW)
 		pf(b, "PDOP", g.PDOP, a["PDOP"], labelW)
 		pf(b, "VDOP", g.VDOP, a["VDOP"], labelW)
 		pf(b, "Heading", g.Heading, a["Heading"], labelW)
 		pf(b, "Velocity (m/s)", g.Velocity, a["Velocity"], labelW)
 		pf(b, "GPS Time", g.LocTimestamp, a["GPS Timestamp"], labelW)
-		if len(g.SatDetail) > 0 {
-			fmt.Fprintln(b, staleStyle("Satellites:", -1))
-			for _, s := range g.SatDetail {
-				fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
-					s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
-			}
+		pf(b, "Satellites", gpsSatSummary(&g), a["Sats"], labelW)
+		for _, s := range g.SatDetail {
+			fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
+				s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
 		}
 	})
 
