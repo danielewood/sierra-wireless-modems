@@ -383,7 +383,7 @@ func (m tuiModel) renderContent() string {
 			pf(b, key, formatGStatusValue(key, d.GStatus[key]), a[key], labelW)
 		}
 		// Serving cell + PCC diversity + neighbor cells.
-		renderCellDetailStyled(b, info, a)
+		renderCellTableStyled(b, info, a)
 	})
 
 	firmware := renderPanel("Firmware", sectionBadge(checks, "firmware_preference"), panelW, func(b *strings.Builder) {
@@ -758,121 +758,102 @@ func joinNonEmpty(parts []string, sep string) string {
 	return strings.Join(filtered, sep)
 }
 
-// renderStyledCellRow writes a cell row with TUI staleness styling.
-// Keys are rendered faint (like labels); values use age-based styling.
-func renderStyledCellRow(b *strings.Builder, cell map[string]string, ages map[string]int) {
-	var parts []string
-	for _, key := range []string{"EARFCN", "MCC", "MNC", "TAC", "CID", "Bd", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"} {
-		v, ok := cell[key]
-		if !ok {
-			continue
-		}
-		if key == "EARFCN" {
-			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
-				v = modem.FormatEARFCN(n)
-			}
-		}
-		parts = append(parts, staleStyle(key+"=", -1)+staleStyle(v, ages[key]))
-	}
-	if len(parts) > 0 {
-		fmt.Fprintf(b, "  %s\n", joinStrings(parts, "  "))
-	}
-}
-
-func renderCellRow(b *strings.Builder, cell map[string]string) {
-	var parts []string
-	for _, key := range []string{"EARFCN", "MCC", "MNC", "TAC", "CID", "Bd", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"} {
-		v, ok := cell[key]
-		if !ok {
-			continue
-		}
-		if key == "EARFCN" {
-			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
-				v = modem.FormatEARFCN(n)
-			}
-		}
-		parts = append(parts, fmt.Sprintf("%s=%s", key, v))
-	}
-	if len(parts) > 0 {
-		fmt.Fprintf(b, "  %s\n", joinStrings(parts, "  "))
-	}
-}
-
-// renderCellDetailStyled appends serving cell, PCC diversity, and neighbor
-// cell rows with TUI staleness styling.
-func renderCellDetailStyled(b *strings.Builder, info *modem.Info, ages map[string]int) {
+// renderCellTableStyled appends an aligned signal table with TUI staleness
+// styling for serving cell, PCC diversity, and neighbor cell rows.
+func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string]int) {
 	gstatus := info.Diagnostics.GStatus
 
-	// Serving cell — prefer LTEDetail (has PCI, EARFCN), fall back to GStatus.
+	hasServing := len(info.LTEDetail.Serving) > 0 || hasGStatusSignal(gstatus)
+	hasIntra := len(info.LTEDetail.IntraFreq) > 0
+	hasInter := len(info.LTEDetail.InterFreq) > 0
+	if !hasServing && !hasIntra && !hasInter {
+		return
+	}
+
+	// styledRow writes one table row with label faint and values styled by age.
+	styledRow := func(label string, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
+		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s\n",
+			staleStyle(fmt.Sprintf("%-10s", label), -1),
+			staleStyle(fmt.Sprintf("%4s", pci), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%6s", rsrq), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%6s", rsrp), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%6s", rssi), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%5s", snr), ages[ageKey]))
+	}
+
+	// Header + separator (always faint).
+	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
+	fmt.Fprintln(b, staleStyle(cellTableSep, -1))
+
+	// Serving cell.
 	if len(info.LTEDetail.Serving) > 0 {
-		fmt.Fprintln(b, staleStyle("Serving Cell:", -1))
-		renderStyledCellRow(b, info.LTEDetail.Serving[0], ages)
-		renderStyledPCCDetail(b, gstatus, ages)
+		s := info.LTEDetail.Serving[0]
+		styledRow("Serving",
+			valOr(s, "PCI", "--"),
+			valOr(s, "RSRQ", "--"),
+			valOr(s, "RSRP", "--"),
+			valOr(s, "RSSI", "--"),
+			valOr(s, "SNR", "--"),
+			"RSRP")
 	} else if hasGStatusSignal(gstatus) {
-		fmt.Fprintln(b, staleStyle("Serving Cell:", -1))
-		renderStyledServingFromGStatus(b, gstatus, ages)
-		renderStyledPCCDetail(b, gstatus, ages)
+		styledRow("Serving", "--",
+			valOr(gstatus, "RSRQ (dB)", "--"),
+			valOr(gstatus, "RSRP (dBm)", "--"),
+			"--",
+			valOr(gstatus, "SINR (dB)", "--"),
+			"RSRP (dBm)")
 	}
 
-	if len(info.LTEDetail.IntraFreq) > 0 {
-		fmt.Fprintln(b, staleStyle("Neighbor Cells (IntraFreq):", -1))
-		for _, cell := range info.LTEDetail.IntraFreq {
-			renderStyledCellRow(b, cell, ages)
-		}
-	}
-	if len(info.LTEDetail.InterFreq) > 0 {
-		fmt.Fprintln(b, staleStyle("Neighbor Cells (InterFreq):", -1))
-		for _, cell := range info.LTEDetail.InterFreq {
-			renderStyledCellRow(b, cell, ages)
-		}
-	}
-}
-
-// renderStyledServingFromGStatus writes a compact signal row from GStatus
-// keys with TUI staleness styling.
-func renderStyledServingFromGStatus(b *strings.Builder, gstatus map[string]string, ages map[string]int) {
-	type field struct{ key, name, unit string }
-	fields := []field{
-		{"RSRQ (dB)", "RSRQ", "dB"},
-		{"RSRP (dBm)", "RSRP", "dBm"},
-		{"SINR (dB)", "SINR", "dB"},
-	}
-	var parts []string
-	for _, f := range fields {
-		if v, ok := gstatus[f.key]; ok {
-			parts = append(parts, staleStyle(f.name+"=", -1)+staleStyle(v+" "+f.unit, ages[f.key]))
-		}
-	}
-	if len(parts) > 0 {
-		fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
-	}
-}
-
-// renderStyledPCCDetail writes PCC RxD/RxM diversity data with TUI styling.
-func renderStyledPCCDetail(b *strings.Builder, gstatus map[string]string, ages map[string]int) {
+	// PCC diversity sub-rows.
 	rxdRSRP := gstatus["PCC RxD RSRP (dBm)"]
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
-	if rxdRSRP == "" && rxdRSSI == "" && rxmRSSI == "" {
-		return
-	}
-	var parts []string
-	needRxDLabel := true
-	if rxdRSRP != "" {
-		parts = append(parts, staleStyle("RxD: RSRP=", -1)+staleStyle(rxdRSRP+" dBm", ages["PCC RxD RSRP (dBm)"]))
-		needRxDLabel = false
-	}
-	if rxdRSSI != "" {
-		label := "RSSI="
-		if needRxDLabel {
-			label = "RxD: RSSI="
-		}
-		parts = append(parts, staleStyle(label, -1)+staleStyle(rxdRSSI+" dBm", ages["PCC RxD RSSI"]))
+	if rxdRSRP != "" || rxdRSSI != "" {
+		styledRow("  RxD", "--", "--",
+			valOrDefault(rxdRSRP, "--"),
+			valOrDefault(rxdRSSI, "--"),
+			"--",
+			"PCC RxD RSRP (dBm)")
 	}
 	if rxmRSSI != "" {
-		parts = append(parts, staleStyle("RxM: RSSI=", -1)+staleStyle(rxmRSSI+" dBm", ages["PCC RxM RSSI"]))
+		styledRow("  RxM", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
 	}
-	fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
+
+	// IntraFreq neighbors.
+	if hasIntra {
+		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
+		for _, cell := range info.LTEDetail.IntraFreq {
+			styledRow("Intra",
+				valOr(cell, "PCI", "--"),
+				valOr(cell, "RSRQ", "--"),
+				valOr(cell, "RSRP", "--"),
+				valOr(cell, "RSSI", "--"),
+				valOr(cell, "SNR", "--"),
+				"RSRQ")
+		}
+	}
+
+	// InterFreq neighbors.
+	if hasInter {
+		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
+		for _, cell := range info.LTEDetail.InterFreq {
+			label := "Inter"
+			if earfcn, ok := cell["EARFCN"]; ok {
+				if n, err := strconv.Atoi(earfcn); err == nil {
+					if band := modem.EARFCNBand(n); band != "" {
+						label = "Inter " + band
+					}
+				}
+			}
+			styledRow(label,
+				valOr(cell, "PCI", "--"),
+				valOr(cell, "RSRQ", "--"),
+				valOr(cell, "RSRP", "--"),
+				valOr(cell, "RSSI", "--"),
+				valOr(cell, "SNR", "--"),
+				"RSRQ")
+		}
+	}
 }
 
 func renderBars(filled, total int) string {

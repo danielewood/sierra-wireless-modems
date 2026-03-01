@@ -320,7 +320,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 				if url := cellLookupURL(d.GStatus); url != "" {
 					sf(b, "Cell Lookup", url, labelW)
 				}
-				renderCellDetail(b, info, labelW)
+				renderCellTable(b, info)
 			})
 		}
 
@@ -542,7 +542,7 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 			for _, key := range remaining {
 				sf(b, key, formatGStatusValue(key, d.GStatus[key]), labelW)
 			}
-			renderCellDetail(b, info, labelW)
+			renderCellTable(b, info)
 		})
 	case "gps":
 		printSectionFields(w, "GPS", labelW, func(b *strings.Builder) {
@@ -686,33 +686,91 @@ var servingCellGStatusKeys = map[string]bool{
 	"PCC RxM RSSI":       true,
 }
 
-// renderCellDetail appends serving cell, PCC diversity, and neighbor cell
-// rows to the signal panel body. Serving data comes from AT!LTEINFO? when
-// available, falling back to GStatus signal keys.
-func renderCellDetail(b *strings.Builder, info *modem.Info, labelW int) {
+// Cell table format constants (no trailing newline — callers add it).
+const (
+	cellTableFmt = "%-10s  %4s  %6s  %6s  %6s  %5s"
+	cellTableSep = "            ----  ------  ------  ------  -----"
+)
+
+// renderCellTable appends an aligned signal table with serving cell,
+// PCC diversity, and neighbor cell rows to the signal panel body.
+func renderCellTable(b *strings.Builder, info *modem.Info) {
 	gstatus := info.Diagnostics.GStatus
 
-	// Serving cell — prefer LTEDetail (has PCI, EARFCN), fall back to GStatus.
-	if len(info.LTEDetail.Serving) > 0 {
-		fmt.Fprintln(b, "Serving Cell:")
-		renderCellRow(b, info.LTEDetail.Serving[0])
-		renderPCCDetail(b, gstatus)
-	} else if hasGStatusSignal(gstatus) {
-		fmt.Fprintln(b, "Serving Cell:")
-		renderServingFromGStatus(b, gstatus)
-		renderPCCDetail(b, gstatus)
+	hasServing := len(info.LTEDetail.Serving) > 0 || hasGStatusSignal(gstatus)
+	hasIntra := len(info.LTEDetail.IntraFreq) > 0
+	hasInter := len(info.LTEDetail.InterFreq) > 0
+	if !hasServing && !hasIntra && !hasInter {
+		return
 	}
 
-	if len(info.LTEDetail.IntraFreq) > 0 {
-		fmt.Fprintln(b, "Neighbor Cells (IntraFreq):")
+	// Header
+	fmt.Fprintf(b, cellTableFmt+"\n", "", "PCI", "RSRQ", "RSRP", "RSSI", "SNR")
+	fmt.Fprintln(b, cellTableSep)
+
+	// Serving cell — prefer LTEDetail, fall back to GStatus.
+	if len(info.LTEDetail.Serving) > 0 {
+		s := info.LTEDetail.Serving[0]
+		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
+			valOr(s, "PCI", "--"),
+			valOr(s, "RSRQ", "--"),
+			valOr(s, "RSRP", "--"),
+			valOr(s, "RSSI", "--"),
+			valOr(s, "SNR", "--"))
+	} else if hasGStatusSignal(gstatus) {
+		fmt.Fprintf(b, cellTableFmt+"\n", "Serving", "--",
+			valOr(gstatus, "RSRQ (dB)", "--"),
+			valOr(gstatus, "RSRP (dBm)", "--"),
+			"--",
+			valOr(gstatus, "SINR (dB)", "--"))
+	}
+
+	// PCC diversity sub-rows.
+	rxdRSRP := gstatus["PCC RxD RSRP (dBm)"]
+	rxdRSSI := gstatus["PCC RxD RSSI"]
+	rxmRSSI := gstatus["PCC RxM RSSI"]
+	if rxdRSRP != "" || rxdRSSI != "" {
+		fmt.Fprintf(b, cellTableFmt+"\n", "  RxD", "--", "--",
+			valOrDefault(rxdRSRP, "--"),
+			valOrDefault(rxdRSSI, "--"),
+			"--")
+	}
+	if rxmRSSI != "" {
+		fmt.Fprintf(b, cellTableFmt+"\n", "  RxM", "--", "--", "--",
+			rxmRSSI, "--")
+	}
+
+	// IntraFreq neighbors.
+	if hasIntra {
+		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.IntraFreq {
-			renderCellRow(b, cell)
+			fmt.Fprintf(b, cellTableFmt+"\n", "Intra",
+				valOr(cell, "PCI", "--"),
+				valOr(cell, "RSRQ", "--"),
+				valOr(cell, "RSRP", "--"),
+				valOr(cell, "RSSI", "--"),
+				valOr(cell, "SNR", "--"))
 		}
 	}
-	if len(info.LTEDetail.InterFreq) > 0 {
-		fmt.Fprintln(b, "Neighbor Cells (InterFreq):")
+
+	// InterFreq neighbors.
+	if hasInter {
+		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.InterFreq {
-			renderCellRow(b, cell)
+			label := "Inter"
+			if earfcn, ok := cell["EARFCN"]; ok {
+				if n, err := strconv.Atoi(earfcn); err == nil {
+					if band := modem.EARFCNBand(n); band != "" {
+						label = "Inter " + band
+					}
+				}
+			}
+			fmt.Fprintf(b, cellTableFmt+"\n", label,
+				valOr(cell, "PCI", "--"),
+				valOr(cell, "RSRQ", "--"),
+				valOr(cell, "RSRP", "--"),
+				valOr(cell, "RSSI", "--"),
+				valOr(cell, "SNR", "--"))
 		}
 	}
 }
@@ -727,50 +785,20 @@ func hasGStatusSignal(gstatus map[string]string) bool {
 	return false
 }
 
-// renderServingFromGStatus writes a compact signal row from GStatus keys.
-func renderServingFromGStatus(b *strings.Builder, gstatus map[string]string) {
-	type field struct{ key, name, unit string }
-	fields := []field{
-		{"RSRQ (dB)", "RSRQ", "dB"},
-		{"RSRP (dBm)", "RSRP", "dBm"},
-		{"SINR (dB)", "SINR", "dB"},
+// valOr returns m[key] if present and non-empty, otherwise fallback.
+func valOr(m map[string]string, key, fallback string) string {
+	if v, ok := m[key]; ok && v != "" {
+		return v
 	}
-	var parts []string
-	for _, f := range fields {
-		if v, ok := gstatus[f.key]; ok {
-			parts = append(parts, fmt.Sprintf("%s=%s %s", f.name, v, f.unit))
-		}
-	}
-	if len(parts) > 0 {
-		fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
-	}
+	return fallback
 }
 
-// renderPCCDetail writes PCC RxD/RxM diversity data as a sub-line.
-func renderPCCDetail(b *strings.Builder, gstatus map[string]string) {
-	rxdRSRP := gstatus["PCC RxD RSRP (dBm)"]
-	rxdRSSI := gstatus["PCC RxD RSSI"]
-	rxmRSSI := gstatus["PCC RxM RSSI"]
-	if rxdRSRP == "" && rxdRSSI == "" && rxmRSSI == "" {
-		return
+// valOrDefault returns s if non-empty, otherwise fallback.
+func valOrDefault(s, fallback string) string {
+	if s != "" {
+		return s
 	}
-	var parts []string
-	needRxDLabel := true
-	if rxdRSRP != "" {
-		parts = append(parts, fmt.Sprintf("RxD: RSRP=%s dBm", rxdRSRP))
-		needRxDLabel = false
-	}
-	if rxdRSSI != "" {
-		if needRxDLabel {
-			parts = append(parts, fmt.Sprintf("RxD: RSSI=%s dBm", rxdRSSI))
-		} else {
-			parts = append(parts, fmt.Sprintf("RSSI=%s dBm", rxdRSSI))
-		}
-	}
-	if rxmRSSI != "" {
-		parts = append(parts, fmt.Sprintf("RxM: RSSI=%s dBm", rxmRSSI))
-	}
-	fmt.Fprintf(b, "  %s\n", strings.Join(parts, "  "))
+	return fallback
 }
 
 // cellLookupURL constructs a CellMapper URL from GStatus fields.

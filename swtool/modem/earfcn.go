@@ -93,6 +93,15 @@ func FormatULEARFCN(earfcn int) string {
 	return fmt.Sprintf("%d (%.1f MHz, B%d)", earfcn, freq, info.Band)
 }
 
+// EARFCNBand returns the band name like "B4" for a DL EARFCN, or "" if unknown.
+func EARFCNBand(earfcn int) string {
+	info, err := lookupDLEARFCN(earfcn)
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("B%d", info.Band)
+}
+
 func lookupDLEARFCN(earfcn int) (EARFCNInfo, error) {
 	for _, b := range earfcnBands {
 		if earfcn >= b.NDLMin && earfcn <= b.NDLMax {
