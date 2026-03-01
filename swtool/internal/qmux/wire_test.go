@@ -161,10 +161,10 @@ func TestDecodeKnownFrame(t *testing.T) {
 
 func TestDecodeErrorResponse(t *testing.T) {
 	t.Parallel()
-	// DMS response with QMI error 0x001E (not-supported).
+	// DMS response with QMI error 26 (0x001A = no-effect).
 	// QMUX: marker=01 len=0013(19=20-1) flags=80 svc=02 client=01
 	// SDU:  flags=02 txn=0100 msg=002D tlvLen=0004
-	// TLV 0x02: result error (01 00 1E 00)
+	// TLV 0x02: result error (01 00 1A 00)
 	frame, _ := hex.DecodeString(
 		"01" +
 			"1300" + // length = 19 (total frame 20, minus 1 for marker)
@@ -175,7 +175,7 @@ func TestDecodeErrorResponse(t *testing.T) {
 			"0100" + // txn ID 1 (16-bit for DMS)
 			"2d00" + // msg ID 0x002D
 			"0700" + // TLV length = 7
-			"02" + "0400" + "01001e00", // result: error, code=0x001E
+			"02" + "0400" + "01001a00", // result: error, code=0x001A (no-effect)
 	)
 
 	msg, err := DecodeMessage(frame)
@@ -187,8 +187,8 @@ func TestDecodeErrorResponse(t *testing.T) {
 	if err == nil {
 		t.Fatal("Result() = nil, want error")
 	}
-	if !errors.Is(err, ErrNotSupported) {
-		t.Errorf("Result() = %v, want ErrNotSupported", err)
+	if !errors.Is(err, ErrNoEffect) {
+		t.Errorf("Result() = %v, want ErrNoEffect", err)
 	}
 }
 
@@ -313,14 +313,14 @@ func TestTLVHelpers(t *testing.T) {
 
 func TestQMIErrorSentinels(t *testing.T) {
 	t.Parallel()
-	err := newQMIError(0x001E)
-	if !errors.Is(err, ErrNotSupported) {
-		t.Errorf("newQMIError(0x001E) should match ErrNotSupported")
+	err := newQMIError(5)
+	if !errors.Is(err, ErrClientIdsExhausted) {
+		t.Errorf("newQMIError(5) should match ErrClientIdsExhausted")
 	}
 
 	err = newQMIError(0xFFFF)
-	if errors.Is(err, ErrNotSupported) {
-		t.Errorf("newQMIError(0xFFFF) should not match ErrNotSupported")
+	if errors.Is(err, ErrClientIdsExhausted) {
+		t.Errorf("newQMIError(0xFFFF) should not match ErrClientIdsExhausted")
 	}
 	if err.Error() != "QMI error 65535" {
 		t.Errorf("Error() = %q, want \"QMI error 65535\"", err.Error())
@@ -329,13 +329,13 @@ func TestQMIErrorSentinels(t *testing.T) {
 
 func TestIsQMIError(t *testing.T) {
 	t.Parallel()
-	if !IsQMIError(ErrNotSupported, 0x001E) {
-		t.Error("IsQMIError(ErrNotSupported, 0x001E) = false, want true")
+	if !IsQMIError(ErrClientIdsExhausted, 5) {
+		t.Error("IsQMIError(ErrClientIdsExhausted, 5) = false, want true")
 	}
-	if IsQMIError(ErrNotSupported, 0x0001) {
-		t.Error("IsQMIError(ErrNotSupported, 0x0001) = true, want false")
+	if IsQMIError(ErrClientIdsExhausted, 1) {
+		t.Error("IsQMIError(ErrClientIdsExhausted, 1) = true, want false")
 	}
-	if IsQMIError(errors.New("other"), 0x001E) {
+	if IsQMIError(errors.New("other"), 5) {
 		t.Error("IsQMIError(non-QMI error) = true, want false")
 	}
 }

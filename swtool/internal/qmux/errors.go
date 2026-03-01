@@ -18,36 +18,41 @@ func (e *QMIError) Error() string {
 	return fmt.Sprintf("QMI error %d", e.Code)
 }
 
-// Sentinel errors for common QMI error codes.
+// Sentinel errors for common QMI protocol error codes.
+// Codes from libqmi-1.38.0/src/libqmi-glib/qmi-errors.h.
 var (
-	ErrMalformedMessage  = &QMIError{Code: 0x0001, Name: "malformed-message"}
-	ErrNoMemory          = &QMIError{Code: 0x0002, Name: "no-memory"}
-	ErrInternal          = &QMIError{Code: 0x0003, Name: "internal"}
-	ErrInvalidArg        = &QMIError{Code: 0x0004, Name: "invalid-arg"}
-	ErrNoEffect          = &QMIError{Code: 0x0005, Name: "no-effect"}
-	ErrDeviceInUse       = &QMIError{Code: 0x0014, Name: "device-in-use"}
-	ErrInvalidOperation  = &QMIError{Code: 0x0016, Name: "invalid-operation"}
-	ErrAccessDenied      = &QMIError{Code: 0x0017, Name: "access-denied"}
-	ErrNotProvisioned    = &QMIError{Code: 0x0019, Name: "not-provisioned"}
-	ErrNotSupported      = &QMIError{Code: 0x001E, Name: "not-supported"}
-	ErrNoFreeClient      = &QMIError{Code: 0x0024, Name: "no-free-client"}
-	ErrInvalidClient     = &QMIError{Code: 0x0025, Name: "invalid-client"}
+	ErrMalformedMessage    = &QMIError{Code: 1, Name: "malformed-message"}
+	ErrNoMemory            = &QMIError{Code: 2, Name: "no-memory"}
+	ErrInternal            = &QMIError{Code: 3, Name: "internal"}
+	ErrAborted             = &QMIError{Code: 4, Name: "aborted"}
+	ErrClientIdsExhausted  = &QMIError{Code: 5, Name: "client-ids-exhausted"}
+	ErrInvalidClientID     = &QMIError{Code: 7, Name: "invalid-client-id"}
+	ErrNoNetworkFound      = &QMIError{Code: 13, Name: "no-network-found"}
+	ErrNotProvisioned      = &QMIError{Code: 16, Name: "not-provisioned"}
+	ErrDeviceInUse         = &QMIError{Code: 23, Name: "device-in-use"}
+	ErrNoEffect            = &QMIError{Code: 26, Name: "no-effect"}
+	ErrInvalidArgument     = &QMIError{Code: 48, Name: "invalid-argument"}
+	ErrNoEntry             = &QMIError{Code: 50, Name: "no-entry"}
+	ErrDeviceNotReady      = &QMIError{Code: 52, Name: "device-not-ready"}
+	ErrInfoUnavailable     = &QMIError{Code: 74, Name: "information-unavailable"}
 )
 
 // qmiErrors maps known QMI error codes to sentinel errors.
 var qmiErrors = map[uint16]*QMIError{
-	0x0001: ErrMalformedMessage,
-	0x0002: ErrNoMemory,
-	0x0003: ErrInternal,
-	0x0004: ErrInvalidArg,
-	0x0005: ErrNoEffect,
-	0x0014: ErrDeviceInUse,
-	0x0016: ErrInvalidOperation,
-	0x0017: ErrAccessDenied,
-	0x0019: ErrNotProvisioned,
-	0x001E: ErrNotSupported,
-	0x0024: ErrNoFreeClient,
-	0x0025: ErrInvalidClient,
+	1:  ErrMalformedMessage,
+	2:  ErrNoMemory,
+	3:  ErrInternal,
+	4:  ErrAborted,
+	5:  ErrClientIdsExhausted,
+	7:  ErrInvalidClientID,
+	13: ErrNoNetworkFound,
+	16: ErrNotProvisioned,
+	23: ErrDeviceInUse,
+	26: ErrNoEffect,
+	48: ErrInvalidArgument,
+	50: ErrNoEntry,
+	52: ErrDeviceNotReady,
+	74: ErrInfoUnavailable,
 }
 
 // newQMIError returns a sentinel *QMIError for known codes, or a new

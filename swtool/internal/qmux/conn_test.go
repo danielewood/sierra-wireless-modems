@@ -192,7 +192,7 @@ func TestConnQMIError(t *testing.T) {
 	})
 	ft.queueResponse(&Message{
 		Service: ServiceDMS, Client: 1, TxnID: 1, MsgID: 0x002D,
-		TLVs: []TLV{errorResult(0x001E)}, // not-supported
+		TLVs: []TLV{errorResult(26)}, // no-effect
 	})
 
 	conn := NewConn(ft)
@@ -202,8 +202,8 @@ func TestConnQMIError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Send: %v", err)
 	}
-	if err := resp.Result(); !errors.Is(err, ErrNotSupported) {
-		t.Errorf("Result() = %v, want ErrNotSupported", err)
+	if err := resp.Result(); !errors.Is(err, ErrNoEffect) {
+		t.Errorf("Result() = %v, want ErrNoEffect", err)
 	}
 }
 
