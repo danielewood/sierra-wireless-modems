@@ -26,7 +26,8 @@ func TestMBIMCommandEncoding(t *testing.T) {
 	// Verify the structure of an MBIM COMMAND wrapping a small QMUX frame.
 	// We use a fake mbimTransport to build a command manually.
 
-	qmuxFrame := []byte{0x01, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x22, 0x00, 0x00, 0x00}
+	// 12-byte QMUX frame: marker(01) + length(0b00 = 11, excludes marker) + 9 bytes payload
+	qmuxFrame := []byte{0x01, 0x0b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x22, 0x00, 0x00, 0x00}
 
 	msgLen := mbimCommandHeaderLen + len(qmuxFrame)
 	msg := make([]byte, msgLen)

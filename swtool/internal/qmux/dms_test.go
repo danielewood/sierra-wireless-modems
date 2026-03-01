@@ -97,21 +97,8 @@ func TestParseStoredImagesTLV(t *testing.T) {
 	// Build a TLV payload representing 2 list entries (modem + pri),
 	// each with 2 image slots.
 	//
-	// Entry 0 (modem, type=0):
-	//   maxImages=2, indexListSize=2
-	//     slot 0: storageIndex=0, failureCount=0
-	//     slot 1: storageIndex=1, failureCount=1
-	//   imageIDListSize=2
-	//     image 0: uniqueID="?_?", buildID="02.39.00.00_GENERIC"
-	//     image 1: uniqueID="?_?", buildID=""
-	//
-	// Entry 1 (pri, type=1):
-	//   maxImages=2, indexListSize=2
-	//     slot 0: storageIndex=0, failureCount=0
-	//     slot 1: storageIndex=1, failureCount=0
-	//   imageIDListSize=2
-	//     image 0: uniqueID="config_ver_0", buildID="02.39.00.00_GENERIC"
-	//     image 1: uniqueID="", buildID=""
+	// Layout per list: type(1) maxImages(1) runningIndex(1) sublistCount(1)
+	// Per entry: storageIndex(1) failureCount(1) uniqueID(16 fixed) buildIDLen(1) buildID(N)
 
 	var data []byte
 	data = append(data, 0x02) // listCount = 2
@@ -119,34 +106,31 @@ func TestParseStoredImagesTLV(t *testing.T) {
 	// Entry 0: modem
 	data = append(data, 0x00) // type = modem
 	data = append(data, 0x02) // maxImages
-	data = append(data, 0x02) // indexListSize
-	data = append(data, 0x00, 0x00) // slot 0: storageIndex=0, failureCount=0
-	data = append(data, 0x01, 0x01) // slot 1: storageIndex=1, failureCount=1
-	data = append(data, 0x02)       // imageIDListSize = 2
-	// image 0
-	data = append(data, 0x03)                             // uniqueIDLen = 3
-	data = append(data, []byte("?_?")...)                  // uniqueID
+	data = append(data, 0x00) // runningIndex
+	data = append(data, 0x02) // sublistCount = 2
+	// slot 0
+	data = append(data, 0x00, 0x00) // storageIndex=0, failureCount=0
+	data = append(data, padUID("?_?")...)
 	data = append(data, 0x13)                              // buildIDLen = 19
 	data = append(data, []byte("02.39.00.00_GENERIC")...) // buildID
-	// image 1
-	data = append(data, 0x03)            // uniqueIDLen = 3
-	data = append(data, []byte("?_?")...) // uniqueID
-	data = append(data, 0x00)            // buildIDLen = 0
+	// slot 1
+	data = append(data, 0x01, 0x01) // storageIndex=1, failureCount=1
+	data = append(data, padUID("?_?")...)
+	data = append(data, 0x00) // buildIDLen = 0
 
 	// Entry 1: pri
 	data = append(data, 0x01) // type = pri
 	data = append(data, 0x02) // maxImages
-	data = append(data, 0x02) // indexListSize
-	data = append(data, 0x00, 0x00) // slot 0
-	data = append(data, 0x01, 0x00) // slot 1
-	data = append(data, 0x02)       // imageIDListSize = 2
-	// image 0
-	data = append(data, 0x0C)                                  // uniqueIDLen = 12
-	data = append(data, []byte("config_ver_0")...)             // uniqueID
-	data = append(data, 0x13)                                  // buildIDLen = 19
-	data = append(data, []byte("02.39.00.00_GENERIC")...)      // buildID
-	// image 1
-	data = append(data, 0x00) // uniqueIDLen = 0
+	data = append(data, 0x00) // runningIndex
+	data = append(data, 0x02) // sublistCount = 2
+	// slot 0
+	data = append(data, 0x00, 0x00) // storageIndex=0, failureCount=0
+	data = append(data, padUID("config_ver_0")...)
+	data = append(data, 0x13)                              // buildIDLen = 19
+	data = append(data, []byte("02.39.00.00_GENERIC")...) // buildID
+	// slot 1
+	data = append(data, 0x01, 0x00) // storageIndex=1, failureCount=0
+	data = append(data, padUID("")...)
 	data = append(data, 0x00) // buildIDLen = 0
 
 	images, err := parseStoredImagesTLV(data)
@@ -225,20 +209,19 @@ func TestParseStoredImagesTLVTruncated(t *testing.T) {
 func TestParseFirmwarePrefTLV(t *testing.T) {
 	t.Parallel()
 	// 2 entries: modem + pri
+	// Layout: count(1) + per entry: type(1) uniqueID(16 fixed) buildIDLen(1) buildID(N)
 	var data []byte
 	data = append(data, 0x02) // count
 
 	// Modem.
 	data = append(data, 0x00)                             // type
-	data = append(data, 0x03)                             // uniqueIDLen
-	data = append(data, []byte("?_?")...)                  // uniqueID
+	data = append(data, padUID("?_?")...)                  // uniqueID (16 bytes)
 	data = append(data, 0x13)                              // buildIDLen = 19
 	data = append(data, []byte("02.39.00.00_GENERIC")...) // buildID
 
 	// PRI.
 	data = append(data, 0x01)                              // type
-	data = append(data, 0x0C)                              // uniqueIDLen
-	data = append(data, []byte("config_ver_0")...)         // uniqueID
+	data = append(data, padUID("config_ver_0")...)         // uniqueID (16 bytes)
 	data = append(data, 0x13)                              // buildIDLen = 19
 	data = append(data, []byte("02.39.00.00_GENERIC")...)  // buildID
 
@@ -267,11 +250,10 @@ func TestListStoredImages(t *testing.T) {
 	storedData = append(storedData, 0x01) // listCount = 1
 	storedData = append(storedData, 0x00) // type = modem
 	storedData = append(storedData, 0x01) // maxImages
-	storedData = append(storedData, 0x01) // indexListSize
+	storedData = append(storedData, 0x00) // runningIndex
+	storedData = append(storedData, 0x01) // sublistCount = 1
 	storedData = append(storedData, 0x00, 0x00) // storageIndex=0, failureCount=0
-	storedData = append(storedData, 0x01) // imageIDListSize
-	storedData = append(storedData, 0x03) // uniqueIDLen
-	storedData = append(storedData, []byte("?_?")...)
+	storedData = append(storedData, padUID("?_?")...)
 	storedData = append(storedData, 0x05) // buildIDLen
 	storedData = append(storedData, []byte("1.0_G")...)
 
@@ -298,11 +280,10 @@ func TestGetFirmwarePreference(t *testing.T) {
 	defer conn.Close()
 
 	var prefData []byte
-	prefData = append(prefData, 0x01)            // count
-	prefData = append(prefData, 0x00)            // type = modem
-	prefData = append(prefData, 0x03)            // uniqueIDLen
-	prefData = append(prefData, []byte("?_?")...)
-	prefData = append(prefData, 0x05)            // buildIDLen
+	prefData = append(prefData, 0x01)             // count
+	prefData = append(prefData, 0x00)             // type = modem
+	prefData = append(prefData, padUID("?_?")...) // uniqueID (16 bytes)
+	prefData = append(prefData, 0x05)             // buildIDLen
 	prefData = append(prefData, []byte("1.0_G")...)
 
 	ft.queueResponse(&Message{

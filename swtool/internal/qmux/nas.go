@@ -99,7 +99,8 @@ type ServingSystem struct {
 	MNC        uint16
 }
 
-// ratName maps QMI radio interface enum values to names.
+// ratName maps QMI NAS serving system radio interface enum values to names.
+// These differ from the radio technology values used elsewhere in QMI!
 func ratName(r uint8) string {
 	switch r {
 	case 0x00:
@@ -107,12 +108,16 @@ func ratName(r uint8) string {
 	case 0x01:
 		return "cdma"
 	case 0x02:
-		return "umts"
+		return "cdma-evdo"
 	case 0x03:
-		return "gsm"
+		return "amps"
 	case 0x04:
-		return "lte"
+		return "gsm"
 	case 0x05:
+		return "umts"
+	case 0x08:
+		return "lte"
+	case 0x09:
 		return "td-scdma"
 	default:
 		return fmt.Sprintf("unknown-%d", r)
@@ -233,8 +238,8 @@ func GetSystemInfo(c *Conn) (*SystemInfo, error) {
 		info.ServiceStatus = tlv.Value[0]
 	}
 
-	// LTE System Info (TLV 0x1D): complex nested structure.
-	if tlv := resp.FindTLV(0x1D); tlv != nil {
+	// LTE System Info (TLV 0x19): complex nested structure.
+	if tlv := resp.FindTLV(0x19); tlv != nil {
 		parseLTESystemInfoTLV(tlv.Value, info)
 	}
 

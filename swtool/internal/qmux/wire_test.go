@@ -114,13 +114,13 @@ func TestEncodeDecodeRoundTrip(t *testing.T) {
 func TestDecodeKnownFrame(t *testing.T) {
 	t.Parallel()
 	// A real CTL allocate-client-ID response (service=DMS, clientID=1).
-	// QMUX: marker=01 len=0017(23) flags=80 svc=00 client=00
+	// QMUX: marker=01 len=0017(23=24-1) flags=80 svc=00 client=00
 	// SDU:  flags=02 txn=01 msg=0022 tlvLen=000C
 	// TLV 0x02: result success (00 00 00 00)
 	// TLV 0x01: svc=02 client=01
 	frame, _ := hex.DecodeString(
 		"01" + // marker
-			"1800" + // length = 24
+			"1700" + // length = 23 (total frame 24, minus 1 for marker)
 			"80" + // flags (response)
 			"00" + // service CTL
 			"00" + // client 0
@@ -162,12 +162,12 @@ func TestDecodeKnownFrame(t *testing.T) {
 func TestDecodeErrorResponse(t *testing.T) {
 	t.Parallel()
 	// DMS response with QMI error 0x001E (not-supported).
-	// QMUX: marker=01 len=0014(20) flags=80 svc=02 client=01
+	// QMUX: marker=01 len=0013(19=20-1) flags=80 svc=02 client=01
 	// SDU:  flags=02 txn=0100 msg=002D tlvLen=0004
 	// TLV 0x02: result error (01 00 1E 00)
 	frame, _ := hex.DecodeString(
 		"01" +
-			"1400" + // length = 20
+			"1300" + // length = 19 (total frame 20, minus 1 for marker)
 			"80" +
 			"02" + // service DMS
 			"01" + // client 1

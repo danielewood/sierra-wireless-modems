@@ -1,6 +1,9 @@
 package qmux
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // DMS message IDs.
 const (
@@ -78,18 +81,18 @@ type StoredImage struct {
 	FailureCount uint8
 }
 
+// uniqueIDLen is the fixed width of the unique ID field in DMS image TLVs.
+const uniqueIDLen = 16
+
 // ListStoredImages queries the modem's stored firmware images.
 //
 // DMS 0x0049 response TLV 0x01 layout (nested, variable-length):
 //
 //	count(1)
-//	  per list entry:
-//	    type(1) maxImages(1) indexListSize(1)
-//	      per image in list:
-//	        storageIndex(1) failureCount(1)
-//	  imageIDListSize(1)
-//	      per image ID:
-//	        uniqueIDLen(1) uniqueID(N) buildIDLen(1) buildID(N)
+//	  per list:
+//	    type(1) maxImages(1) runningIndex(1) sublistCount(1)
+//	    per entry:
+//	      storageIndex(1) failureCount(1) uniqueID(16 fixed) buildIDLen(1) buildID(N)
 func ListStoredImages(c *Conn) ([]StoredImage, error) {
 	resp, err := c.Send(ServiceDMS, dmsMsgListStoredImages)
 	if err != nil {
@@ -118,54 +121,28 @@ func parseStoredImagesTLV(data []byte) ([]StoredImage, error) {
 	off++
 
 	for i := range listCount {
-		if off+3 > len(data) {
-			return nil, fmt.Errorf("truncated list entry %d header", i)
+		if off+4 > len(data) {
+			return nil, fmt.Errorf("truncated list %d header", i)
 		}
 		imageType := data[off]
-		off++ // type
-		off++ // maxImages (skip)
-		indexListSize := int(data[off])
+		off++         // type
+		off++         // maxImages (skip)
+		off++         // runningIndex (skip)
+		sublistCount := int(data[off])
 		off++
 
-		// Read index list entries (storageIndex + failureCount per entry).
-		type indexEntry struct {
-			storageIndex uint8
-			failureCount uint8
-		}
-		indices := make([]indexEntry, indexListSize)
-		for j := range indexListSize {
-			if off+2 > len(data) {
-				return nil, fmt.Errorf("truncated index entry %d/%d", i, j)
+		for j := range sublistCount {
+			// storageIndex(1) + failureCount(1) + uniqueID(16) + buildIDLen(1) minimum
+			if off+uniqueIDLen+3 > len(data) {
+				return nil, fmt.Errorf("truncated image entry %d/%d", i, j)
 			}
-			indices[j] = indexEntry{
-				storageIndex: data[off],
-				failureCount: data[off+1],
-			}
+			storageIndex := data[off]
+			failureCount := data[off+1]
 			off += 2
-		}
 
-		// Read image ID list.
-		if off+1 > len(data) {
-			return nil, fmt.Errorf("truncated image ID list size for entry %d", i)
-		}
-		idListSize := int(data[off])
-		off++
+			uniqueID := trimNulls(data[off : off+uniqueIDLen])
+			off += uniqueIDLen
 
-		for j := range idListSize {
-			if off+1 > len(data) {
-				return nil, fmt.Errorf("truncated unique ID length for entry %d/%d", i, j)
-			}
-			uidLen := int(data[off])
-			off++
-			if off+uidLen > len(data) {
-				return nil, fmt.Errorf("truncated unique ID for entry %d/%d", i, j)
-			}
-			uniqueID := string(data[off : off+uidLen])
-			off += uidLen
-
-			if off+1 > len(data) {
-				return nil, fmt.Errorf("truncated build ID length for entry %d/%d", i, j)
-			}
 			bidLen := int(data[off])
 			off++
 			if off+bidLen > len(data) {
@@ -174,21 +151,43 @@ func parseStoredImagesTLV(data []byte) ([]StoredImage, error) {
 			buildID := string(data[off : off+bidLen])
 			off += bidLen
 
-			img := StoredImage{
-				Type:     imageType,
-				Slot:     uint8(j),
-				UniqueID: uniqueID,
-				BuildID:  buildID,
-			}
-			if j < len(indices) {
-				img.StorageIndex = indices[j].storageIndex
-				img.FailureCount = indices[j].failureCount
-			}
-			images = append(images, img)
+			images = append(images, StoredImage{
+				Type:         imageType,
+				Slot:         uint8(j),
+				UniqueID:     uniqueID,
+				BuildID:      buildID,
+				StorageIndex: storageIndex,
+				FailureCount: failureCount,
+			})
 		}
 	}
 
 	return images, nil
+}
+
+// trimNulls returns a string from a null-padded fixed-width byte field.
+func trimNulls(b []byte) string {
+	if i := bytes.IndexByte(b, 0); i >= 0 {
+		return string(b[:i])
+	}
+	return string(b)
+}
+
+// padUID returns s as a fixed 16-byte null-padded field.
+func padUID(s string) []byte {
+	b := make([]byte, uniqueIDLen)
+	copy(b, s)
+	return b
+}
+
+// appendImageEntry appends a firmware image entry (type + uniqueID(16) + buildID(N))
+// to the payload buffer.
+func appendImageEntry(buf []byte, imgType uint8, uniqueID, buildID string) []byte {
+	buf = append(buf, imgType)
+	buf = append(buf, padUID(uniqueID)...)
+	buf = append(buf, byte(len(buildID)))
+	buf = append(buf, []byte(buildID)...)
+	return buf
 }
 
 // FirmwarePrefImage represents a firmware preference entry.
@@ -203,7 +202,7 @@ type FirmwarePrefImage struct {
 // DMS 0x0047 response TLV 0x01 layout:
 //
 //	count(1)
-//	  per entry: type(1) uniqueIDLen(1) uniqueID(N) buildIDLen(1) buildID(N)
+//	  per entry: type(1) uniqueID(16 fixed) buildIDLen(1) buildID(N)
 func GetFirmwarePreference(c *Conn) ([]FirmwarePrefImage, error) {
 	resp, err := c.Send(ServiceDMS, dmsMsgGetFirmwarePref)
 	if err != nil {
@@ -232,26 +231,16 @@ func parseFirmwarePrefTLV(data []byte) ([]FirmwarePrefImage, error) {
 
 	images := make([]FirmwarePrefImage, 0, count)
 	for i := range count {
-		if off+1 > len(data) {
+		// type(1) + uniqueID(16) + buildIDLen(1) minimum
+		if off+uniqueIDLen+2 > len(data) {
 			return nil, fmt.Errorf("truncated firmware preference entry %d", i)
 		}
 		imgType := data[off]
 		off++
 
-		if off+1 > len(data) {
-			return nil, fmt.Errorf("truncated unique ID length for preference %d", i)
-		}
-		uidLen := int(data[off])
-		off++
-		if off+uidLen > len(data) {
-			return nil, fmt.Errorf("truncated unique ID for preference %d", i)
-		}
-		uniqueID := string(data[off : off+uidLen])
-		off += uidLen
+		uniqueID := trimNulls(data[off : off+uniqueIDLen])
+		off += uniqueIDLen
 
-		if off+1 > len(data) {
-			return nil, fmt.Errorf("truncated build ID length for preference %d", i)
-		}
 		bidLen := int(data[off])
 		off++
 		if off+bidLen > len(data) {
@@ -278,24 +267,11 @@ func SetFirmwarePreference(c *Conn, fwVersion, configVersion, carrier string) er
 	modemBuildID := fwVersion + "_" + carrier
 	priBuildID := modemBuildID
 
-	// Modem entry: type=0, uniqueID="?_?", buildID="{fw}_{carrier}"
-	// PRI entry: type=1, uniqueID=configVersion, buildID="{fw}_{carrier}"
-	var payload []byte
-	payload = append(payload, 0x02) // count = 2
-
-	// Modem entry.
-	payload = append(payload, 0x00)                     // type = modem
-	payload = append(payload, byte(len("?_?")))          // uniqueID length
-	payload = append(payload, []byte("?_?")...)          // uniqueID
-	payload = append(payload, byte(len(modemBuildID)))   // buildID length
-	payload = append(payload, []byte(modemBuildID)...)   // buildID
-
-	// PRI entry.
-	payload = append(payload, 0x01)                      // type = pri
-	payload = append(payload, byte(len(configVersion)))  // uniqueID length
-	payload = append(payload, []byte(configVersion)...)  // uniqueID
-	payload = append(payload, byte(len(priBuildID)))     // buildID length
-	payload = append(payload, []byte(priBuildID)...)     // buildID
+	// Modem entry: type=0, uniqueID="?_?" (padded to 16), buildID="{fw}_{carrier}"
+	// PRI entry: type=1, uniqueID=configVersion (padded to 16), buildID="{fw}_{carrier}"
+	payload := []byte{0x02} // count = 2
+	payload = appendImageEntry(payload, 0x00, "?_?", modemBuildID)
+	payload = appendImageEntry(payload, 0x01, configVersion, priBuildID)
 
 	resp, err := c.Send(ServiceDMS, dmsMsgSetFirmwarePref, TLV{Type: 0x01, Value: payload})
 	if err != nil {
@@ -327,22 +303,9 @@ func SelectStoredImage(c *Conn, images []StoredImage, modemSlot, priSlot int) er
 		return fmt.Errorf("selecting stored image: slot modem=%d pri=%d not found", modemSlot, priSlot)
 	}
 
-	var payload []byte
-	payload = append(payload, 0x02) // count = 2
-
-	// Modem entry.
-	payload = append(payload, 0x00)
-	payload = append(payload, byte(len(modemImg.UniqueID)))
-	payload = append(payload, []byte(modemImg.UniqueID)...)
-	payload = append(payload, byte(len(modemImg.BuildID)))
-	payload = append(payload, []byte(modemImg.BuildID)...)
-
-	// PRI entry.
-	payload = append(payload, 0x01)
-	payload = append(payload, byte(len(priImg.UniqueID)))
-	payload = append(payload, []byte(priImg.UniqueID)...)
-	payload = append(payload, byte(len(priImg.BuildID)))
-	payload = append(payload, []byte(priImg.BuildID)...)
+	payload := []byte{0x02} // count = 2
+	payload = appendImageEntry(payload, 0x00, modemImg.UniqueID, modemImg.BuildID)
+	payload = appendImageEntry(payload, 0x01, priImg.UniqueID, priImg.BuildID)
 
 	resp, err := c.Send(ServiceDMS, dmsMsgSetFirmwarePref, TLV{Type: 0x01, Value: payload})
 	if err != nil {
@@ -358,14 +321,9 @@ func SelectStoredImage(c *Conn, images []StoredImage, modemSlot, priSlot int) er
 //
 // DMS 0x004A request TLV 0x01 layout:
 //
-//	type(1) uniqueIDLen(1) uniqueID(N) buildIDLen(1) buildID(N)
+//	type(1) uniqueID(16 fixed) buildIDLen(1) buildID(N)
 func DeleteStoredImage(c *Conn, img StoredImage) error {
-	var payload []byte
-	payload = append(payload, img.Type)
-	payload = append(payload, byte(len(img.UniqueID)))
-	payload = append(payload, []byte(img.UniqueID)...)
-	payload = append(payload, byte(len(img.BuildID)))
-	payload = append(payload, []byte(img.BuildID)...)
+	payload := appendImageEntry(nil, img.Type, img.UniqueID, img.BuildID)
 
 	resp, err := c.Send(ServiceDMS, dmsMsgDeleteStoredImage, TLV{Type: 0x01, Value: payload})
 	if err != nil {

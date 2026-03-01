@@ -1,5 +1,14 @@
 // Package qmux implements the QMI multiplexing wire protocol, transports,
 // and service message codecs for direct modem communication.
+//
+// When adding new QMI messages or fixing TLV layouts, refer to the canonical
+// libqmi JSON message definitions for the authoritative field layouts:
+//
+//   - DMS: libqmi-1.38.0/data/qmi-service-dms.json
+//   - NAS: libqmi-1.38.0/data/qmi-service-nas.json
+//
+// These JSON files describe every TLV type, field order, width, and
+// signedness. Download the libqmi source for reference.
 package qmux
 
 import (
@@ -22,7 +31,7 @@ const qmuxMarker = 0x01
 // QMUX frame layout (little-endian):
 //
 //	Byte 0:     marker (0x01)
-//	Bytes 1-2:  total length (includes marker)
+//	Bytes 1-2:  total length (excludes marker byte)
 //	Byte 3:     flags (0x00 for request, 0x80 for response)
 //	Byte 4:     service ID
 //	Byte 5:     client ID (0x00 for CTL)
@@ -108,9 +117,9 @@ func EncodeMessage(msg *Message) ([]byte, error) {
 	totalLen := qmuxHeaderLen + sduHeaderLen + tlvLen
 	buf := make([]byte, totalLen)
 
-	// QMUX header.
+	// QMUX header. Length field excludes the marker byte itself.
 	buf[0] = qmuxMarker
-	binary.LittleEndian.PutUint16(buf[1:3], uint16(totalLen))
+	binary.LittleEndian.PutUint16(buf[1:3], uint16(totalLen-1))
 	buf[3] = 0x00 // flags: request
 	buf[4] = byte(msg.Service)
 	buf[5] = msg.Client
@@ -153,7 +162,8 @@ func DecodeMessage(frame []byte) (*Message, error) {
 		return nil, fmt.Errorf("invalid QMUX marker: 0x%02x", frame[0])
 	}
 
-	frameLen := int(binary.LittleEndian.Uint16(frame[1:3]))
+	// Length field excludes the marker byte, so total frame = length + 1.
+	frameLen := int(binary.LittleEndian.Uint16(frame[1:3])) + 1
 	if frameLen > len(frame) {
 		return nil, fmt.Errorf("frame length %d exceeds buffer %d", frameLen, len(frame))
 	}

@@ -3,6 +3,7 @@ package qmux
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -25,13 +26,32 @@ type Transport interface {
 const DefaultReadTimeout = 5 * time.Second
 
 // OpenTransport opens a QMI transport for the given device path.
-// It auto-detects MBIM (/dev/cdc-wdm*) vs raw QMI (/dev/qcqmi*) based on
-// the device path name.
+// For /dev/cdc-wdm* devices, it checks sysfs to determine whether the
+// device is driven by qmi_wwan (raw QMI) or cdc_mbim (MBIM tunneling).
+// For /dev/qcqmi* devices, raw QMI is always used.
 func OpenTransport(devicePath string) (Transport, error) {
 	if strings.Contains(devicePath, "cdc-wdm") {
-		return openMBIMTransport(devicePath)
+		if isMBIMDevice(devicePath) {
+			return openMBIMTransport(devicePath)
+		}
+		return OpenRawTransport(devicePath)
 	}
-	return openRawTransport(devicePath)
+	return OpenRawTransport(devicePath)
+}
+
+// isMBIMDevice checks sysfs to determine if a cdc-wdm device uses the
+// cdc_mbim driver (MBIM) vs qmi_wwan (raw QMI).
+// Falls back to assuming MBIM if the driver can't be determined.
+func isMBIMDevice(devicePath string) bool {
+	// Extract device name: "/dev/cdc-wdm0" → "cdc-wdm0"
+	devName := filepath.Base(devicePath)
+	driverLink, err := os.Readlink(filepath.Join("/sys/class/usbmisc", devName, "device/driver"))
+	if err != nil {
+		// Can't determine driver — default to MBIM (the more common case).
+		return true
+	}
+	driver := filepath.Base(driverLink)
+	return driver != "qmi_wwan"
 }
 
 // rawTransport sends/receives QMUX frames directly on /dev/qcqmi* devices.
@@ -39,7 +59,10 @@ type rawTransport struct {
 	f *os.File
 }
 
-func openRawTransport(devicePath string) (*rawTransport, error) {
+// OpenRawTransport opens a raw QMI transport for the given device path.
+// Use this when the device speaks raw QMUX (e.g. /dev/cdc-wdm0 in QMI mode
+// or /dev/qcqmi* devices).
+func OpenRawTransport(devicePath string) (*rawTransport, error) {
 	f, err := os.OpenFile(devicePath, os.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("opening raw QMI device %s: %w", devicePath, err)

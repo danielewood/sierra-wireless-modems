@@ -166,8 +166,8 @@ func TestGetServingSystem(t *testing.T) {
 	}{
 		{
 			name: "registered LTE",
-			// regState=1(registered) csAttach=1 psAttach=1 selNet=1 riCount=1 ri[0]=4(lte)
-			mandTLV: []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x04},
+			// regState=1(registered) csAttach=1 psAttach=1 selNet=1 riCount=1 ri[0]=8(lte)
+			mandTLV: []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x08},
 			roamTLV: []byte{0x00}, // not roaming
 			plmnTLV: func() []byte {
 				b := make([]byte, 7)
@@ -191,7 +191,7 @@ func TestGetServingSystem(t *testing.T) {
 		},
 		{
 			name:    "registered roaming UMTS",
-			mandTLV: []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x02},
+			mandTLV: []byte{0x01, 0x01, 0x01, 0x01, 0x01, 0x05},
 			roamTLV: []byte{0x01}, // roaming
 			plmnTLV: func() []byte {
 				b := make([]byte, 6)
@@ -262,7 +262,7 @@ func TestGetSystemInfo(t *testing.T) {
 	// TLV 0x14: LTE Service Status = available(2)
 	svcTLV := []byte{0x02, 0x02, 0x01} // svcStatus=2, trueStatus=2, prefData=1
 
-	// TLV 0x1D: LTE System Info (21 bytes)
+	// TLV 0x19: LTE System Info (21 bytes)
 	// domain=3(cs-ps) svcCap=3 roaming=0 forbidden=0
 	// lacValid=0 lac=0000 cidValid=1 cid=67890 regReject=0
 	// plmnValid=1 mcc=310 mnc=260 tacValid=1 tac=12345
@@ -287,7 +287,7 @@ func TestGetSystemInfo(t *testing.T) {
 		TLVs: []TLV{
 			successResult(),
 			{Type: 0x14, Value: svcTLV},
-			{Type: 0x1D, Value: sysData},
+			{Type: 0x19, Value: sysData},
 		},
 	})
 
