@@ -504,11 +504,10 @@ func (m tuiModel) renderContent() string {
 		}
 	})
 
-	// Wide sections — always full-width in both layouts.
 	var images, ca, bands string
 
 	if len(info.Images.Firmware) > 0 || len(info.Images.PRI) > 0 {
-		images = renderPanel("Firmware Images", sectionBadge(checks, "firmware_images"), m.width, func(b *strings.Builder) {
+		images = renderPanel("Firmware Images", sectionBadge(checks, "firmware_images"), panelW, func(b *strings.Builder) {
 			if len(info.Images.Firmware) > 0 {
 				fmt.Fprintf(b, "FW Slots (max %d, active: %d):\n", info.Images.MaxFW, info.Images.ActiveSlot)
 				for _, s := range info.Images.Firmware {
@@ -527,7 +526,7 @@ func (m tuiModel) renderContent() string {
 	}
 
 	if len(info.LTECA.Hardware) > 0 || len(info.LTECA.Permitted) > 0 {
-		ca = renderPanel("Carrier Aggregation", "", m.width, func(b *strings.Builder) {
+		ca = renderPanel("Carrier Aggregation", "", panelW, func(b *strings.Builder) {
 			if len(info.LTECA.Hardware) > 0 {
 				fmt.Fprintln(b, "Hardware:")
 				for _, c := range info.LTECA.Hardware {
@@ -555,7 +554,7 @@ func (m tuiModel) renderContent() string {
 	}
 
 	if len(info.Network.AvailableBands) > 0 {
-		bands = renderPanel("Available Bands", "", m.width, func(b *strings.Builder) {
+		bands = renderPanel("Available Bands", "", panelW, func(b *strings.Builder) {
 			for _, band := range info.Network.AvailableBands {
 				fmt.Fprintf(b, "%02d  %-24s LTE=%s\n", band.Index, band.Name, band.LTEMask)
 			}
@@ -592,12 +591,12 @@ func (m tuiModel) renderContent() string {
 	if m.width >= minTwoColWidth {
 		colWidth := m.width / 2
 
-		leftParts := []string{identity, sim, signal, firmware, priID}
+		leftParts := []string{identity, sim, signal, firmware, priID, images}
 		rightParts := []string{network, usb, power}
 		if custom != "" {
 			rightParts = append(rightParts, custom)
 		}
-		rightParts = append(rightParts, gps, paths)
+		rightParts = append(rightParts, gps, paths, ca, bands)
 
 		left := joinNonEmpty(leftParts, "\n")
 		right := joinNonEmpty(rightParts, "\n")
@@ -622,20 +621,13 @@ func (m tuiModel) renderContent() string {
 			result.WriteString("\n")
 		}
 	} else {
-		allParts := []string{identity, sim, signal, firmware, priID, network, usb, power}
+		allParts := []string{identity, sim, signal, firmware, priID, images, network, usb, power}
 		if custom != "" {
 			allParts = append(allParts, custom)
 		}
-		allParts = append(allParts, gps, paths)
+		allParts = append(allParts, gps, paths, ca, bands)
 		result.WriteString(joinNonEmpty(allParts, "\n"))
 		result.WriteString("\n")
-	}
-
-	for _, ws := range []string{images, ca, bands} {
-		if strings.TrimSpace(ws) != "" {
-			result.WriteString(ws)
-			result.WriteString("\n")
-		}
 	}
 
 	return result.String()
