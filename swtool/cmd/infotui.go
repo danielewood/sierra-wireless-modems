@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -771,10 +770,12 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	}
 
 	// styledRow writes one table row with label faint and values styled by age.
-	styledRow := func(label string, earfcn, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
-		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s\n",
+	styledRow := func(label string, earfcn, band, freq, pci, rsrq, rsrp, rssi, snr string, ageKey string) {
+		fmt.Fprintf(b, "%s  %s  %s  %s  %s  %s  %s  %s  %s\n",
 			staleStyle(fmt.Sprintf("%-10s", label), -1),
-			staleStyle(fmt.Sprintf("%6s", earfcn), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%5s", earfcn), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%4s", band), ages[ageKey]),
+			staleStyle(fmt.Sprintf("%5s", freq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%4s", pci), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrq), ages[ageKey]),
 			staleStyle(fmt.Sprintf("%6s", rsrp), ages[ageKey]),
@@ -782,15 +783,24 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 			staleStyle(fmt.Sprintf("%5s", snr), ages[ageKey]))
 	}
 
+	// Resolve serving EARFCN — used for serving row and intra-freq rows.
+	servingEARFCN := "--"
+	if len(info.LTEDetail.Serving) > 0 {
+		servingEARFCN = cellVal(info.LTEDetail.Serving[0], "EARFCN")
+	} else if v, ok := gstatus["LTE Rx chan"]; ok && v != "" {
+		servingEARFCN = v
+	}
+	servingBand, servingFreq := earfcnBandFreq(servingEARFCN)
+
 	// Header + separator (always faint).
-	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "EARFCN", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
+	fmt.Fprintln(b, staleStyle(fmt.Sprintf(cellTableFmt, "", "EARFCN", "Band", "Freq", "PCI", "RSRQ", "RSRP", "RSSI", "SNR"), -1))
 	fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 
 	// Serving cell.
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		styledRow("Serving",
-			cellVal(s, "EARFCN"),
+			servingEARFCN, servingBand, servingFreq,
 			cellVal(s, "PCI"),
 			cellVal(s, "RSRQ"),
 			cellVal(s, "RSRP"),
@@ -799,7 +809,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 			"RSRP")
 	} else if hasGStatusSignal(gstatus) {
 		styledRow("Serving",
-			valOr(gstatus, "LTE Rx chan", "--"),
+			servingEARFCN, servingBand, servingFreq,
 			"--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
 			valOr(gstatus, "RSRP (dBm)", "--"),
@@ -813,14 +823,14 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		styledRow("  RxD", "--", "--", "--",
+		styledRow("  RxD", "--", "--", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--",
 			"PCC RxD RSRP (dBm)")
 	}
 	if rxmRSSI != "" {
-		styledRow("  RxM", "--", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
+		styledRow("  RxM", "--", "--", "--", "--", "--", "--", rxmRSSI, "--", "PCC RxM RSSI")
 	}
 
 	// IntraFreq neighbors.
@@ -828,7 +838,7 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 		for _, cell := range info.LTEDetail.IntraFreq {
 			styledRow("Intra",
-				cellVal(cell, "EARFCN"),
+				servingEARFCN, servingBand, servingFreq,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -842,16 +852,10 @@ func renderCellTableStyled(b *strings.Builder, info *modem.Info, ages map[string
 	if hasInter {
 		fmt.Fprintln(b, staleStyle(cellTableSep, -1))
 		for _, cell := range info.LTEDetail.InterFreq {
-			label := "Inter"
-			if earfcn, ok := cell["EARFCN"]; ok {
-				if n, err := strconv.Atoi(earfcn); err == nil {
-					if band := modem.EARFCNBand(n); band != "" {
-						label = "Inter " + band
-					}
-				}
-			}
-			styledRow(label,
-				cellVal(cell, "EARFCN"),
+			earfcn := cellVal(cell, "EARFCN")
+			band, freq := earfcnBandFreq(earfcn)
+			styledRow("Inter",
+				earfcn, band, freq,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),

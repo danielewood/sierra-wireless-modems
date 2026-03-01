@@ -688,8 +688,8 @@ var servingCellGStatusKeys = map[string]bool{
 
 // Cell table format constants (no trailing newline — callers add it).
 const (
-	cellTableFmt = "%-10s  %6s  %4s  %6s  %6s  %6s  %5s"
-	cellTableSep = "            ------  ----  ------  ------  ------  -----"
+	cellTableFmt = "%-10s  %5s  %4s  %5s  %4s  %6s  %6s  %6s  %5s"
+	cellTableSep = "            -----  ----  -----  ----  ------  ------  ------  -----"
 )
 
 // renderCellTable appends an aligned signal table with serving cell,
@@ -704,15 +704,24 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 		return
 	}
 
+	// Resolve serving EARFCN — used for serving row and intra-freq rows.
+	servingEARFCN := "--"
+	if len(info.LTEDetail.Serving) > 0 {
+		servingEARFCN = cellVal(info.LTEDetail.Serving[0], "EARFCN")
+	} else if v, ok := gstatus["LTE Rx chan"]; ok && v != "" {
+		servingEARFCN = v
+	}
+	servingBand, servingFreq := earfcnBandFreq(servingEARFCN)
+
 	// Header
-	fmt.Fprintf(b, cellTableFmt+"\n", "", "EARFCN", "PCI", "RSRQ", "RSRP", "RSSI", "SNR")
+	fmt.Fprintf(b, cellTableFmt+"\n", "", "EARFCN", "Band", "Freq", "PCI", "RSRQ", "RSRP", "RSSI", "SNR")
 	fmt.Fprintln(b, cellTableSep)
 
 	// Serving cell — prefer LTEDetail, fall back to GStatus.
 	if len(info.LTEDetail.Serving) > 0 {
 		s := info.LTEDetail.Serving[0]
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
-			cellVal(s, "EARFCN"),
+			servingEARFCN, servingBand, servingFreq,
 			cellVal(s, "PCI"),
 			cellVal(s, "RSRQ"),
 			cellVal(s, "RSRP"),
@@ -720,7 +729,7 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 			cellVal(s, "SNR"))
 	} else if hasGStatusSignal(gstatus) {
 		fmt.Fprintf(b, cellTableFmt+"\n", "Serving",
-			valOr(gstatus, "LTE Rx chan", "--"),
+			servingEARFCN, servingBand, servingFreq,
 			"--",
 			valOr(gstatus, "RSRQ (dB)", "--"),
 			valOr(gstatus, "RSRP (dBm)", "--"),
@@ -733,13 +742,13 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	rxdRSSI := gstatus["PCC RxD RSSI"]
 	rxmRSSI := gstatus["PCC RxM RSSI"]
 	if rxdRSRP != "" || rxdRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "  RxD", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "  RxD", "--", "--", "--", "--", "--",
 			valOrDefault(rxdRSRP, "--"),
 			valOrDefault(rxdRSSI, "--"),
 			"--")
 	}
 	if rxmRSSI != "" {
-		fmt.Fprintf(b, cellTableFmt+"\n", "  RxM", "--", "--", "--", "--",
+		fmt.Fprintf(b, cellTableFmt+"\n", "  RxM", "--", "--", "--", "--", "--", "--",
 			rxmRSSI, "--")
 	}
 
@@ -748,7 +757,7 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.IntraFreq {
 			fmt.Fprintf(b, cellTableFmt+"\n", "Intra",
-				cellVal(cell, "EARFCN"),
+				servingEARFCN, servingBand, servingFreq,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -761,16 +770,10 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 	if hasInter {
 		fmt.Fprintln(b, cellTableSep)
 		for _, cell := range info.LTEDetail.InterFreq {
-			label := "Inter"
-			if earfcn, ok := cell["EARFCN"]; ok {
-				if n, err := strconv.Atoi(earfcn); err == nil {
-					if band := modem.EARFCNBand(n); band != "" {
-						label = "Inter " + band
-					}
-				}
-			}
-			fmt.Fprintf(b, cellTableFmt+"\n", label,
-				cellVal(cell, "EARFCN"),
+			earfcn := cellVal(cell, "EARFCN")
+			band, freq := earfcnBandFreq(earfcn)
+			fmt.Fprintf(b, cellTableFmt+"\n", "Inter",
+				earfcn, band, freq,
 				cellVal(cell, "PCI"),
 				cellVal(cell, "RSRQ"),
 				cellVal(cell, "RSRP"),
@@ -778,6 +781,27 @@ func renderCellTable(b *strings.Builder, info *modem.Info) {
 				cellVal(cell, "SNR"))
 		}
 	}
+}
+
+// earfcnBandFreq resolves an EARFCN string to band ("B4") and frequency
+// ("887.5") strings. Returns "--" for both if the EARFCN is unknown or empty.
+func earfcnBandFreq(earfcn string) (band, freq string) {
+	if earfcn == "" || earfcn == "--" {
+		return "--", "--"
+	}
+	n, err := strconv.Atoi(earfcn)
+	if err != nil {
+		return "--", "--"
+	}
+	band = modem.EARFCNBand(n)
+	freq = modem.EARFCNFreq(n)
+	if band == "" {
+		band = "--"
+	}
+	if freq == "" {
+		freq = "--"
+	}
+	return band, freq
 }
 
 // hasGStatusSignal returns true if any primary signal keys are in GStatus.

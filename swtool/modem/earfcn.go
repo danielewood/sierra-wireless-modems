@@ -102,6 +102,19 @@ func EARFCNBand(earfcn int) string {
 	return fmt.Sprintf("B%d", info.Band)
 }
 
+// EARFCNFreq returns the DL frequency in MHz as a string like "887.5" or
+// "2110", or "" if the EARFCN is unknown.
+func EARFCNFreq(earfcn int) string {
+	info, err := lookupDLEARFCN(earfcn)
+	if err != nil {
+		return ""
+	}
+	if info.FreqMHz == float64(int(info.FreqMHz)) {
+		return fmt.Sprintf("%g", info.FreqMHz)
+	}
+	return fmt.Sprintf("%.1f", info.FreqMHz)
+}
+
 func lookupDLEARFCN(earfcn int) (EARFCNInfo, error) {
 	for _, b := range earfcnBands {
 		if earfcn >= b.NDLMin && earfcn <= b.NDLMax {
