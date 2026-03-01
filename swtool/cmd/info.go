@@ -623,6 +623,10 @@ func joinStrings(s []string, sep string) string {
 // formatGStatusValue applies display formatting for specific GStatus keys.
 func formatGStatusValue(key, value string) string {
 	switch key {
+	case "PS state":
+		if strings.EqualFold(value, "LIMITED") {
+			return "Not attached"
+		}
 	case "Current Time":
 		return formatUptime(value)
 	case "TAC":
