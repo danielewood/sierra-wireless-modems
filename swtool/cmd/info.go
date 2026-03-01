@@ -328,14 +328,7 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 		if !printed["gps"] && (info.GPS.FixStatus != "" || info.GPS.SessionStatus != "") {
 			printed["gps"] = true
 			printPanel(w, "GPS", "", panelW, labelW, func(b *strings.Builder) {
-				sf(b, "Session", info.GPS.SessionStatus, labelW)
-				sf(b, "Fix Status", info.GPS.FixStatus, labelW)
-				sf(b, "Latitude", info.GPS.Latitude, labelW)
-				sf(b, "Longitude", info.GPS.Longitude, labelW)
-				sf(b, "Altitude (m)", info.GPS.Altitude, labelW)
-				if info.GPS.Satellites > 0 {
-					sf(b, "Satellites", fmt.Sprintf("%d", info.GPS.Satellites), labelW)
-				}
+				renderGPSFields(b, &info.GPS, labelW)
 			})
 		}
 
@@ -549,14 +542,7 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 		})
 	case "gps":
 		printSectionFields(w, "GPS", labelW, func(b *strings.Builder) {
-			sf(b, "Session", info.GPS.SessionStatus, labelW)
-			sf(b, "Fix Status", info.GPS.FixStatus, labelW)
-			sf(b, "Latitude", info.GPS.Latitude, labelW)
-			sf(b, "Longitude", info.GPS.Longitude, labelW)
-			sf(b, "Altitude (m)", info.GPS.Altitude, labelW)
-			if info.GPS.Satellites > 0 {
-				sf(b, "Satellites", fmt.Sprintf("%d", info.GPS.Satellites), labelW)
-			}
+			renderGPSFields(b, &info.GPS, labelW)
 		})
 	case "bands":
 		printSectionFields(w, "Available Bands", labelW, func(b *strings.Builder) {
@@ -733,6 +719,49 @@ func cellLookupURL(gstatus map[string]string) string {
 
 	return fmt.Sprintf("https://www.cellmapper.net/map?MCC=%s&MNC=%s&type=LTE&latitude=0&longitude=0&zoom=14&tower_id=%d",
 		mcc, mnc, enbID)
+}
+
+// renderGPSFields writes all GPS fields into a string builder.
+// Shared by both the streaming and section-filtered display paths.
+func renderGPSFields(b *strings.Builder, g *modem.GPSInfo, labelW int) {
+	sf(b, "Session", g.SessionStatus, labelW)
+	sf(b, "Fix Status", g.FixStatus, labelW)
+	sf(b, "Fix Type", g.FixType, labelW)
+	sf(b, "TTFF (sec)", g.TTFF, labelW)
+	sf(b, "Latitude", g.Latitude, labelW)
+	sf(b, "Longitude", g.Longitude, labelW)
+	sf(b, "Altitude (m)", g.Altitude, labelW)
+	sf(b, "HEPE (m)", g.HEPE, labelW)
+	if g.Satellites > 0 {
+		sf(b, "Satellites", fmt.Sprintf("%d", g.Satellites), labelW)
+	}
+	sf(b, "HDOP", g.HDOP, labelW)
+	sf(b, "PDOP", g.PDOP, labelW)
+	sf(b, "VDOP", g.VDOP, labelW)
+	sf(b, "Heading", g.Heading, labelW)
+	sf(b, "Velocity (m/s)", g.Velocity, labelW)
+	sf(b, "GPS Time", g.LocTimestamp, labelW)
+	if len(g.SatDetail) > 0 {
+		// Group by constellation for a compact summary.
+		counts := make(map[string]int)
+		for _, s := range g.SatDetail {
+			counts[s.System]++
+		}
+		var summary []string
+		for _, sys := range []string{"GPS", "GLONASS", "Galileo", "BeiDou", "SBAS"} {
+			if n, ok := counts[sys]; ok {
+				summary = append(summary, fmt.Sprintf("%s:%d", sys, n))
+			}
+		}
+		if len(summary) > 0 {
+			sf(b, "Constellations", strings.Join(summary, "  "), labelW)
+		}
+		fmt.Fprintln(b, "Satellites:")
+		for _, s := range g.SatDetail {
+			fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
+				s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
+		}
+	}
 }
 
 // extractHexValue pulls the hex portion from a GStatus value.

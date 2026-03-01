@@ -459,6 +459,19 @@ func TestParseGPSSTATUS(t *testing.T) {
 				TTFF:          "0",
 			},
 		},
+		{
+			name: "real hardware with timestamps",
+			resp: "AT!GPSSTATUS?\r\n" +
+				"Current time: 2026 03 01 6 18:54:20\r\n\r\n" +
+				"2026 03 01 6 18:54:19 Last Fix Status    = SUCCESS\r\n" +
+				"2026 03 01 6 18:54:19 Fix Session Status = ACTIVE\r\n\r\n" +
+				"TTFF (sec) = 91\r\n\r\nOK\r\n",
+			want: GPSInfo{
+				SessionStatus: "ACTIVE",
+				FixStatus:     "SUCCESS",
+				TTFF:          "91",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -495,6 +508,115 @@ func TestParseGPSSTATUS(t *testing.T) {
 				t.Errorf("Velocity: got %q, want %q", got.Velocity, tt.want.Velocity)
 			}
 		})
+	}
+}
+
+func TestParseGPSSATINFO(t *testing.T) {
+	t.Parallel()
+	resp := "AT!GPSSATINFO?\r\n" +
+		"Satellites in view:  18 (2026 03 01 6 18:54:38)\r\n" +
+		"* SV:  3  ELEV: 18  AZI:   63  SNR: 25\r\n" +
+		"* SV: 14  ELEV: 62  AZI:   82  SNR: 36\r\n" +
+		"* SV: 77  ELEV: 75  AZI:   11  SNR: 28\r\n" +
+		"* SV:313  ELEV: 53  AZI:  209  SNR: 33\r\n" +
+		"\r\nOK\r\n"
+
+	count, sats := parseGPSSATINFO(resp)
+	if count != 18 {
+		t.Errorf("count: got %d, want 18", count)
+	}
+	if len(sats) != 4 {
+		t.Fatalf("satellites: got %d, want 4", len(sats))
+	}
+
+	// GPS satellite (PRN 1-32)
+	if sats[0].System != "GPS" || sats[0].PRN != 3 {
+		t.Errorf("sat[0]: got %q PRN %d, want GPS PRN 3", sats[0].System, sats[0].PRN)
+	}
+	if sats[0].Elevation != 18 || sats[0].Azimuth != 63 || sats[0].SNR != 25 {
+		t.Errorf("sat[0] values: elev=%d azi=%d snr=%d", sats[0].Elevation, sats[0].Azimuth, sats[0].SNR)
+	}
+
+	// GLONASS satellite (PRN 65-96)
+	if sats[2].System != "GLONASS" || sats[2].PRN != 77 {
+		t.Errorf("sat[2]: got %q PRN %d, want GLONASS PRN 77", sats[2].System, sats[2].PRN)
+	}
+
+	// Galileo satellite (PRN 301-336)
+	if sats[3].System != "Galileo" || sats[3].PRN != 313 {
+		t.Errorf("sat[3]: got %q PRN %d, want Galileo PRN 313", sats[3].System, sats[3].PRN)
+	}
+}
+
+func TestParseGPSSATINFO_Empty(t *testing.T) {
+	t.Parallel()
+	count, sats := parseGPSSATINFO("AT!GPSSATINFO?\r\nSatellites in view:  0\r\n\r\nOK\r\n")
+	if count != 0 {
+		t.Errorf("count: got %d, want 0", count)
+	}
+	if len(sats) != 0 {
+		t.Errorf("satellites: got %d, want 0", len(sats))
+	}
+}
+
+func TestParseGPSLOC(t *testing.T) {
+	t.Parallel()
+	resp := "AT!GPSLOC?\r\n" +
+		"Lat: 21 Deg 8 Min 55.04 Sec N  (0x003C27F5)\r\n" +
+		"Lon: 86 Deg 49 Min 46.79 Sec W  (0xFF090491)\r\n" +
+		"Time: 2026 03 01 6 18:56:23 (GPS)\r\n" +
+		"LocUncAngle: 0.0 deg  LocUncA: 2 m  LocUncP: 2 m  HEPE: 2.828 m\r\n" +
+		"3D Fix\r\n" +
+		"Altitude: 6 m  LocUncVe: 3.0 m\r\n" +
+		"Heading: 0.0 deg  VelHoriz: 0.0 m/s  VelVert: 0.0 m/s\r\n" +
+		"\r\nOK\r\n"
+
+	gps := GPSInfo{}
+	parseGPSLOC(resp, &gps)
+
+	if gps.Latitude != "21 Deg 8 Min 55.04 Sec N" {
+		t.Errorf("Latitude: got %q", gps.Latitude)
+	}
+	if gps.Longitude != "86 Deg 49 Min 46.79 Sec W" {
+		t.Errorf("Longitude: got %q", gps.Longitude)
+	}
+	if gps.LocTimestamp != "2026 03 01 6 18:56:23 (GPS)" {
+		t.Errorf("LocTimestamp: got %q", gps.LocTimestamp)
+	}
+	if gps.HEPE != "2.828" {
+		t.Errorf("HEPE: got %q, want %q", gps.HEPE, "2.828")
+	}
+	if gps.FixType != "3D Fix" {
+		t.Errorf("FixType: got %q, want %q", gps.FixType, "3D Fix")
+	}
+	if gps.Altitude != "6" {
+		t.Errorf("Altitude: got %q, want %q", gps.Altitude, "6")
+	}
+	if gps.Heading != "0.0" {
+		t.Errorf("Heading: got %q, want %q", gps.Heading, "0.0")
+	}
+	if gps.Velocity != "0.0" {
+		t.Errorf("Velocity: got %q, want %q", gps.Velocity, "0.0")
+	}
+}
+
+func TestGnssSystem(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		prn  int
+		want string
+	}{
+		{1, "GPS"}, {32, "GPS"},
+		{65, "GLONASS"}, {96, "GLONASS"},
+		{120, "SBAS"}, {158, "SBAS"},
+		{201, "BeiDou"}, {263, "BeiDou"},
+		{301, "Galileo"}, {336, "Galileo"},
+		{400, "SV400"},
+	}
+	for _, tt := range tests {
+		if got := gnssSystem(tt.prn); got != tt.want {
+			t.Errorf("gnssSystem(%d) = %q, want %q", tt.prn, got, tt.want)
+		}
 	}
 }
 

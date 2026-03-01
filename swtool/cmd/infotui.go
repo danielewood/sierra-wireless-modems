@@ -485,10 +485,12 @@ func (m tuiModel) renderContent() string {
 		g := info.GPS
 		pf(b, "Session", g.SessionStatus, a["GPS Session"], labelW)
 		pf(b, "Fix Status", g.FixStatus, a["GPS"], labelW)
+		pf(b, "Fix Type", g.FixType, a["GPS Fix Type"], labelW)
 		pf(b, "TTFF (sec)", g.TTFF, a["GPS TTFF"], labelW)
 		pf(b, "Latitude", g.Latitude, a["Latitude"], labelW)
 		pf(b, "Longitude", g.Longitude, a["Longitude"], labelW)
 		pf(b, "Altitude (m)", g.Altitude, a["Altitude"], labelW)
+		pf(b, "HEPE (m)", g.HEPE, a["HEPE"], labelW)
 		if g.Satellites > 0 {
 			pf(b, "Satellites", fmt.Sprintf("%d", g.Satellites), a["Sats"], labelW)
 		}
@@ -496,7 +498,15 @@ func (m tuiModel) renderContent() string {
 		pf(b, "PDOP", g.PDOP, a["PDOP"], labelW)
 		pf(b, "VDOP", g.VDOP, a["VDOP"], labelW)
 		pf(b, "Heading", g.Heading, a["Heading"], labelW)
-		pf(b, "Velocity", g.Velocity, a["Velocity"], labelW)
+		pf(b, "Velocity (m/s)", g.Velocity, a["Velocity"], labelW)
+		pf(b, "GPS Time", g.LocTimestamp, a["GPS Timestamp"], labelW)
+		if len(g.SatDetail) > 0 {
+			fmt.Fprintln(b, staleStyle("Satellites:", -1))
+			for _, s := range g.SatDetail {
+				fmt.Fprintf(b, "  %-8s SV:%-3d  El:%2d  Az:%3d  SNR:%2d\n",
+					s.System, s.PRN, s.Elevation, s.Azimuth, s.SNR)
+			}
+		}
 	})
 
 	paths := renderPanel("Device Paths", "", panelW, func(b *strings.Builder) {
@@ -871,11 +881,14 @@ func extractFields(info *modem.Info) map[string]string {
 		"Latitude":    info.GPS.Latitude,
 		"Longitude":   info.GPS.Longitude,
 		"Altitude":    info.GPS.Altitude,
-		"HDOP":        info.GPS.HDOP,
-		"PDOP":        info.GPS.PDOP,
-		"VDOP":        info.GPS.VDOP,
-		"Heading":     info.GPS.Heading,
-		"Velocity":    info.GPS.Velocity,
+		"HDOP":          info.GPS.HDOP,
+		"PDOP":          info.GPS.PDOP,
+		"VDOP":          info.GPS.VDOP,
+		"Heading":       info.GPS.Heading,
+		"Velocity":      info.GPS.Velocity,
+		"GPS Fix Type":  info.GPS.FixType,
+		"HEPE":          info.GPS.HEPE,
+		"GPS Timestamp": info.GPS.LocTimestamp,
 	}
 
 	// All gstatus keys — dynamic, tracks age for every key the modem reports
@@ -1031,8 +1044,14 @@ func mergeInfo(dst, src *modem.Info) *modem.Info {
 	mergeStr(&merged.GPS.Heading, dst.GPS.Heading)
 	mergeStr(&merged.GPS.Velocity, dst.GPS.Velocity)
 	mergeStr(&merged.GPS.TTFF, dst.GPS.TTFF)
+	mergeStr(&merged.GPS.FixType, dst.GPS.FixType)
+	mergeStr(&merged.GPS.HEPE, dst.GPS.HEPE)
+	mergeStr(&merged.GPS.LocTimestamp, dst.GPS.LocTimestamp)
 	if merged.GPS.Satellites == 0 {
 		merged.GPS.Satellites = dst.GPS.Satellites
+	}
+	if len(merged.GPS.SatDetail) == 0 {
+		merged.GPS.SatDetail = dst.GPS.SatDetail
 	}
 
 	// SIM

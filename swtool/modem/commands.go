@@ -149,7 +149,8 @@ type ImageSlot struct {
 	BuildID  string `json:"build_id"`
 }
 
-// GPSInfo holds GPS status and position from AT!GPSSTATUS?.
+// GPSInfo holds GPS status and position from AT!GPSSTATUS?, AT!GPSLOC?,
+// and AT!GPSSATINFO?.
 type GPSInfo struct {
 	SessionStatus string `json:"session_status"`
 	FixStatus     string `json:"fix_status"`
@@ -163,6 +164,21 @@ type GPSInfo struct {
 	VDOP          string `json:"vdop,omitempty"`
 	Heading       string `json:"heading,omitempty"`
 	Velocity      string `json:"velocity,omitempty"`
+	FixType       string `json:"fix_type,omitempty"`       // "2D Fix" or "3D Fix" from GPSLOC
+	HEPE          string `json:"hepe,omitempty"`            // Horizontal position error (m)
+	LocTimestamp  string `json:"loc_timestamp,omitempty"`   // UTC time from GPSLOC
+	// Per-satellite detail from AT!GPSSATINFO?.
+	SatDetail []SatelliteInfo `json:"sat_detail,omitempty"`
+}
+
+// SatelliteInfo holds per-satellite data from AT!GPSSATINFO?.
+type SatelliteInfo struct {
+	System    string `json:"system"`              // GPS, GLONASS, Galileo, BeiDou
+	PRN       int    `json:"prn"`                 // Satellite PRN/ID
+	Elevation int    `json:"elevation,omitempty"`  // Degrees above horizon
+	Azimuth   int    `json:"azimuth,omitempty"`    // Degrees from true north
+	SNR       int    `json:"snr"`                  // Signal-to-noise ratio (dB-Hz)
+	Used      bool   `json:"used,omitempty"`       // Used in fix
 }
 
 // SIMInfo holds SIM card information from AT+CPIN?, AT+CIMI, AT+ICCID?.
@@ -371,6 +387,16 @@ func GetInfoStreaming(port *Port, send func(*Info)) {
 	if resp, err := port.SendCommand("AT!GPSSTATUS?"); err == nil {
 		info.GPS = parseGPSSTATUS(resp)
 	}
+	if resp, err := port.SendCommand("AT!GPSSATINFO?"); err == nil {
+		info.GPS.Satellites, info.GPS.SatDetail = parseGPSSATINFO(resp)
+	}
+	// AT!GPSLOC? only returns data when a fix is available.
+	if info.GPS.FixStatus != "" && !strings.EqualFold(info.GPS.FixStatus, "NO FIX") &&
+		!strings.EqualFold(info.GPS.FixStatus, "NONE") {
+		if resp, err := port.SendCommand("AT!GPSLOC?"); err == nil {
+			parseGPSLOC(resp, &info.GPS)
+		}
+	}
 	if resp, err := port.SendCommand("AT!HWID?"); err == nil {
 		info.Identity.HardwareRev = parseHWID(resp)
 	}
@@ -482,6 +508,15 @@ func GetInfoForSection(port *Port, section string) *Info {
 	case "gps":
 		if resp, err := port.SendCommand("AT!GPSSTATUS?"); err == nil {
 			info.GPS = parseGPSSTATUS(resp)
+		}
+		if resp, err := port.SendCommand("AT!GPSSATINFO?"); err == nil {
+			info.GPS.Satellites, info.GPS.SatDetail = parseGPSSATINFO(resp)
+		}
+		if info.GPS.FixStatus != "" && !strings.EqualFold(info.GPS.FixStatus, "NO FIX") &&
+			!strings.EqualFold(info.GPS.FixStatus, "NONE") {
+			if resp, err := port.SendCommand("AT!GPSLOC?"); err == nil {
+				parseGPSLOC(resp, &info.GPS)
+			}
 		}
 	case "bands":
 		if resp, err := port.SendCommand("AT!BAND=?"); err == nil {
@@ -1221,6 +1256,123 @@ func parseGPSSTATUS(resp string) GPSInfo {
 		}
 	}
 	return g
+}
+
+// parseGPSSATINFO parses AT!GPSSATINFO? response.
+// Returns satellite count and per-satellite details.
+//
+// Input:
+//
+//	Satellites in view:  18 (2026 03 01 6 18:54:38)
+//	* SV:  3  ELEV: 18  AZI:   63  SNR: 25
+//	* SV:  6  ELEV: 70  AZI:  234  SNR: 27
+//	* SV:313  ELEV: 53  AZI:  209  SNR: 33
+func parseGPSSATINFO(resp string) (int, []SatelliteInfo) {
+	var sats []SatelliteInfo
+	count := 0
+	re := regexp.MustCompile(`SV:\s*(\d+)\s+ELEV:\s*(\d+)\s+AZI:\s*(\d+)\s+SNR:\s*(\d+)`)
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if line == "" || line == "OK" || line == "ERROR" || strings.HasPrefix(line, "AT!") {
+			continue
+		}
+		if strings.Contains(line, "Satellites in view") {
+			reCount := regexp.MustCompile(`Satellites in view:\s*(\d+)`)
+			if m := reCount.FindStringSubmatch(line); len(m) > 1 {
+				count = parseIntValue(m[1])
+			}
+			continue
+		}
+		if m := re.FindStringSubmatch(line); len(m) > 4 {
+			prn := parseIntValue(m[1])
+			sats = append(sats, SatelliteInfo{
+				System:    gnssSystem(prn),
+				PRN:       prn,
+				Elevation: parseIntValue(m[2]),
+				Azimuth:   parseIntValue(m[3]),
+				SNR:       parseIntValue(m[4]),
+			})
+		}
+	}
+	return count, sats
+}
+
+// gnssSystem returns the GNSS constellation name from a satellite PRN number.
+// Sierra Wireless modems use standard NMEA-style PRN ranges.
+func gnssSystem(prn int) string {
+	switch {
+	case prn >= 1 && prn <= 32:
+		return "GPS"
+	case prn >= 65 && prn <= 96:
+		return "GLONASS"
+	case prn >= 120 && prn <= 158:
+		return "SBAS"
+	case prn >= 201 && prn <= 263:
+		return "BeiDou"
+	case prn >= 301 && prn <= 336:
+		return "Galileo"
+	default:
+		return fmt.Sprintf("SV%d", prn)
+	}
+}
+
+// parseGPSLOC parses AT!GPSLOC? response and fills position fields into a GPSInfo.
+// This supplements AT!GPSSTATUS? with richer position data when a fix is available.
+//
+// Input:
+//
+//	Lat: 21 Deg 8 Min 55.04 Sec N  (0x003C27F5)
+//	Lon: 86 Deg 49 Min 46.79 Sec W  (0xFF090491)
+//	Time: 2026 03 01 6 18:56:23 (GPS)
+//	LocUncAngle: 0.0 deg  LocUncA: 2 m  LocUncP: 2 m  HEPE: 2.828 m
+//	3D Fix
+//	Altitude: 6 m  LocUncVe: 3.0 m
+//	Heading: 0.0 deg  VelHoriz: 0.0 m/s  VelVert: 0.0 m/s
+func parseGPSLOC(resp string, gps *GPSInfo) {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if line == "" || line == "OK" || line == "ERROR" || strings.HasPrefix(line, "AT!") {
+			continue
+		}
+		switch {
+		case strings.HasPrefix(line, "Lat:"):
+			v := strings.TrimPrefix(line, "Lat: ")
+			if idx := strings.Index(v, "(0x"); idx > 0 {
+				v = strings.TrimSpace(v[:idx])
+			}
+			gps.Latitude = v
+		case strings.HasPrefix(line, "Lon:"):
+			v := strings.TrimPrefix(line, "Lon: ")
+			if idx := strings.Index(v, "(0x"); idx > 0 {
+				v = strings.TrimSpace(v[:idx])
+			}
+			gps.Longitude = v
+		case strings.HasPrefix(line, "Time:"):
+			gps.LocTimestamp = strings.TrimSpace(strings.TrimPrefix(line, "Time:"))
+		case strings.HasPrefix(line, "Altitude:"):
+			re := regexp.MustCompile(`Altitude:\s*([0-9.-]+)\s*m`)
+			if m := re.FindStringSubmatch(line); len(m) > 1 {
+				gps.Altitude = m[1]
+			}
+		case strings.Contains(line, "HEPE"):
+			re := regexp.MustCompile(`HEPE:\s*([0-9.]+)\s*m`)
+			if m := re.FindStringSubmatch(line); len(m) > 1 {
+				gps.HEPE = m[1]
+			}
+		case strings.Contains(line, "Heading"):
+			re := regexp.MustCompile(`Heading:\s*([0-9.]+)`)
+			if m := re.FindStringSubmatch(line); len(m) > 1 {
+				gps.Heading = m[1]
+			}
+			re2 := regexp.MustCompile(`VelHoriz:\s*([0-9.]+)`)
+			if m := re2.FindStringSubmatch(line); len(m) > 1 {
+				gps.Velocity = m[1]
+			}
+		case strings.HasSuffix(line, "Fix"):
+			// "3D Fix" or "2D Fix"
+			gps.FixType = line
+		}
+	}
 }
 
 // parseCPIN parses AT+CPIN? response.
