@@ -72,7 +72,7 @@ type VendorProfile struct {
 // Vendors maps vendor names to their USB identity profiles.
 var Vendors = map[string]VendorProfile{
 	"sierra": {VID: "1199", PIDApp: "9071", PIDBoot: "9070", Product: "EM7455"},
-	"dell":   {VID: "413C", PIDApp: "81B6", PIDBoot: "81B5", Product: "DW5811e Snapdragon\u2122 X7 LTE"},
+	"dell":   {VID: "413C", PIDApp: "81B6", PIDBoot: "81B5", Product: "DW5811e Snapdragon X7 LTE"},
 	"lenovo": {VID: "1199", PIDApp: "9079", PIDBoot: "9078", Product: "Sierra Wireless EM7455 Qualcomm Snapdragon X7 LTE-A"},
 }
 
