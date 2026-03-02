@@ -28,44 +28,49 @@ Use --mode to switch between MBIM and QMI USB composition.`,
 			return fmt.Errorf("no AT port found for modem %s", dev.Name)
 		}
 
-		// Validate vendor flag if set
-		var vendor *modem.VendorProfile
-		if flagCfgVendor != "" {
+		// Build settings only for flags that were explicitly passed.
+		var cfg modem.ConfigureSettings
+		changed := cmd.Flags().Changed
+
+		if changed("vendor") {
 			v, ok := modem.Vendors[flagCfgVendor]
 			if !ok {
 				return fmt.Errorf("unknown vendor %q (valid: sierra, dell, lenovo)", flagCfgVendor)
 			}
-			vendor = &v
+			cfg.USBVID = v.VID
+			cfg.USBPID = fmt.Sprintf("%s,%s", v.PIDApp, v.PIDBoot)
+			cfg.USBProduct = v.Product
+		}
+		if changed("mode") {
+			cfg.USBComp = resolveUSBComposition(flagCfgMode).ATValue
+		}
+		if changed("bands") {
+			cfg.SelRat, cfg.Band = resolveBands(flagCfgBands)
+		}
+		if changed("usb-speed") {
+			cfg.USBSpeed = resolveUSBSpeed(flagCfgUSBSpeed)
+			cfg.SetUSBSpeed = true
+		}
+		if changed("fast-enum") {
+			cfg.FastEnumEN = flagCfgFastEnum
+			cfg.SetFastEnum = true
 		}
 
-		comp := resolveUSBComposition(flagCfgMode)
-		selrat, band := resolveBands(flagCfgBands)
-		usbSpeed := resolveUSBSpeed(flagCfgUSBSpeed)
+		cmds := cfg.ATCommands()
+		if len(cmds) == 0 {
+			return fmt.Errorf("no settings to apply — pass at least one flag (--vendor, --mode, --bands, --usb-speed, --fast-enum)")
+		}
 
 		logger.Step(fmt.Sprintf("Configuring %s (%s)...", dev.Name, dev.ID))
-		if vendor != nil {
-			logger.Infof("  Vendor:      %s (VID=%s, PID=%s/%s)", flagCfgVendor, vendor.VID, vendor.PIDApp, vendor.PIDBoot)
-		}
-		logger.Infof("  USB mode:    %s", comp.Description)
-		logger.Infof("  USB speed:   %s", flagCfgUSBSpeed)
-		logger.Infof("  Bands:       %s (SELRAT=%s, BAND=%s)", flagCfgBands, selrat, band)
-		logger.Infof("  Fast enum:   %d", flagCfgFastEnum)
 
 		if isDryRun() {
 			logger.Infof("")
 			logger.Infof("DRY RUN — pass --no-dry-run to execute")
 			logger.Infof("")
 			logger.Infof("Would apply the following AT commands:")
-			logger.Infof("  AT!USBCOMP=%s", comp.ATValue)
-			if vendor != nil {
-				logger.Infof("  AT!USBVID=%s", vendor.VID)
-				logger.Infof("  AT!USBPID=%s,%s", vendor.PIDApp, vendor.PIDBoot)
-				logger.Infof("  AT!USBPRODUCT=\"%s\"", vendor.Product)
+			for _, c := range cmds {
+				logger.Infof("  %s", c)
 			}
-			logger.Infof("  AT!SELRAT=%s", selrat)
-			logger.Infof("  AT!BAND=%s", band)
-			logger.Infof("  AT!CUSTOM=\"FASTENUMEN\",%d", flagCfgFastEnum)
-			logger.Infof("  AT!USBSPEED=%d", usbSpeed)
 			logger.Infof("  AT!RESET")
 			return nil
 		}
@@ -75,21 +80,6 @@ Use --mode to switch between MBIM and QMI USB composition.`,
 			return err
 		}
 		defer port.Close()
-
-		cfg := modem.ConfigureSettings{
-			USBComp:       comp.ATValue,
-			SelRat:        selrat,
-			Band:          band,
-			FastEnumEN:    flagCfgFastEnum,
-			USBSpeed:      usbSpeed,
-			PRIIDCustomer: "Generic-Laptop",
-		}
-
-		if vendor != nil {
-			cfg.USBVID = vendor.VID
-			cfg.USBPID = fmt.Sprintf("%s,%s", vendor.PIDApp, vendor.PIDBoot)
-			cfg.USBProduct = vendor.Product
-		}
 
 		if err := modem.ApplySettings(port, cfg); err != nil {
 			return fmt.Errorf("applying settings: %w", err)

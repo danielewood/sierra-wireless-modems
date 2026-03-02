@@ -610,6 +610,7 @@ func ClearFirmwareImages(port *Port) error {
 }
 
 // ConfigureSettings holds all parameters for modem configuration.
+// Only non-empty/flagged fields are applied.
 type ConfigureSettings struct {
 	USBComp       string // "1,1,0000100D"
 	USBVID        string // "1199"
@@ -621,48 +622,53 @@ type ConfigureSettings struct {
 	SelRat        string // "06" or "00"
 	Band          string // "09" or "00"
 	FastEnumEN    int    // 0-3
+	SetFastEnum   bool   // true if FastEnumEN was explicitly set
 	USBSpeed      int    // 0 or 1
+	SetUSBSpeed   bool   // true if USBSpeed was explicitly set
 }
 
-// ApplySettings sends the full configuration AT command sequence.
+// ATCommands returns the AT command strings for all populated settings.
+// Does not include AT!ENTERCND, carrier preference, or AT!RESET.
+func (c ConfigureSettings) ATCommands() []string {
+	var cmds []string
+	if c.USBComp != "" {
+		cmds = append(cmds, fmt.Sprintf("AT!USBCOMP=%s", c.USBComp))
+	}
+	if c.USBVID != "" {
+		cmds = append(cmds, fmt.Sprintf("AT!USBVID=%s", c.USBVID))
+	}
+	if c.USBPID != "" {
+		cmds = append(cmds, fmt.Sprintf("AT!USBPID=%s", c.USBPID))
+	}
+	if c.USBProduct != "" {
+		cmds = append(cmds, fmt.Sprintf(`AT!USBPRODUCT="%s"`, c.USBProduct))
+	}
+	if c.PRIIDPartNum != "" && c.PRIIDRev != "" {
+		cmds = append(cmds, fmt.Sprintf(`AT!PRIID="%s","%s","%s"`, c.PRIIDPartNum, c.PRIIDRev, c.PRIIDCustomer))
+	}
+	if c.SelRat != "" {
+		cmds = append(cmds, fmt.Sprintf("AT!SELRAT=%s", c.SelRat))
+	}
+	if c.Band != "" {
+		cmds = append(cmds, fmt.Sprintf("AT!BAND=%s", c.Band))
+	}
+	if c.SetFastEnum {
+		cmds = append(cmds, fmt.Sprintf(`AT!CUSTOM="FASTENUMEN",%d`, c.FastEnumEN))
+	}
+	if c.SetUSBSpeed {
+		cmds = append(cmds, fmt.Sprintf("AT!USBSPEED=%d", c.USBSpeed))
+	}
+	return cmds
+}
+
+// ApplySettings sends AT commands for the populated fields in cfg,
+// then resets the modem. Only non-empty/flagged fields are applied.
 func ApplySettings(port *Port, cfg ConfigureSettings) error {
 	if err := EnterCommandMode(port); err != nil {
 		return err
 	}
 
-	// Carrier preference — soft-fail since freshly flashed firmware may
-	// not have the carrier index ready, and GENERIC is the default anyway.
-	for _, cmd := range []string{`AT!IMPREF="GENERIC"`, `AT!GOBIIMPREF="GENERIC"`} {
-		if _, err := port.SendCommand(cmd); err != nil {
-			port.log.Debugf("%s failed (may already be GENERIC): %v", cmd, err)
-		}
-	}
-
-	commands := []string{
-		fmt.Sprintf("AT!USBCOMP=%s", cfg.USBComp),
-	}
-	if cfg.USBVID != "" {
-		commands = append(commands,
-			fmt.Sprintf("AT!USBVID=%s", cfg.USBVID),
-			fmt.Sprintf("AT!USBPID=%s", cfg.USBPID),
-			fmt.Sprintf(`AT!USBPRODUCT="%s"`, cfg.USBProduct),
-		)
-	}
-
-	if cfg.PRIIDPartNum != "" && cfg.PRIIDRev != "" {
-		commands = append(commands,
-			fmt.Sprintf(`AT!PRIID="%s","%s","%s"`, cfg.PRIIDPartNum, cfg.PRIIDRev, cfg.PRIIDCustomer))
-	}
-
-	commands = append(commands,
-		fmt.Sprintf("AT!SELRAT=%s", cfg.SelRat),
-		fmt.Sprintf("AT!BAND=%s", cfg.Band),
-		fmt.Sprintf(`AT!CUSTOM="FASTENUMEN",%d`, cfg.FastEnumEN),
-		"AT!PCOFFEN=2",
-		fmt.Sprintf("AT!USBSPEED=%d", cfg.USBSpeed),
-	)
-
-	for _, cmd := range commands {
+	for _, cmd := range cfg.ATCommands() {
 		if _, err := port.SendCommand(cmd); err != nil {
 			return fmt.Errorf("setting %q: %w", cmd, err)
 		}
