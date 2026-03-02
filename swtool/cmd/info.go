@@ -440,6 +440,9 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 			sf(b, "EPS", info.Registration.EPS.Status, labelW)
 			sf(b, "CS", info.Registration.CS.Status, labelW)
 			sf(b, "GPRS", info.Registration.GPRS.Status, labelW)
+			if info.Registration.EPS.Status == "" && info.Registration.CS.Status == "" && info.Registration.GPRS.Status == "" {
+				sf(b, "Registration", checkNetworkRegistration(info).Summary, labelW)
+			}
 			if info.Network.RATSelection.Name != "" {
 				sf(b, "RAT", fmt.Sprintf("%02d (%s)", info.Network.RATSelection.Index, info.Network.RATSelection.Name), labelW)
 			}

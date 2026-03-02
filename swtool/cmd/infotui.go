@@ -402,13 +402,18 @@ func (m tuiModel) renderContent() string {
 		pf(b, "Carrier PRI", f.PRIID.CarrierPRI, a["Carrier PRI"], labelW)
 	})
 
-	network := renderPanel("Network", sectionBadge(checks, "network_registration"), panelW, func(b *strings.Builder) {
+	netCheck := checkNetworkRegistration(info)
+	network := renderPanel("Network", diagBadge(netCheck.Status), panelW, func(b *strings.Builder) {
 		if op := info.Operator; op != "" && op != "0" {
 			pf(b, "Operator", op, a["Operator"], labelW)
 		}
 		pf(b, "EPS", info.Registration.EPS.Status, a["EPS"], labelW)
 		pf(b, "CS", info.Registration.CS.Status, a["CS"], labelW)
 		pf(b, "GPRS", info.Registration.GPRS.Status, a["GPRS"], labelW)
+		// If no registration fields are populated, show why the badge is set.
+		if info.Registration.EPS.Status == "" && info.Registration.CS.Status == "" && info.Registration.GPRS.Status == "" {
+			pf(b, "Registration", netCheck.Summary, 0, labelW)
+		}
 		if info.Network.RATSelection.Name != "" {
 			pf(b, "RAT", fmt.Sprintf("%02d (%s)", info.Network.RATSelection.Index, info.Network.RATSelection.Name), a["RAT"], labelW)
 		}
