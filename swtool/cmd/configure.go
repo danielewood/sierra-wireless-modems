@@ -85,7 +85,8 @@ Use --mode to switch between MBIM and QMI USB composition.`,
 			return fmt.Errorf("applying settings: %w", err)
 		}
 
-		logger.Success("Settings applied. Modem is resetting...")
+		logger.Success("Settings applied. Resetting modem...")
+		modem.ResetModem(port)
 		return nil
 	},
 }
