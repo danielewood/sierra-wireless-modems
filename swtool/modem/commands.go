@@ -254,6 +254,11 @@ const SIMStatusLPM = "low-power-mode"
 //	#7  firmware_images         (after AT!IMAGE?)
 //	#8  all remaining           (band tables, signal, GPS, LTE detail)
 func GetInfoStreaming(port *Port, send func(*Info)) {
+	if port.platform == PlatformIntel {
+		getInfoStreamingIntel(port, send)
+		return
+	}
+
 	info := &Info{
 		Custom: make(map[string]string),
 	}
@@ -417,6 +422,10 @@ func GetInfoStreaming(port *Port, send func(*Info)) {
 // "swtool info signal". Returns a partial Info with only the relevant
 // fields populated.
 func GetInfoForSection(port *Port, section string) *Info {
+	if port.platform == PlatformIntel {
+		return getInfoForSectionIntel(port, section)
+	}
+
 	info := &Info{
 		Custom: make(map[string]string),
 	}
@@ -1818,4 +1827,588 @@ func cleanATResponse(resp, cmd string) string {
 		return strings.Join(lines, "\n")
 	}
 	return cleaned
+}
+
+// ---------------------------------------------------------------------------
+// Intel XMM info gathering
+// ---------------------------------------------------------------------------
+
+// getInfoStreamingIntel queries an Intel XMM modem (EM7345) using standard
+// 3GPP and Intel AT+X commands. Maps results into the same Info struct so
+// the display code works unchanged.
+func getInfoStreamingIntel(port *Port, send func(*Info)) {
+	info := &Info{
+		Custom: make(map[string]string),
+	}
+	info.Diagnostics.GStatus = make(map[string]string)
+
+	port.SendCommand("ATE1")
+
+	// ── Identity (3GPP standard commands) ─────────────────────────
+	if resp, err := port.SendCommand("AT+CGMI"); err == nil {
+		info.Identity.Manufacturer = parsePlainValue(resp, "+CGMI")
+	}
+	if resp, err := port.SendCommand("AT+CGMM"); err == nil {
+		info.Identity.Model = parsePlainValue(resp, "+CGMM")
+	}
+	if resp, err := port.SendCommand("AT+CGMR"); err == nil {
+		info.Identity.Revision = parsePlainValue(resp, "+CGMR")
+	}
+	if resp, err := port.SendCommand("AT+CGSN"); err == nil {
+		info.Identity.IMEI = parsePlainValue(resp, "+CGSN")
+	}
+	send(snapshotInfo(info)) // #1 — identity
+
+	// ── Power state ───────────────────────────────────────────────
+	if resp, err := port.SendCommand("AT+CFUN?"); err == nil {
+		info.Power.State = parseCFUN(resp)
+	}
+	send(snapshotInfo(info)) // #2 — power
+
+	// ── SIM ───────────────────────────────────────────────────────
+	isLPM := info.Power.State == "minimum" || info.Power.State == "offline"
+	if isLPM {
+		info.SIM.Status = SIMStatusLPM
+	} else {
+		if resp, err := port.SendCommand("AT+CPIN?"); err == nil {
+			info.SIM.Status = parseCPIN(resp)
+		}
+	}
+	if resp, err := port.SendCommand("AT+CIMI"); err == nil {
+		info.SIM.IMSI = parseCIMI(resp)
+	}
+	if resp, err := port.SendCommand("AT+CCID"); err == nil {
+		info.SIM.ICCID = parseICCID(resp)
+	}
+	send(snapshotInfo(info)) // #3 — SIM
+
+	// ── Network registration ──────────────────────────────────────
+	if resp, err := port.SendCommand("AT+COPS?"); err == nil {
+		info.Operator = parseCOPS(resp)
+	}
+	if resp, err := port.SendCommand("AT+CREG?"); err == nil {
+		info.Registration.CS = parseCREG(resp)
+	}
+	if resp, err := port.SendCommand("AT+CEREG?"); err == nil {
+		info.Registration.EPS = parseCEREG(resp)
+	}
+	if resp, err := port.SendCommand("AT+CGREG?"); err == nil {
+		info.Registration.GPRS = parseCGREG(resp)
+	}
+	send(snapshotInfo(info)) // #4 — registration
+
+	// ── Firmware (Intel-specific) ─────────────────────────────────
+	if resp, err := port.SendCommand("AT+XGENDATA"); err == nil {
+		info.Firmware.Current.Version, info.Firmware.Current.CarrierName = parseXGENDATA(resp)
+		info.Firmware.Preferred = info.Firmware.Current // Intel has no separate preferred
+	}
+	send(snapshotInfo(info)) // #5 — firmware
+
+	// ── Band / RAT (Intel AT+XACT) ───────────────────────────────
+	if resp, err := port.SendCommand("AT+XACT?"); err == nil {
+		info.Network.RATSelection, info.Network.CurrentBand = parseXACTQuery(resp)
+	}
+	if resp, err := port.SendCommand("AT+XACT=?"); err == nil {
+		info.Network.AvailableBands = parseXACTTest(resp)
+	}
+	if resp, err := port.SendCommand("AT+CGDCONT?"); err == nil {
+		info.APNs = parseCGDCONT(resp)
+	}
+
+	// ── Signal (Intel AT+XCESQ) ──────────────────────────────────
+	if resp, err := port.SendCommand("AT+XCESQ?"); err == nil {
+		parseXCESQ(resp, info)
+	}
+	if resp, err := port.SendCommand("AT+CSQ"); err == nil {
+		rssi, ber := parseCSQ(resp)
+		if info.Diagnostics.RSSI == 0 {
+			info.Diagnostics.RSSI = rssi
+			info.Diagnostics.BER = ber
+			info.Diagnostics.SignalBars = rssiToBars(rssi)
+		}
+	}
+
+	// ── Extended registration (shows active band) ─────────────────
+	if resp, err := port.SendCommand("AT+XREG?"); err == nil {
+		parseXREG(resp, info)
+	}
+
+	// ── GPS (Intel GNSS) ──────────────────────────────────────────
+	if resp, err := port.SendCommand("AT%GPS?"); err == nil {
+		info.GPS = parsePercentGPS(resp)
+	}
+
+	send(snapshotInfo(info)) // #6 — signal + bands + final
+}
+
+// getInfoForSectionIntel queries only the AT commands needed for a single
+// info section on Intel XMM modems.
+func getInfoForSectionIntel(port *Port, section string) *Info {
+	info := &Info{
+		Custom: make(map[string]string),
+	}
+	info.Diagnostics.GStatus = make(map[string]string)
+
+	port.SendCommand("ATE1")
+
+	switch section {
+	case "identity":
+		if resp, err := port.SendCommand("AT+CGMI"); err == nil {
+			info.Identity.Manufacturer = parsePlainValue(resp, "+CGMI")
+		}
+		if resp, err := port.SendCommand("AT+CGMM"); err == nil {
+			info.Identity.Model = parsePlainValue(resp, "+CGMM")
+		}
+		if resp, err := port.SendCommand("AT+CGMR"); err == nil {
+			info.Identity.Revision = parsePlainValue(resp, "+CGMR")
+		}
+		if resp, err := port.SendCommand("AT+CGSN"); err == nil {
+			info.Identity.IMEI = parsePlainValue(resp, "+CGSN")
+		}
+	case "power":
+		if resp, err := port.SendCommand("AT+CFUN?"); err == nil {
+			info.Power.State = parseCFUN(resp)
+		}
+	case "sim":
+		if resp, err := port.SendCommand("AT+CPIN?"); err == nil {
+			info.SIM.Status = parseCPIN(resp)
+		}
+		if resp, err := port.SendCommand("AT+CIMI"); err == nil {
+			info.SIM.IMSI = parseCIMI(resp)
+		}
+		if resp, err := port.SendCommand("AT+CCID"); err == nil {
+			info.SIM.ICCID = parseICCID(resp)
+		}
+	case "network":
+		if resp, err := port.SendCommand("AT+COPS?"); err == nil {
+			info.Operator = parseCOPS(resp)
+		}
+		if resp, err := port.SendCommand("AT+CREG?"); err == nil {
+			info.Registration.CS = parseCREG(resp)
+		}
+		if resp, err := port.SendCommand("AT+CEREG?"); err == nil {
+			info.Registration.EPS = parseCEREG(resp)
+		}
+		if resp, err := port.SendCommand("AT+CGREG?"); err == nil {
+			info.Registration.GPRS = parseCGREG(resp)
+		}
+		if resp, err := port.SendCommand("AT+XACT?"); err == nil {
+			info.Network.RATSelection, info.Network.CurrentBand = parseXACTQuery(resp)
+		}
+		if resp, err := port.SendCommand("AT+CGDCONT?"); err == nil {
+			info.APNs = parseCGDCONT(resp)
+		}
+	case "firmware":
+		if resp, err := port.SendCommand("AT+XGENDATA"); err == nil {
+			info.Firmware.Current.Version, info.Firmware.Current.CarrierName = parseXGENDATA(resp)
+			info.Firmware.Preferred = info.Firmware.Current
+		}
+	case "signal":
+		if resp, err := port.SendCommand("AT+XCESQ?"); err == nil {
+			parseXCESQ(resp, info)
+		}
+		if resp, err := port.SendCommand("AT+XREG?"); err == nil {
+			parseXREG(resp, info)
+		}
+	case "bands":
+		if resp, err := port.SendCommand("AT+XACT=?"); err == nil {
+			info.Network.AvailableBands = parseXACTTest(resp)
+		}
+	case "gps":
+		if resp, err := port.SendCommand("AT%GPS?"); err == nil {
+			info.GPS = parsePercentGPS(resp)
+		}
+	}
+
+	return info
+}
+
+// ---------------------------------------------------------------------------
+// Intel XMM AT command parsers
+// ---------------------------------------------------------------------------
+
+// parsePlainValue extracts a value from a response where the modem echoes
+// the command then returns a plain text value on the next line.
+//
+// Example:
+//
+//	AT+CGMI
+//	Sierra Wireless Inc.
+//	OK
+func parsePlainValue(resp, prefix string) string {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if line == "" || line == "OK" || line == "ERROR" {
+			continue
+		}
+		if strings.HasPrefix(line, "AT") {
+			continue
+		}
+		// Skip +PREFIX: header lines (shouldn't appear for these commands, but be safe)
+		if strings.HasPrefix(line, prefix+":") {
+			return strings.TrimSpace(line[len(prefix)+1:])
+		}
+		return line
+	}
+	return ""
+}
+
+// parseCFUN parses AT+CFUN? response into a human-readable power state.
+//
+// Input: +CFUN: 1,0
+func parseCFUN(resp string) string {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+CFUN:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+CFUN:"))
+		parts := strings.SplitN(val, ",", 2)
+		if len(parts) == 0 {
+			return val
+		}
+		switch strings.TrimSpace(parts[0]) {
+		case "0":
+			return "minimum"
+		case "1":
+			return "online"
+		case "4":
+			return "offline"
+		default:
+			return val
+		}
+	}
+	return ""
+}
+
+// parseXGENDATA parses AT+XGENDATA response into version and carrier strings.
+//
+// Input:
+//
+//	+XGENDATA: "    FIH7160_XMM7160_V1.2_MBIM_GNSS_NAND_REV_4.5 2016-Oct-20 09:18:18
+//	*FIH7160_V1.2_WW_01.1644.00_TS*"
+func parseXGENDATA(resp string) (version, carrier string) {
+	// Extract content between quotes
+	full := ""
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "+XGENDATA:") {
+			full = strings.TrimPrefix(line, "+XGENDATA:")
+		} else if full != "" && line != "OK" && line != "" && !strings.HasPrefix(line, "AT") {
+			full += " " + line
+		}
+	}
+	full = strings.TrimSpace(full)
+
+	// Extract the carrier variant between * markers
+	re := regexp.MustCompile(`\*([^*]+)\*`)
+	if m := re.FindStringSubmatch(full); len(m) > 1 {
+		version = strings.TrimSpace(m[1])
+	}
+
+	// Extract carrier from the version string (e.g., "FIH7160_V1.2_WW_01.1644.00_TS")
+	// The "WW" part is the carrier variant
+	parts := strings.Split(version, "_")
+	for i, p := range parts {
+		if p == "WW" || p == "ATT" || p == "VZW" || p == "SPR" || p == "TMO" {
+			carrier = p
+			break
+		}
+		// Last resort: second segment after platform+version
+		if i >= 2 && len(p) <= 4 && carrier == "" {
+			carrier = p
+		}
+	}
+	if carrier == "" {
+		carrier = "GENERIC"
+	}
+
+	return version, carrier
+}
+
+// xactModeNames maps AT+XACT mode indices to descriptions.
+var xactModeNames = [...]string{
+	0: "2G only",
+	1: "3G only",
+	2: "4G only",
+	3: "2G+3G",
+	4: "3G+4G",
+	5: "2G+4G",
+	6: "2G+3G+4G",
+}
+
+// parseXACTQuery parses AT+XACT? response into RAT selection and a summary band entry.
+//
+// Input: +XACT: 6,2,1,900,1800,1900,850,1,2,4,5,8,101,102,...,120
+//
+// Format: <mode>,<pref1>,<pref2>,<band1>,<band2>,...
+func parseXACTQuery(resp string) (rat RATSelection, band BandEntry) {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+XACT:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+XACT:"))
+		parts := strings.Split(val, ",")
+		if len(parts) < 1 {
+			return
+		}
+
+		mode, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
+		rat.Index = mode
+		if mode >= 0 && mode < len(xactModeNames) {
+			rat.Name = xactModeNames[mode]
+		}
+
+		// Bands start at index 3 (after mode, pref1, pref2)
+		if len(parts) > 3 {
+			band.Name = formatXACTBands(parts[3:])
+		}
+		return
+	}
+	return
+}
+
+// formatXACTBands formats a list of XACT band number strings into a
+// human-readable summary like "2G:900/1800 3G:B1/B2 4G:B1/B2/B3".
+func formatXACTBands(raw []string) string {
+	var bands2G, bands3G, bands4G []string
+	for _, b := range raw {
+		n, err := strconv.Atoi(strings.TrimSpace(b))
+		if err != nil || n == 0 {
+			continue
+		}
+		switch {
+		case n > 300:
+			bands2G = append(bands2G, fmt.Sprintf("%d", n))
+		case n >= 100:
+			bands4G = append(bands4G, fmt.Sprintf("B%d", n-100))
+		default:
+			bands3G = append(bands3G, fmt.Sprintf("B%d", n))
+		}
+	}
+	var summary []string
+	if len(bands2G) > 0 {
+		summary = append(summary, "2G:"+strings.Join(bands2G, "/"))
+	}
+	if len(bands3G) > 0 {
+		summary = append(summary, "3G:"+strings.Join(bands3G, "/"))
+	}
+	if len(bands4G) > 0 {
+		summary = append(summary, "4G:"+strings.Join(bands4G, "/"))
+	}
+	return strings.Join(summary, " ")
+}
+
+// parseXACTTest parses AT+XACT=? response into available band entries.
+// Returns one BandEntry per band group (2G, 3G, 4G) for display.
+//
+// Input: +XACT: (0-6),(0-2),0,900,1800,1900,850,1,2,4,5,8,101,...,120
+func parseXACTTest(resp string) []BandEntry {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+XACT:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+XACT:"))
+
+		// Strip parenthesized ranges like "(0-6),(0-2)" to get the band list.
+		// Find the last ')' and take everything after it.
+		lastParen := strings.LastIndex(val, ")")
+		if lastParen >= 0 {
+			val = val[lastParen+1:]
+		}
+		// Remove leading comma
+		val = strings.TrimLeft(val, ",")
+
+		parts := strings.Split(val, ",")
+		var bands2G, bands3G, bands4G []string
+		for _, p := range parts {
+			n, err := strconv.Atoi(strings.TrimSpace(p))
+			if err != nil || n == 0 {
+				continue
+			}
+			switch {
+			case n > 300:
+				bands2G = append(bands2G, fmt.Sprintf("%d MHz", n))
+			case n >= 100:
+				bands4G = append(bands4G, fmt.Sprintf("Band %d", n-100))
+			default:
+				bands3G = append(bands3G, fmt.Sprintf("Band %d", n))
+			}
+		}
+
+		var entries []BandEntry
+		if len(bands2G) > 0 {
+			entries = append(entries, BandEntry{
+				Index: 0,
+				Name:  "GSM: " + strings.Join(bands2G, ", "),
+			})
+		}
+		if len(bands3G) > 0 {
+			entries = append(entries, BandEntry{
+				Index: 1,
+				Name:  "UMTS: " + strings.Join(bands3G, ", "),
+			})
+		}
+		if len(bands4G) > 0 {
+			entries = append(entries, BandEntry{
+				Index: 2,
+				Name:  "LTE: " + strings.Join(bands4G, ", "),
+			})
+		}
+		return entries
+	}
+	return nil
+}
+
+// parseXCESQ parses AT+XCESQ? response and populates info.Diagnostics.
+//
+// Input: +XCESQ: 0,99,99,255,255,24,51,18
+//
+// Fields: n, rxlev, ber, rscp, ecn0, rsrq, rsrp, rssnr
+func parseXCESQ(resp string, info *Info) {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+XCESQ:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+XCESQ:"))
+		parts := strings.Split(val, ",")
+		if len(parts) < 8 {
+			return
+		}
+
+		// Parse each field
+		rxlev, _ := strconv.Atoi(strings.TrimSpace(parts[1]))
+		rscp, _ := strconv.Atoi(strings.TrimSpace(parts[3]))
+		ecn0, _ := strconv.Atoi(strings.TrimSpace(parts[4]))
+		rsrq, _ := strconv.Atoi(strings.TrimSpace(parts[5]))
+		rsrp, _ := strconv.Atoi(strings.TrimSpace(parts[6]))
+		rssnr, _ := strconv.Atoi(strings.TrimSpace(parts[7]))
+
+		// Populate GStatus map with signal info in the same format
+		// the display code expects (matching AT!GSTATUS? keys).
+		gs := info.Diagnostics.GStatus
+
+		// LTE signal (most common for EM7345)
+		if rsrp != 255 {
+			rsrpDBM := rsrp - 141
+			gs["RSRP (dBm)"] = fmt.Sprintf("%d", rsrpDBM)
+			info.Diagnostics.RSSI = rsrpDBM
+			info.Diagnostics.SignalBars = rssiToBars(rsrpDBM)
+		}
+		if rsrq != 255 {
+			rsrqDB := float64(rsrq)/2.0 - 19.5
+			gs["RSRQ (dB)"] = fmt.Sprintf("%.1f", rsrqDB)
+		}
+		if rssnr != 255 {
+			snrDB := float64(rssnr) / 2.0
+			gs["SINR (dB)"] = fmt.Sprintf("%.1f", snrDB)
+		}
+
+		// UMTS signal
+		if rscp != 255 {
+			rscpDBM := rscp - 121
+			gs["RSCP (dBm)"] = fmt.Sprintf("%d", rscpDBM)
+			if info.Diagnostics.RSSI == 0 {
+				info.Diagnostics.RSSI = rscpDBM
+				info.Diagnostics.SignalBars = rssiToBars(rscpDBM)
+			}
+		}
+		if ecn0 != 255 {
+			ecioDB := float64(ecn0)/2.0 - 24.5
+			gs["Ec/Io (dB)"] = fmt.Sprintf("%.1f", ecioDB)
+		}
+
+		// GSM signal
+		if rxlev != 99 {
+			rssiDBM := rxlev - 110
+			gs["RSSI (dBm)"] = fmt.Sprintf("%d", rssiDBM)
+			if info.Diagnostics.RSSI == 0 {
+				info.Diagnostics.RSSI = rssiDBM
+				info.Diagnostics.SignalBars = rssiToBars(rssiDBM)
+			}
+		}
+
+		return
+	}
+}
+
+// parsePercentGPS parses AT%GPS? response into a GPSInfo struct.
+//
+// Input: %GPS: <enabled> <fix> <sats> <hdop> <pdop> <lat> <lon> <alt>
+// Example: %GPS: 1 0 0 0.00000 0.00000 0.00000 0.00000 0
+func parsePercentGPS(resp string) GPSInfo {
+	var gps GPSInfo
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "%GPS:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "%GPS:"))
+		fields := strings.Fields(val)
+		if len(fields) < 8 {
+			return gps
+		}
+
+		// Field 0: enabled (0/1)
+		if fields[0] == "1" {
+			gps.SessionStatus = "active"
+		} else {
+			gps.SessionStatus = "inactive"
+		}
+
+		// Field 1: fix (0/1)
+		if fields[1] == "1" {
+			gps.FixStatus = "fix acquired"
+		} else {
+			gps.FixStatus = "no fix"
+			return gps
+		}
+
+		// Fields 2-7: sats, hdop, pdop, lat, lon, alt
+		if n, err := strconv.Atoi(fields[2]); err == nil && n > 0 {
+			gps.Satellites = n
+		}
+		if fields[3] != "0.00000" && fields[3] != "0" {
+			gps.HDOP = fields[3]
+		}
+		if fields[4] != "0.00000" && fields[4] != "0" {
+			gps.PDOP = fields[4]
+		}
+		if fields[5] != "0.00000" && fields[5] != "0" {
+			gps.Latitude = fields[5]
+		}
+		if fields[6] != "0.00000" && fields[6] != "0" {
+			gps.Longitude = fields[6]
+		}
+		if fields[7] != "0" {
+			gps.Altitude = fields[7]
+		}
+
+		return gps
+	}
+	return gps
+}
+
+// parseXREG parses AT+XREG? response and adds band info to diagnostics.
+//
+// Input: +XREG: 0,8,BAND_LTE_20,0
+func parseXREG(resp string, info *Info) {
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+XREG:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+XREG:"))
+		parts := strings.Split(val, ",")
+		if len(parts) >= 3 {
+			bandStr := strings.TrimSpace(parts[2])
+			if strings.HasPrefix(bandStr, "BAND_") {
+				info.Diagnostics.GStatus["LTE band"] = bandStr
+			}
+		}
+		return
+	}
 }

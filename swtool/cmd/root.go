@@ -32,10 +32,10 @@ func isDryRun() bool {
 // rootCmd is the base command when called without subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "swtool",
-	Short: "Sierra Wireless EM7455/MC7455 modem management tool",
-	Long: `Autoflash detects, configures, and flashes Sierra Wireless EM7455/MC7455/EM7565
-modems. It replaces the legacy bash script with a single binary that handles modem
-detection, AT command communication, firmware downloading, and flashing.
+	Short: "Sierra Wireless modem management tool",
+	Long: `swtool detects, configures, and flashes Sierra Wireless modems (EM7455, MC7455,
+EM7565, EM7345). It handles modem detection, AT command communication, firmware
+downloading, and flashing.
 
 Running without a subcommand is equivalent to 'swtool flash'.`,
 	SilenceUsage:  true,
@@ -48,7 +48,7 @@ Running without a subcommand is equivalent to 'swtool flash'.`,
 			return nil
 		}
 
-		logger.Step("Searching for EM7455/MC7455 modem...")
+		logger.Step("Searching for modem...")
 
 		dev, err := modem.Detect(logger)
 		if errors.Is(err, modem.ErrNoModemFound) {
@@ -109,17 +109,10 @@ func skipModemDetection(cmd *cobra.Command) bool {
 func completeDevicePaths(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	var paths []string
 
-	// Scan for ttyUSB devices
-	matches, _ := filepath.Glob("/dev/ttyUSB*")
-	paths = append(paths, matches...)
-
-	// Scan for CDC-WDM devices
-	matches, _ = filepath.Glob("/dev/cdc-wdm*")
-	paths = append(paths, matches...)
-
-	// Scan for QCQMI devices
-	matches, _ = filepath.Glob("/dev/qcqmi*")
-	paths = append(paths, matches...)
+	for _, pattern := range []string{"/dev/ttyUSB*", "/dev/ttyACM*", "/dev/cdc-wdm*", "/dev/qcqmi*"} {
+		matches, _ := filepath.Glob(pattern)
+		paths = append(paths, matches...)
+	}
 
 	return paths, cobra.ShellCompDirectiveNoFileComp
 }

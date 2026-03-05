@@ -21,7 +21,11 @@ type qmiCache struct {
 // createQMIClient returns a QueryClient if a control device exists.
 // Native QMI is tried first; qmicli is used as fallback if available.
 // Returns nil if no control device is present (graceful AT-only fallback).
+// Intel XMM modems use MBIM-only (no QMI), so always return nil for them.
 func createQMIClient(dev *modem.Device) *qmi.QueryClient {
+	if dev.Platform == modem.PlatformIntel {
+		return nil
+	}
 	if dev.CDCDevice != "" {
 		return qmi.NewQueryClient(dev.CDCDevice, true, logger)
 	}

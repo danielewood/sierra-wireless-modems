@@ -1,6 +1,21 @@
 // Package modem provides detection, serial communication, and AT command
-// handling for Sierra Wireless EM7455/MC7455/EM7565 modems.
+// handling for Sierra Wireless modems (EM7455/MC7455/EM7565 Qualcomm-based,
+// EM7345 Intel XMM-based).
 package modem
+
+// Platform identifies the modem chipset family, which determines the AT
+// command set (Sierra/Qualcomm AT! vs Intel AT+X).
+type Platform int
+
+const (
+	// PlatformQualcomm is the Qualcomm-based platform (EM7455, MC7455, EM7565).
+	// Uses AT! commands (AT!SELRAT, AT!BAND, AT!GSTATUS, etc.).
+	PlatformQualcomm Platform = iota
+
+	// PlatformIntel is the Intel XMM-based platform (EM7345).
+	// Uses AT+X commands (AT+XACT, AT+XCESQ, AT+XGENDATA, etc.).
+	PlatformIntel
+)
 
 // USBID represents a vendor:product ID pair.
 type USBID struct {
@@ -15,20 +30,24 @@ func (id USBID) String() string {
 
 // Device holds all discovered paths and identity for a detected modem.
 type Device struct {
-	ID          USBID  // e.g. {413c, 81b6}
-	Name        string // Human name, e.g. "Dell DW5811e"
-	SysfsPath   string // e.g. "/sys/bus/usb/devices/1-3"
-	ATPort      string // e.g. "/dev/ttyUSB2"
-	CDCDevice   string // e.g. "/dev/cdc-wdm0" (MBIM or QMI via qmi_wwan)
-	QCQMIDevice string // e.g. "/dev/qcqmi0" (QMI via GobiNet)
-	Bootloader  bool   // true when modem is in QDL/bootloader mode
+	ID          USBID    // e.g. {413c, 81b6}
+	Name        string   // Human name, e.g. "Dell DW5811e"
+	Platform    Platform // Qualcomm or Intel XMM
+	SysfsPath   string   // e.g. "/sys/bus/usb/devices/1-3"
+	ATPort      string   // e.g. "/dev/ttyUSB2" or "/dev/ttyACM0"
+	CDCDevice   string   // e.g. "/dev/cdc-wdm0" (MBIM or QMI via qmi_wwan)
+	QCQMIDevice string   // e.g. "/dev/qcqmi0" (QMI via GobiNet)
+	Bootloader  bool     // true when modem is in QDL/bootloader mode
 }
 
 // OnlineIDs maps known VID:PID pairs for modems in normal operating mode.
 var OnlineIDs = map[USBID]string{
+	// Qualcomm-based
 	{Vendor: "1199", Product: "9071"}: "Sierra Wireless EM7455",
 	{Vendor: "1199", Product: "9079"}: "Lenovo EM7455",
 	{Vendor: "413c", Product: "81b6"}: "Dell DW5811e",
+	// Intel XMM-based
+	{Vendor: "1199", Product: "a001"}: "Sierra Wireless EM7345",
 }
 
 // BootloaderIDs maps known VID:PID pairs for modems in bootloader/QDL mode.
@@ -36,6 +55,12 @@ var BootloaderIDs = map[USBID]string{
 	{Vendor: "1199", Product: "9070"}: "Sierra Wireless EM7455 (bootloader)",
 	{Vendor: "1199", Product: "9078"}: "Lenovo EM7455 (bootloader)",
 	{Vendor: "413c", Product: "81b5"}: "Dell DW5811e (bootloader)",
+}
+
+// platformForID maps USB IDs to their chipset platform.
+// IDs not in this map default to PlatformQualcomm.
+var platformForID = map[USBID]Platform{
+	{Vendor: "1199", Product: "a001"}: PlatformIntel,
 }
 
 // USBComposition represents a USB interface composition mode.

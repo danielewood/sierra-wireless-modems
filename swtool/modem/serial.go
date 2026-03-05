@@ -25,7 +25,18 @@ type Port struct {
 	device          string
 	log             *log.Logger
 	timeout         time.Duration
-	engineeringMode bool // true after successful AT!ENTERCND
+	platform        Platform // Qualcomm or Intel — determines AT command set
+	engineeringMode bool     // true after successful AT!ENTERCND (Qualcomm only)
+}
+
+// OpenPortForDevice opens a serial port using the device's AT port and platform.
+func OpenPortForDevice(dev *Device, l *log.Logger) (*Port, error) {
+	p, err := OpenPort(dev.ATPort, l)
+	if err != nil {
+		return nil, err
+	}
+	p.platform = dev.Platform
+	return p, nil
 }
 
 // OpenPort opens a serial port for AT commands at 115200 8N1.

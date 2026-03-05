@@ -56,7 +56,7 @@ var infoCmd = &cobra.Command{
 			return runInfoTUI(dev, flagInfoInterval, flagInfoJSON, section)
 		}
 
-		port, err := modem.OpenPort(dev.ATPort, logger)
+		port, err := modem.OpenPortForDevice(dev, logger)
 		if err != nil {
 			return err
 		}

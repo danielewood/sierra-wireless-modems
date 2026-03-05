@@ -1192,7 +1192,7 @@ func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan 
 			defer qc.Close()
 		}
 
-		port, err := modem.OpenPort(dev.ATPort, logger)
+		port, err := modem.OpenPortForDevice(dev, logger)
 		if err != nil {
 			ch <- pollResultMsg{err: fmt.Errorf("opening AT port: %w", err)}
 			return

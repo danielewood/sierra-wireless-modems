@@ -13,7 +13,7 @@ import (
 
 var (
 	// ErrNoModemFound indicates no supported modem was detected.
-	ErrNoModemFound = errors.New("no EM7455/MC7455 modem found")
+	ErrNoModemFound = errors.New("no supported modem found")
 
 	// ErrMultipleModems indicates more than one modem was found.
 	ErrMultipleModems = errors.New("multiple modems found; remove extras and retry")
@@ -97,6 +97,7 @@ func detectWithIDs(l *log.Logger, knownIDs map[USBID]string) (*Device, error) {
 		dev := &Device{
 			ID:        id,
 			Name:      name,
+			Platform:  platformForID[id], // defaults to PlatformQualcomm (zero value)
 			SysfsPath: devPath,
 		}
 
@@ -124,6 +125,17 @@ func detectWithIDs(l *log.Logger, knownIDs map[USBID]string) (*Device, error) {
 	}
 }
 
+// atInterfaceNumber returns the USB interface number that carries the AT
+// command port for the given platform.
+func atInterfaceNumber(p Platform) string {
+	switch p {
+	case PlatformIntel:
+		return "02" // CDC-ACM on interface 2
+	default:
+		return "03" // qcserial modem port on interface 3
+	}
+}
+
 // discoverDevicePaths finds the AT serial port and CDC/QCQMI device
 // by walking the USB interface subdirectories in sysfs.
 func discoverDevicePaths(l *log.Logger, dev *Device) {
@@ -132,16 +144,17 @@ func discoverDevicePaths(l *log.Logger, dev *Device) {
 		return
 	}
 
+	atIface := atInterfaceNumber(dev.Platform)
+
 	for _, entry := range entries {
 		ifacePath := filepath.Join(dev.SysfsPath, entry.Name())
 
-		// Find the AT command interface (bInterfaceNumber = 03)
 		ifaceNum, err := readSysfsFile(filepath.Join(ifacePath, "bInterfaceNumber"))
 		if err != nil {
 			continue
 		}
 
-		if ifaceNum == "03" {
+		if ifaceNum == atIface {
 			dev.ATPort = findTTYDevice(ifacePath)
 		}
 
@@ -150,37 +163,42 @@ func discoverDevicePaths(l *log.Logger, dev *Device) {
 	}
 }
 
-// findTTYDevice looks for a ttyUSB device under an interface directory.
+// findTTYDevice looks for a ttyUSB or ttyACM device under an interface directory.
 func findTTYDevice(ifacePath string) string {
-	// Walk looking for tty subdirectories
-	matches, _ := filepath.Glob(filepath.Join(ifacePath, "ttyUSB*"))
-	if len(matches) > 0 {
-		return "/dev/" + filepath.Base(matches[0])
+	// Direct children: ttyUSB* or ttyACM*
+	for _, prefix := range []string{"ttyUSB*", "ttyACM*"} {
+		matches, _ := filepath.Glob(filepath.Join(ifacePath, prefix))
+		if len(matches) > 0 {
+			return "/dev/" + filepath.Base(matches[0])
+		}
 	}
 
-	// Sometimes it's nested: interface/tty/ttyUSBx
-	matches, _ = filepath.Glob(filepath.Join(ifacePath, "tty", "ttyUSB*"))
-	if len(matches) > 0 {
-		return "/dev/" + filepath.Base(matches[0])
+	// Nested under tty/: interface/tty/ttyUSBx or interface/tty/ttyACMx
+	for _, prefix := range []string{"ttyUSB*", "ttyACM*"} {
+		matches, _ := filepath.Glob(filepath.Join(ifacePath, "tty", prefix))
+		if len(matches) > 0 {
+			return "/dev/" + filepath.Base(matches[0])
+		}
 	}
 
-	// Try via /sys/class/tty symlinks
-	ttyEntries, err := filepath.Glob("/sys/class/tty/ttyUSB*")
-	if err != nil {
-		return ""
-	}
-	for _, ttyPath := range ttyEntries {
-		link, err := os.Readlink(filepath.Join(ttyPath, "device"))
+	// Fallback: /sys/class/tty symlinks
+	for _, classPattern := range []string{"/sys/class/tty/ttyUSB*", "/sys/class/tty/ttyACM*"} {
+		ttyEntries, err := filepath.Glob(classPattern)
 		if err != nil {
 			continue
 		}
-		// Resolve and check if it points to our interface
-		resolved, err := filepath.Abs(filepath.Join(ttyPath, "device", link))
-		if err != nil {
-			continue
-		}
-		if strings.HasPrefix(resolved, ifacePath) {
-			return "/dev/" + filepath.Base(ttyPath)
+		for _, ttyPath := range ttyEntries {
+			link, err := os.Readlink(filepath.Join(ttyPath, "device"))
+			if err != nil {
+				continue
+			}
+			resolved, err := filepath.Abs(filepath.Join(ttyPath, "device", link))
+			if err != nil {
+				continue
+			}
+			if strings.HasPrefix(resolved, ifacePath) {
+				return "/dev/" + filepath.Base(ttyPath)
+			}
 		}
 	}
 
