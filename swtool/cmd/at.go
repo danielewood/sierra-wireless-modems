@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/danielewood/sierra-wireless-modems/swtool/modem"
 	"github.com/spf13/cobra"
 )
 
-var flagATInteractive bool
+var (
+	flagATInteractive bool
+	flagATTimeout     time.Duration
+)
 
 // dangerousATCommands lists AT command prefixes that mutate modem state.
 // Query forms (=? and ?) are always safe and excluded by isDangerousAT.
@@ -97,6 +101,10 @@ Examples:
 		}
 		defer port.Close()
 
+		if flagATTimeout > 0 {
+			port.SetTimeout(flagATTimeout)
+		}
+
 		if flagATInteractive {
 			return runInteractive(port)
 		}
@@ -138,6 +146,7 @@ Examples:
 
 func init() {
 	atCmd.Flags().BoolVarP(&flagATInteractive, "interactive", "i", false, "interactive REPL mode")
+	atCmd.Flags().DurationVarP(&flagATTimeout, "timeout", "t", 0, "AT command timeout (e.g. 60s, 2m); default 10s")
 	rootCmd.AddCommand(atCmd)
 }
 

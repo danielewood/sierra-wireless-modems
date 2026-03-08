@@ -621,15 +621,19 @@ func ClearFirmwareImages(port *Port) error {
 // ConfigureSettings holds all parameters for modem configuration.
 // Only non-empty/flagged fields are applied.
 type ConfigureSettings struct {
-	USBComp       string // "1,1,0000100D"
-	USBVID        string // "1199"
-	USBPID        string // "9071,9070"
-	USBProduct    string // "EM7455"
+	Platform      Platform // which command set to use
+	USBComp       string   // "1,1,0000100D"
+	USBVID        string   // "1199"
+	USBPID        string   // "9071,9070"
+	USBProduct    string   // "EM7455"
 	PRIIDPartNum  string
 	PRIIDRev      string
 	PRIIDCustomer string // "Generic-Laptop"
-	SelRat        string // "06" or "00"
-	Band          string // "09" or "00"
+	SelRat        string // Qualcomm: "06" or "00"
+	Band          string // Qualcomm: "09" or "00"
+	XACTMode      int    // Intel: AT+XACT mode (0-6), -1 = not set
+	XACTBands     string // Intel: comma-separated band list for AT+XACT
+	SetXACT       bool   // true if XACTMode/XACTBands were explicitly set
 	FastEnumEN    int    // 0-3
 	SetFastEnum   bool   // true if FastEnumEN was explicitly set
 	USBSpeed      int    // 0 or 1
@@ -639,6 +643,9 @@ type ConfigureSettings struct {
 // ATCommands returns the AT command strings for all populated settings.
 // Does not include AT!ENTERCND, carrier preference, or AT!RESET.
 func (c ConfigureSettings) ATCommands() []string {
+	if c.Platform == PlatformIntel {
+		return c.atCommandsIntel()
+	}
 	var cmds []string
 	if c.USBComp != "" {
 		cmds = append(cmds, fmt.Sprintf("AT!USBCOMP=%s", c.USBComp))
@@ -670,11 +677,57 @@ func (c ConfigureSettings) ATCommands() []string {
 	return cmds
 }
 
+// atCommandsIntel returns AT commands for Intel XMM modems.
+// Only band/RAT selection via AT+XACT is supported; other Qualcomm-specific
+// settings (USB composition, VID/PID, fast-enum) are not applicable.
+//
+// AT+XACT format: AT+XACT=<mode>,<pref1>,<pref2>[,band,band,...]
+// Firmware quirk: single-RAT modes (0/1/2) reject band lists — they always
+// use all bands for that RAT. To restrict specific bands, we use mode 6
+// (all RATs) with only the desired bands and pref1=2 (LTE preferred).
+func (c ConfigureSettings) atCommandsIntel() []string {
+	var cmds []string
+	if c.SetXACT {
+		mode := c.XACTMode
+		if c.XACTBands != "" && mode != 6 {
+			// Single-RAT modes don't accept band lists; use mode 6 instead.
+			mode = 6
+		}
+
+		var cmd string
+		if mode <= 2 {
+			// Single-RAT modes (0=2G, 1=3G, 2=4G) take only mode + pref1.
+			// pref2 and band lists are rejected by firmware.
+			cmd = fmt.Sprintf("AT+XACT=%d,2", mode)
+		} else {
+			// Multi-RAT modes (3-6) require pref1 + pref2.
+			// pref1=2 (4G preferred), pref2=1 (3G second preference)
+			cmd = fmt.Sprintf("AT+XACT=%d,2,1", mode)
+			if c.XACTBands != "" {
+				cmd += "," + c.XACTBands
+			}
+		}
+		cmds = append(cmds, cmd)
+	}
+	return cmds
+}
+
 // ApplySettings sends AT commands for the populated fields in cfg,
 // then resets the modem. Only non-empty/flagged fields are applied.
 func ApplySettings(port *Port, cfg ConfigureSettings) error {
-	if err := EnterCommandMode(port); err != nil {
-		return err
+	// Intel modems don't use AT!ENTERCND — settings are applied directly.
+	if cfg.Platform != PlatformIntel {
+		if err := EnterCommandMode(port); err != nil {
+			return err
+		}
+	}
+
+	// Intel "all bands" requires querying AT+XACT=? for the full band list,
+	// since omitting bands preserves the previous restriction.
+	if cfg.Platform == PlatformIntel && cfg.SetXACT && cfg.XACTBands == "" {
+		if allBands, err := queryAllXACTBands(port); err == nil && allBands != "" {
+			cfg.XACTBands = allBands
+		}
 	}
 
 	for _, cmd := range cfg.ATCommands() {
@@ -684,6 +737,30 @@ func ApplySettings(port *Port, cfg ConfigureSettings) error {
 	}
 
 	return nil
+}
+
+// queryAllXACTBands queries AT+XACT=? and returns the full band list as a
+// comma-separated string (e.g. "900,1800,1900,850,1,2,4,5,8,101,...,120").
+func queryAllXACTBands(port *Port) (string, error) {
+	resp, err := port.SendCommand("AT+XACT=?")
+	if err != nil {
+		return "", err
+	}
+	for _, line := range splitLines(resp) {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(line, "+XACT:") {
+			continue
+		}
+		val := strings.TrimSpace(strings.TrimPrefix(line, "+XACT:"))
+		// Strip parenthesized ranges like "(0-6),(0-2)"
+		lastParen := strings.LastIndex(val, ")")
+		if lastParen >= 0 {
+			val = val[lastParen+1:]
+		}
+		val = strings.TrimLeft(val, ",")
+		return val, nil
+	}
+	return "", fmt.Errorf("no +XACT: line in response")
 }
 
 // ResetModem sends AT!RESET to reboot the modem.
@@ -2155,9 +2232,18 @@ func parseXACTQuery(resp string) (rat RATSelection, band BandEntry) {
 		}
 
 		mode, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
+		pref := -1
+		if len(parts) > 1 {
+			pref, _ = strconv.Atoi(strings.TrimSpace(parts[1]))
+		}
+
 		rat.Index = mode
 		if mode >= 0 && mode < len(xactModeNames) {
 			rat.Name = xactModeNames[mode]
+		}
+		// For multi-RAT modes, append the preference
+		if mode >= 3 && pref >= 0 && pref < len(xactPrefNames) && xactPrefNames[pref] != "" {
+			rat.Name += ", " + xactPrefNames[pref] + " preferred"
 		}
 
 		// Bands start at index 3 (after mode, pref1, pref2)
@@ -2198,6 +2284,13 @@ func formatXACTBands(raw []string) string {
 		summary = append(summary, "4G:"+strings.Join(bands4G, "/"))
 	}
 	return strings.Join(summary, " ")
+}
+
+// xactPrefNames maps AT+XACT pref1 values to RAT names.
+var xactPrefNames = [...]string{
+	0: "2G",
+	1: "3G",
+	2: "4G",
 }
 
 // parseXACTTest parses AT+XACT=? response into available band entries.

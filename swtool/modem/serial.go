@@ -74,6 +74,11 @@ func OpenPort(device string, l *log.Logger) (*Port, error) {
 	return p, nil
 }
 
+// SetTimeout overrides the default AT command response deadline.
+func (p *Port) SetTimeout(d time.Duration) {
+	p.timeout = d
+}
+
 // Close closes the serial port.
 func (p *Port) Close() error {
 	return p.port.Close()

@@ -72,6 +72,10 @@ var infoCmd = &cobra.Command{
 				overlayQMIData(qc, info)
 				qc.Close()
 			}
+			if mc := createMBIMClient(dev); mc != nil {
+				overlayMBIMData(mc, info)
+				mc.Close()
+			}
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			return enc.Encode(info)
@@ -104,10 +108,14 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 	const labelW = 20
 	w := os.Stdout
 
-	// Pre-query QMI data once — overlaid into every streaming callback.
+	// Pre-query QMI/MBIM data once — overlaid into every streaming callback.
 	qc := createQMIClient(dev)
 	if qc != nil {
 		defer qc.Close()
+	}
+	mc := createMBIMClient(dev)
+	if mc != nil {
+		defer mc.Close()
 	}
 
 	// Print device paths as a header — these are known before any AT commands.
@@ -125,6 +133,9 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 	modem.GetInfoStreaming(port, func(info *modem.Info) {
 		if qc != nil {
 			overlayQMIData(qc, info)
+		}
+		if mc != nil {
+			overlayMBIMData(mc, info)
 		}
 
 		// Identity — available after ATI (before first send point).
@@ -305,10 +316,11 @@ func printInfoStreaming(dev *modem.Device, port *modem.Port) {
 					skip["RSSI (dBm)"] = true // bars already show RSSI
 				}
 				for _, key := range []string{
-					"System mode", "PS state", "LTE band", "LTE bw",
+					"System mode", "MBIM state", "Data class",
+					"PS state", "LTE band", "LTE bw",
 					"LTE Rx chan", "LTE Tx chan", "EMM state", "RRC state",
-					"RSSI (dBm)",
-					"Tx Power", "TAC", "Cell ID", "Current Time",
+					"RSSI (dBm)", "RSRP (dBm)", "RSRQ (dB)", "SINR (dB)",
+					"Tx Power", "TAC", "Cell ID", "BER", "Current Time",
 				} {
 					if skip[key] {
 						continue
@@ -384,11 +396,15 @@ func printInfoSection(dev *modem.Device, info *modem.Info, section string) {
 	const labelW = 20
 	w := os.Stdout
 
-	// QMI-first: overlay QMI data for sections where it replaces AT commands.
-	if section == "signal" || section == "network" {
+	// QMI/MBIM-first: overlay data for sections where it replaces AT commands.
+	if section == "signal" || section == "network" || section == "identity" || section == "sim" {
 		if qc := createQMIClient(dev); qc != nil {
 			overlayQMIData(qc, info)
 			qc.Close()
+		}
+		if mc := createMBIMClient(dev); mc != nil {
+			overlayMBIMData(mc, info)
+			mc.Close()
 		}
 	}
 

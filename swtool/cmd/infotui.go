@@ -60,9 +60,10 @@ type tuiModel struct {
 	// get aged when the cycle completes (pollDoneMsg).
 	cycleUpdated map[string]bool
 
-	// QMI cache — shared across poll cycles. Signal info is always fresh;
+	// QMI/MBIM cache — shared across poll cycles. Signal info is always fresh;
 	// serving system, system info, and cell location are cached.
-	qmiCache *qmiCache
+	qmiCache  *qmiCache
+	mbimCache *mbimCache
 
 	width        int
 	height       int
@@ -86,6 +87,7 @@ func runInfoTUI(dev *modem.Device, interval time.Duration, jsonOnExit bool, sect
 		fieldAges:    make(map[string]int),
 		cycleUpdated: make(map[string]bool),
 		qmiCache:     &qmiCache{},
+		mbimCache:    &mbimCache{},
 	}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -132,7 +134,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !m.polling {
 				m.polling = true
 				m.cycleUpdated = make(map[string]bool)
-				ch := startStreamPoll(m.dev, m.qmiCache, m.section)
+				ch := startStreamPoll(m.dev, m.qmiCache, m.mbimCache, m.section)
 				return m, tea.Batch(waitStreamUpdate(ch), spinnerTick())
 			}
 		case "up", "k":
@@ -161,7 +163,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case initMsg:
 		m.polling = true
-		ch := startStreamPoll(m.dev, m.qmiCache, m.section)
+		ch := startStreamPoll(m.dev, m.qmiCache, m.mbimCache, m.section)
 		return m, tea.Batch(waitStreamUpdate(ch), tickAfter(m.interval), spinnerTick())
 
 	case streamUpdateMsg:
@@ -198,7 +200,7 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.polling = true
 		m.cycleUpdated = make(map[string]bool)
-		ch := startStreamPoll(m.dev, m.qmiCache, m.section)
+		ch := startStreamPoll(m.dev, m.qmiCache, m.mbimCache, m.section)
 		return m, tea.Batch(waitStreamUpdate(ch), tickAfter(m.interval), spinnerTick())
 	}
 
@@ -1182,7 +1184,7 @@ func mergeStr(dst *string, old string) {
 //
 // When section is non-empty, only that section's AT commands are queried
 // (via GetInfoForSection) and a single result is sent.
-func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan pollResultMsg {
+func startStreamPoll(dev *modem.Device, qCache *qmiCache, mCache *mbimCache, section string) <-chan pollResultMsg {
 	ch := make(chan pollResultMsg, 2)
 	go func() {
 		defer close(ch)
@@ -1190,6 +1192,10 @@ func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan 
 		qc := createQMIClient(dev)
 		if qc != nil {
 			defer qc.Close()
+		}
+		mc := createMBIMClient(dev)
+		if mc != nil {
+			defer mc.Close()
 		}
 
 		port, err := modem.OpenPortForDevice(dev, logger)
@@ -1204,6 +1210,9 @@ func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan 
 			if qc != nil {
 				overlayQMIData(qc, info)
 			}
+			if mc != nil {
+				overlayMBIMData(mc, info)
+			}
 			ch <- pollResultMsg{info: info}
 			return
 		}
@@ -1211,9 +1220,12 @@ func startStreamPoll(dev *modem.Device, cache *qmiCache, section string) <-chan 
 		first := true
 		modem.GetInfoStreaming(port, func(info *modem.Info) {
 			if qc != nil {
-				overlayQMICached(qc, cache, first, info)
-				first = false
+				overlayQMICached(qc, qCache, first, info)
 			}
+			if mc != nil {
+				overlayMBIMCached(mc, mCache, first, info)
+			}
+			first = false
 			ch <- pollResultMsg{info: info}
 		})
 	}()
